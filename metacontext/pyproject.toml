@@ -1,0 +1,124 @@
+[project]
+name = "metacontext"
+version = "0.1.0"
+description = "A tool for generating structured context from codebases"
+authors = [
+    {name = "raymondpeterdorn",email = "rpd346@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "anthropic>=0.66.0",
+    "gitpython>=3.1.45",
+    "google-generativeai>=0.8.0",
+    "openai>=1.106.1",
+    "python-dotenv>=1.0.0",
+    "pyyaml>=6.0.2",
+    "requests>=2.32.5",
+    "langchain-core (>=0.3.76,<0.4.0)",
+    "geopandas (>=1.1.1,<2.0.0)",
+    "h5py (>=3.14.0,<4.0.0)",
+    "tensorflow (>=2.20.0,<3.0.0)",
+    "pillow (>=11.3.0,<12.0.0)",
+    "scipy (>=1.16.2,<2.0.0)",
+    "scikit-learn (>=1.7.2,<2.0.0)",
+    "matplotlib (>=3.10.6,<4.0.0)",
+    "seaborn (>=0.13.2,<0.14.0)",
+    "openpyxl (>=3.1.5,<4.0.0)",
+    "pyarrow (>=21.0.0,<22.0.0)"
+]
+
+[project.optional-dependencies]
+dev = [
+    "mypy>=1.17.1",
+    "pre-commit>=4.3.0",
+    "pytest>=8.4.2",
+    "pytest-cov>=4.0",
+    "ruff>=0.12.12",
+    "types-PyYAML>=6.0"
+]
+
+[project.scripts]
+metacontext = "metacontext.cli:main"
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "ALL"
+]
+ignore = [
+    "E501",  # line too long, handled by ruff format
+    "B008",  # do not perform function calls in argument defaults
+    "C901",  # too complex
+    "S603", # subprocess call: check for execution of untrusted input
+    "TC001" # type checking block for imports
+]
+
+fixable = ["ALL"]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]
+"tests/*" = [
+    "S101",    # Use of assert detected (normal in tests)
+    "ANN201",  # Missing return type annotation for public function
+    "ANN001",  # Missing type annotation for function argument
+    "ANN002",  # Missing type annotation for *args
+    "ANN003",  # Missing type annotation for **kwargs
+    "ANN202",  # Missing return type annotation for private function
+    "PT017",   # Found assertion on exception in except block
+    "S108",    # Probable insecure usage of temporary file
+    "PTH123",  # open() should be replaced by Path.open()
+    "SIM117",  # Use a single with statement
+    "D200",    # One-line docstring should fit on one line
+    "D203",    # incorrect blank line before class
+    "D213",    # multi line summary second line
+    "SLF001",  # Private member accessed
+]
+"example/*" = ["T201", "INP001"]
+"src/metacontext/handlers/tabular.py" = ["ARG002"]
+"src/metacontext/handlers/model.py" = ["ARG002"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["metacontext"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+skip-magic-trailing-comma = false
+line-ending = "auto"
+
+[tool.mypy]
+python_version = "3.12"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+check_untyped_defs = true
+disallow_untyped_decorators = false
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+warn_no_return = true
+warn_unreachable = true
+strict_equality = true
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = [
+    "pandas.*",
+    "sklearn.*",
+    "joblib.*"
+]
+ignore_missing_imports = true
