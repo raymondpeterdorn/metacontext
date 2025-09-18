@@ -25,6 +25,10 @@ logger = logging.getLogger(__name__)
 # Load environment variables from .env file
 load_dotenv(Path(__file__).parent.parent / ".env")
 
+DATA_DIR = Path("bird_demo/data")
+OUTPUT_DIR = Path("bird_demo/output")
+
+
 # Default model configuration
 DEFAULT_MODEL_CONFIG: dict[str, Any] = {
     "n_estimators": 10,
@@ -33,13 +37,13 @@ DEFAULT_MODEL_CONFIG: dict[str, Any] = {
 
 def csv_and_xlsx() -> None:
     """Process birdos.csv and birdos_expanded.xlsx to create CSV and Excel files."""
-    csv_path = Path("example/data/birdos_expanded.csv")
-    xlsx_path = Path("example/data/birdos_expanded.xlsx")  # Use the existing file
-    output_csv_path = Path("example/output/csv.csv")
-    output_xlsx_path = Path("example/output/xlsx.xlsx")
+    csv_path = Path(DATA_DIR / "birdos_expanded.csv")
+    xlsx_path = Path(DATA_DIR / "birdos_expanded.xlsx")  # Use the existing file
+    output_csv_path = Path(OUTPUT_DIR / "csv.csv")
+    output_xlsx_path = Path(OUTPUT_DIR / "xlsx.xlsx")
 
     # Ensure output directory exists
-    Path("example/output").mkdir(exist_ok=True, parents=True)
+    OUTPUT_DIR.mkdir(exist_ok=True, parents=True)
 
     # Read CSV
     if csv_path.exists():
@@ -77,10 +81,10 @@ def csv_and_xlsx() -> None:
         except Exception:
             logger.exception("Error processing CSV")
         try:
-            eda_ouptut = eda(df_csv)
-            eda_ouput_path = Path("example/output/eda_csv.csv")
-            eda_ouptut.to_csv(eda_ouput_path)
-            metacontextualize(eda_ouptut, eda_ouput_path, args)
+            eda_output = eda(df_csv)
+            eda_output_path = OUTPUT_DIR / "eda_csv.csv"
+            eda_output.to_csv(eda_output_path)
+            metacontextualize(eda_output, eda_output_path, args)
         except Exception:
             logger.exception("Error running EDA")
     else:
@@ -118,7 +122,7 @@ def csv_and_xlsx() -> None:
 
 def ml_models() -> None:
     """Create and train a machine learning model for bird classification."""
-    csv_path = Path("example/data/birdos.csv")
+    csv_path = DATA_DIR / "birdos.csv"
 
     if not csv_path.exists():
         logger.warning("CSV file not found for ML model: %s", csv_path)
@@ -154,10 +158,10 @@ def ml_models() -> None:
         model.fit(x, y)
 
         # Ensure output directory exists
-        Path("example/output").mkdir(exist_ok=True, parents=True)
+        OUTPUT_DIR.mkdir(exist_ok=True, parents=True)
 
         # Save the model
-        model_path = Path("example/output/bird_classification_model.pkl")
+        model_path = OUTPUT_DIR / "bird_classification_model.pkl"
         with model_path.open("wb") as f:
             pickle.dump(model, f)
 
@@ -179,13 +183,13 @@ def ml_models() -> None:
 def geospatial_data() -> None:
     """Process geospatial data and generate metacontext for it."""
     # Ensure output directory exists
-    Path("example/output").mkdir(exist_ok=True, parents=True)
+    OUTPUT_DIR.mkdir(exist_ok=True, parents=True)
 
     # Define file paths
-    geojson_path = Path("example/data/birdos_locations.geojson")
-    gpkg_path = Path("example/data/birdos_locations.gpkg")
-    geojson_output_path = Path("example/output/buffered_locations.geojson")
-    gpkg_output_path = Path("example/output/filtered_locations.gpkg")
+    geojson_path = DATA_DIR / "birdos_locations.geojson"
+    gpkg_path = DATA_DIR / "birdos_locations.gpkg"
+    geojson_output_path = OUTPUT_DIR / "buffered_locations.geojson"
+    gpkg_output_path = OUTPUT_DIR / "filtered_locations.gpkg"
 
     # Process GeoJSON
     if geojson_path.exists():
@@ -290,7 +294,7 @@ def media_data() -> None:
     bird_img = Image.fromarray(img_array)
 
     # Save the image
-    img_path = Path("example/output/pixel_bird.png")
+    img_path = OUTPUT_DIR / "pixel_bird.png"
     bird_img.save(img_path)
 
     # Generate metacontext for the image
