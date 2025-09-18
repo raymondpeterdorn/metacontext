@@ -1,0 +1,18 @@
+metacontext_version: 0.3.0
+generation_info:
+  generated_at: '2025-09-13T23:52:01.847269+00:00'
+  generation_method: fallback
+  function_call: metacontext.metacontextualize()
+file_info:
+  filename: filtered_locations.gpkg
+  extension: .gpkg
+  absolute_path: /Users/bigdawg/Documents/metacontext/example/output/filtered_locations.gpkg
+  directory: example/output
+system_info:
+  working_directory: /Users/bigdawg/Documents/metacontext
+data_analysis:
+  type: generic_object
+  python_type: GeoDataFrame
+  note: Fallback analysis - specialized handler not available
+confidence_assessment:
+  overall: LOW

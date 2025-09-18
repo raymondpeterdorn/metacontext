@@ -2,7 +2,7 @@
 
 from unittest.mock import Mock, patch
 
-from metacontext.ai.handlers import LLMHandler
+from src.ai.handlers import LLMHandler
 
 
 class LLMTestError(Exception):

@@ -7,7 +7,7 @@ extensions dynamically, eliminating circular dependencies between schema modules
 from pathlib import Path
 from typing import ClassVar
 
-from metacontext.schemas.core.interfaces import SchemaRegistry
+from src.schemas.core.interfaces import SchemaRegistry
 
 
 class SchemaExtensionFactory:

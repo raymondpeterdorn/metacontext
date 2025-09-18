@@ -9,7 +9,7 @@ from typing import ClassVar
 
 from pydantic import BaseModel
 
-from metacontext.schemas.core.interfaces import (
+from src.schemas.core.interfaces import (
     EnrichmentProvider,
     MetadataProvider,
 )

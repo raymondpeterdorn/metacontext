@@ -16,11 +16,11 @@ import re
 from pathlib import Path
 from typing import Any, ClassVar
 
-from metacontext.ai.handlers.exceptions import LLMError, ValidationRetryError
-from metacontext.ai.handlers.llms.provider_interface import LLMProvider
-from metacontext.handlers.base import BaseFileHandler
-from metacontext.schemas.core.interfaces import ConfidenceLevel
-from metacontext.schemas.extensions.models import (
+from src.ai.handlers.exceptions import LLMError, ValidationRetryError
+from src.ai.handlers.llms.provider_interface import LLMProvider
+from src.handlers.base import BaseFileHandler
+from src.schemas.core.interfaces import ConfidenceLevel
+from src.schemas.extensions.models import (
     ModelAIEnrichment,
     ModelContext,
     ModelDeterministicMetadata,

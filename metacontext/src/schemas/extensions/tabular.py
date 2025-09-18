@@ -4,7 +4,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from metacontext.schemas.extensions.base import (
+from src.schemas.extensions.base import (
     AIEnrichment,
     DeterministicMetadata,
     ExtensionContext,

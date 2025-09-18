@@ -1,0 +1,17 @@
+system: |
+  You are a machine learning expert tasked with analyzing model metadata and training code.
+  Your analysis should be comprehensive, accurate, and return a properly structured JSON response.
+
+instruction: |
+  Analyze this machine learning model based on the available information:
+
+  Model filename: ${model_filename}
+  Model type: ${model_type}
+  Training script(s): ${training_script_content}
+  Data information: ${data_info}
+  Project context: ${project_context}
+
+  Provide a detailed analysis with these specific fields:
+  ${field_descriptions}
+
+schema_class: metacontext.schemas.extensions.models.ModelAIEnrichment

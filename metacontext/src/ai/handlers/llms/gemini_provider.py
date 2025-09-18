@@ -10,10 +10,10 @@ from typing import Any
 
 import google.generativeai as genai
 
-from metacontext.ai.handlers.core.exceptions import LLMError
-from metacontext.ai.handlers.core.provider_registry import ProviderRegistry
-from metacontext.ai.handlers.llms.base import SimplifiedLLMProvider
-from metacontext.core.config import get_config
+from src.ai.handlers.core.exceptions import LLMError
+from src.ai.handlers.core.provider_registry import ProviderRegistry
+from src.ai.handlers.llms.base import SimplifiedLLMProvider
+from src.core.config import get_config
 
 logger = logging.getLogger(__name__)
 
@@ -94,7 +94,7 @@ class GeminiProvider(SimplifiedLLMProvider):
                     prompt_tokens = getattr(usage, "prompt_token_count", 0)
                     completion_tokens = getattr(usage, "candidates_token_count", 0)
                     total_tokens = getattr(usage, "total_token_count", prompt_tokens + completion_tokens)
-                    
+
                     self._token_tracker.track_response(
                         prompt_tokens=prompt_tokens,
                         completion_tokens=completion_tokens,

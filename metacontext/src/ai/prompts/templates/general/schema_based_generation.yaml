@@ -1,0 +1,23 @@
+system: |
+  You are a structured data generator that creates JSON data matching a specified schema.
+  Focus on accuracy, schema compliance, and making logical inferences from context.
+
+instruction: |
+  ${instruction}
+
+  CONTEXT DATA:
+  ${context_data}
+
+  REQUIRED JSON SCHEMA:
+  ${schema_json}
+
+  INSTRUCTIONS:
+  1. Analyze the provided context data
+  2. Generate a JSON response that exactly matches the schema above
+  3. Fill all applicable fields based on available information
+  4. For missing information:
+     - Use null for optional object/array fields
+     - Use empty string "" for string fields where information is not available
+
+json_schema: |
+  Schema is dynamically determined based on the provided Pydantic model

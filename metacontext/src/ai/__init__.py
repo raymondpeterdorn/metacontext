@@ -4,8 +4,8 @@ This package provides LLM integration, code companion support, and codebase scan
 functionality for intelligent metadata generation.
 """
 
-from metacontext.ai.codebase_scanner import CodebaseScanner, scan_codebase_context
-from metacontext.ai.handlers import (
+from src.ai.codebase_scanner import CodebaseScanner, scan_codebase_context
+from src.ai.handlers import (
     AbstractLLMProvider,
     BaseCodeCompanionProvider,
     BaseLLMProviderConfig,

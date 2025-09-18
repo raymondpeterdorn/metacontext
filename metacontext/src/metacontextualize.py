@@ -12,29 +12,33 @@ See:
 
 import logging
 import time
-import yaml
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from metacontext.ai.codebase_scanner import scan_codebase_context
-from metacontext.ai.handlers.core.provider_manager import ProviderManager
-from metacontext.ai.handlers.llms.provider_interface import LLMProvider
-from .core.config import get_config
-from .core.output_utils import write_output
-from .inspectors.file_inspector import FileInspector
-from .schemas.core.codebase import CodebaseContext, CodebaseRelationships, FileRelationship
-from metacontext.core.registry import HandlerRegistry
-from metacontext.handlers.model import ModelHandler
-from metacontext.handlers.tabular import CSVHandler
-from metacontext.schemas.core.codebase import CodebaseContext
-from metacontext.schemas.core.core import (
+import yaml
+
+from src.ai.codebase_scanner import scan_codebase_context
+from src.ai.handlers.core.provider_manager import ProviderManager
+from src.ai.handlers.llms.provider_interface import LLMProvider
+from src.core.config import get_config
+from src.core.output_utils import write_output
+from src.core.registry import HandlerRegistry
+from src.handlers.model import ModelHandler
+from src.handlers.tabular import CSVHandler
+from src.inspectors.file_inspector import FileInspector
+from src.schemas.core.codebase import (
+    CodebaseContext,
+    CodebaseRelationships,
+    FileRelationship,
+)
+from src.schemas.core.core import (
     ConfidenceAssessment,
     TokenUsage,
     create_base_metacontext,
 )
-from metacontext.schemas.core.interfaces import ConfidenceLevel
+from src.schemas.core.interfaces import ConfidenceLevel
 
 logger = logging.getLogger(__name__)
 
@@ -57,19 +61,19 @@ class MetacontextualizeArgs:
 
 def _merge_config_with_args(args: MetacontextualizeArgs) -> dict[str, Any]:
     """Merge centralized config with runtime arguments.
-    
+
     Precedence: CLI args > config file > env vars > defaults
-    
+
     Args:
         args: Runtime arguments from function call
-        
+
     Returns:
         Merged configuration dictionary
-        
+
     """
     # Get centralized config (already handles config file > env vars > defaults)
     central_config = get_config()
-    
+
     # Start with centralized config values
     merged_config = {
         "llm_provider": central_config.llm.provider,
@@ -80,11 +84,11 @@ def _merge_config_with_args(args: MetacontextualizeArgs) -> dict[str, Any]:
         "scan_codebase": central_config.scan_codebase,
         "scan_depth": central_config.scan_depth,
     }
-    
+
     # Override with runtime args.config if provided (CLI args have highest precedence)
     if args.config:
         merged_config.update(args.config)
-    
+
     # Override specific args that are provided via the MetacontextualizeArgs
     if hasattr(args, "output_format") and args.output_format != "yaml":
         # If output_format was explicitly set (not default), use it
@@ -92,10 +96,10 @@ def _merge_config_with_args(args: MetacontextualizeArgs) -> dict[str, Any]:
     else:
         # Use config system default
         merged_config["output_format"] = central_config.output_format
-        
+
     # Verbosity from args takes precedence
     merged_config["verbose"] = args.verbose if hasattr(args, "verbose") else central_config.verbosity
-    
+
     return merged_config
 
 
@@ -122,10 +126,10 @@ def metacontextualize(
 
     """
     file_path = Path(file_path)
-    
+
     # Merge centralized config with runtime arguments
     merged_config = _merge_config_with_args(args)
-    
+
     start_time = time.time()
 
     # Generate output path
@@ -146,7 +150,7 @@ def metacontextualize(
     # Always perform universal file inspection for baseline metadata
     file_inspector = FileInspector()
     universal_metadata = file_inspector.inspect(file_path)
-    
+
     context = _generate_context(
         data_object=data_object,
         file_path=file_path,
@@ -446,7 +450,7 @@ def _generate_fallback_context(data_object: object, file_path: Path) -> dict:
     """Generate basic fallback context when handlers fail."""
     # Get codebase context even in fallback mode
     codebase_context = _scan_codebase({}, file_path)
-    
+
     context = {
         "metacontext_version": "0.3.0",
         "generation_info": {
@@ -468,7 +472,7 @@ def _generate_fallback_context(data_object: object, file_path: Path) -> dict:
         },
         "confidence_assessment": {"overall": "LOW"},
     }
-    
+
     # Add codebase context if available
     if codebase_context:
         # Convert to dict for serialization, handling any Pydantic models

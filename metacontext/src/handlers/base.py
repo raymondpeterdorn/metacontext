@@ -9,8 +9,8 @@ from enum import Enum
 from pathlib import Path
 from typing import ClassVar
 
-from metacontext.core.registry import HandlerRegistry
-from metacontext.schemas.core.core import Metacontext, create_base_metacontext
+from src.core.registry import HandlerRegistry
+from src.schemas.core.core import Metacontext, create_base_metacontext
 
 
 class AnalysisDepth(Enum):

@@ -8,9 +8,9 @@ from typing import Any, ClassVar
 
 import pandas as pd
 
-from metacontext.ai.handlers.core.exceptions import LLMError, ValidationRetryError
-from metacontext.handlers.base import BaseFileHandler, register_handler
-from metacontext.schemas.extensions.tabular import (
+from src.ai.handlers.core.exceptions import LLMError, ValidationRetryError
+from src.handlers.base import BaseFileHandler, register_handler
+from src.schemas.extensions.tabular import (
     ColumnAIEnrichment,
     ColumnDeterministicInfo,
     ColumnInfo,
@@ -62,7 +62,7 @@ class CSVHandler(BaseFileHandler):
 
         return False
 
-    def get_required_extensions(self, file_path: Path, data_object: object = None) -> list[str]:
+    def get_required_extensions(self, file_path: Path, data_object: object = None) -> list[str]:  # noqa: ARG002
         """Return required extensions for tabular data."""
         return self.required_schema_extensions
 
@@ -127,7 +127,7 @@ class CSVHandler(BaseFileHandler):
         file_path: Path,
         data_object: object | None = None,
         codebase_context: dict[str, object] | None = None,
-        ai_companion: object | None = None,
+        ai_companion: object | None = None,  # noqa: ARG002
     ) -> dict[str, object]:
         """Generate data_structure context using bulk AI prompts.
 
@@ -265,7 +265,7 @@ class CSVHandler(BaseFileHandler):
         try:
             # Prepare context for schema-first analysis
             context_summary = self._prepare_context_summary(codebase_context)
-            
+
             schema_context = {
                 "file_name": file_path.name,
                 "project_summary": context_summary.get("project_summary", "Unknown project"),
@@ -295,7 +295,7 @@ class CSVHandler(BaseFileHandler):
     def _convert_ai_enrichment_to_legacy_format(self, ai_enrichment: DataAIEnrichment) -> dict[str, dict[str, Any]]:
         """Convert schema-first AI enrichment to legacy format for compatibility."""
         result = {}
-        
+
         if ai_enrichment.column_interpretations:
             for col_name, col_info in ai_enrichment.column_interpretations.items():
                 result[col_name] = {
@@ -308,13 +308,13 @@ class CSVHandler(BaseFileHandler):
                     "domain_context": col_info.domain_context or "",
                     "relationship_to_other_columns": col_info.relationship_to_other_columns or [],
                 }
-        
+
         return result
 
     def _convert_ai_schema_to_legacy_format(self, ai_enrichment: DataAIEnrichment) -> dict[str, Any]:
         """Convert schema-first AI enrichment to legacy format for backward compatibility."""
         result = {}
-        
+
         # Map top-level fields
         if ai_enrichment.domain_analysis:
             result["domain_analysis"] = ai_enrichment.domain_analysis
@@ -322,7 +322,7 @@ class CSVHandler(BaseFileHandler):
             result["data_quality_assessment"] = ai_enrichment.data_quality_assessment
         if ai_enrichment.business_value_assessment:
             result["business_value_assessment"] = ai_enrichment.business_value_assessment
-        
+
         return result
 
     def _bulk_analyze_schema(
@@ -364,10 +364,10 @@ Provide insights on the overall data structure, business value, and data quality
                 schema_prompt,
                 DataAIEnrichment,
             )
-            
+
             # Convert to legacy format for backward compatibility
             return self._convert_ai_schema_to_legacy_format(ai_enrichment)
-            
+
         except (LLMError, ValidationRetryError):
             return fallback_response
 
@@ -535,6 +535,6 @@ Provide insights on the overall data structure, business value, and data quality
         "schema_interpretation": "templates/tabular/schema_analysis.yaml",
     }
 
-    def get_bulk_prompts(self, file_path: Path, data_object: object = None) -> dict[str, str]:
+    def get_bulk_prompts(self, file_path: Path, data_object: object = None) -> dict[str, str]:  # noqa: ARG002
         """Get bulk prompts for this file type from config."""
         return self.PROMPT_CONFIG.copy()

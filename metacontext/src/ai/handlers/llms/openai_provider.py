@@ -12,10 +12,10 @@ from typing import Any
 from openai import OpenAI
 from pydantic import BaseModel
 
-from metacontext.ai.handlers.core.exceptions import LLMError
-from metacontext.ai.handlers.core.provider_registry import ProviderRegistry
-from metacontext.ai.handlers.llms.base import SimplifiedLLMProvider
-from metacontext.ai.handlers.llms.provider_interface import parse_json_response
+from src.ai.handlers.core.exceptions import LLMError
+from src.ai.handlers.core.provider_registry import ProviderRegistry
+from src.ai.handlers.llms.base import SimplifiedLLMProvider
+from src.ai.handlers.llms.provider_interface import parse_json_response
 
 logger = logging.getLogger(__name__)
 

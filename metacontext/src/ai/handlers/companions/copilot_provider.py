@@ -2,14 +2,13 @@
 
 import contextlib
 import logging
-import os
 import subprocess
 import tempfile
 from pathlib import Path
 from typing import Any
 
-from metacontext.ai.handlers.companions.base_companion import BaseCodeCompanionProvider
-from metacontext.ai.handlers.core.provider_registry import ProviderRegistry
+from src.ai.handlers.companions.base_companion import BaseCodeCompanionProvider
+from src.ai.handlers.core.provider_registry import ProviderRegistry
 
 logger = logging.getLogger(__name__)
 
@@ -102,7 +101,7 @@ class CopilotProvider(BaseCodeCompanionProvider):
                         suggestion = f.read().strip()
                     if suggestion:
                         return {"content": suggestion}
-                
+
                 return {"error": "No suggestion generated"}
             finally:
                 # Clean up temp file

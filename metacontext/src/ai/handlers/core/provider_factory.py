@@ -1,7 +1,7 @@
 """Factory for creating LLM provider instances."""
 
-from metacontext.ai.handlers.llms.provider_interface import LLMProvider
-from metacontext.core.config import get_config
+from src.ai.handlers.llms.provider_interface import LLMProvider
+from src.core.config import get_config
 
 from .provider_registry import ProviderRegistry
 

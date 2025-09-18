@@ -7,7 +7,7 @@ from typing import Any
 
 import yaml
 
-from metacontext.ai.prompts.schema_utils import generate_prompt_from_schema
+from src.ai.prompts.schema_utils import generate_prompt_from_schema
 
 
 class PromptLoader:

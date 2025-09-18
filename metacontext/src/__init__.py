@@ -19,7 +19,7 @@ __author__ = "raymondpeterdorn"
 __email__ = "rpd346@gmail.com"
 
 # Universal File Intelligence System (Current)
-from metacontext.metacontextualize import MetacontextualizeArgs, metacontextualize
+from src.metacontextualize import MetacontextualizeArgs, metacontextualize
 
 # Core API
 __all__ = [

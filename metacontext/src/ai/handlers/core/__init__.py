@@ -1,8 +1,8 @@
 """Core infrastructure for LLM handlers."""
 
-from .exceptions import LLMError
-from .provider_factory import ProviderFactory
-from .provider_registry import ProviderRegistry
+from src.ai.handlers.core.exceptions import LLMError
+from src.ai.handlers.core.provider_factory import ProviderFactory
+from src.ai.handlers.core.provider_registry import ProviderRegistry
 
 __all__ = [
     "LLMError",

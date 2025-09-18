@@ -4,8 +4,8 @@ This package provides the core schemas and extensions for the metacontext system
 Commonly used types are re-exported at the package level for convenience.
 """
 
-from metacontext.schemas.core.codebase import CodebaseContext
-from metacontext.schemas.core.core import (
+from src.schemas.core.codebase import CodebaseContext
+from src.schemas.core.core import (
     ConfidenceAssessment,
     FileInfo,
     GenerationInfo,
@@ -15,14 +15,14 @@ from metacontext.schemas.core.core import (
     TokenUsage,
     create_base_metacontext,
 )
-from metacontext.schemas.core.interfaces import ConfidenceLevel
-from metacontext.schemas.extensions.models import (
+from src.schemas.core.interfaces import ConfidenceLevel
+from src.schemas.extensions.models import (
     ModelAIEnrichment,
     ModelContext,
     ModelDeterministicMetadata,
     TrainingData,
 )
-from metacontext.schemas.extensions.tabular import (
+from src.schemas.extensions.tabular import (
     ColumnAIEnrichment,
     ColumnDeterministicInfo,
     ColumnInfo,

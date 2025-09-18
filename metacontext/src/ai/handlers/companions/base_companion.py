@@ -12,7 +12,7 @@ from abc import abstractmethod
 from pathlib import Path
 from typing import Any
 
-from metacontext.ai.handlers.llms.provider_interface import AbstractLLMProvider
+from src.ai.handlers.llms.provider_interface import AbstractLLMProvider
 
 logger = logging.getLogger(__name__)
 

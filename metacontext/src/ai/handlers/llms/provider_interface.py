@@ -12,7 +12,7 @@ from typing import Any, ClassVar, Protocol
 
 from pydantic import BaseModel
 
-from metacontext.ai.handlers.core.exceptions import LLMError
+from src.ai.handlers.core.exceptions import LLMError
 
 logger = logging.getLogger(__name__)
 

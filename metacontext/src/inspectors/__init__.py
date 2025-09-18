@@ -1,5 +1,5 @@
 """Inspector modules for file analysis."""
 
-from .file_inspector import FileInspector
+from src.inspectors.file_inspector import FileInspector
 
 __all__ = ["FileInspector"]

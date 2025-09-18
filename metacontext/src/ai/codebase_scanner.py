@@ -296,72 +296,73 @@ class CodebaseScanner:
 
     def _find_cross_references(self, data_file: Path) -> dict[str, Any]:
         """Find cross-file references - which files reference this file and what it imports.
-        
+
         Args:
             data_file: Path to the data file being analyzed
-            
+
         Returns:
             Dictionary containing cross-reference information
+
         """
         cross_refs = {
             "referenced_by": [],  # Files that reference/import/load this data file
             "imports_from": [],   # Files that this data file imports/depends on
             "data_dependencies": [],  # Other data files this file might depend on
-            "summary": ""
+            "summary": "",
         }
-        
+
         data_filename = data_file.name
         data_stem = data_file.stem
         data_relative_path = str(data_file.relative_to(self.cwd)) if data_file.is_relative_to(self.cwd) else str(data_file)
-        
+
         # Search through all code files for references to this data file
         for file_path in self.cwd.rglob("*"):
-            if (file_path.is_file() 
-                and file_path.suffix.lower() in self.code_extensions 
+            if (file_path.is_file()
+                and file_path.suffix.lower() in self.code_extensions
                 and file_path != data_file):
-                
+
                 try:
                     with file_path.open(encoding="utf-8", errors="ignore") as f:
                         content = f.read()
-                    
+
                     # Look for references to this data file
                     references = self._find_file_references_in_content(
-                        content, data_filename, data_stem, data_relative_path
+                        content, data_filename, data_stem, data_relative_path,
                     )
-                    
+
                     if references:
                         ref_info = {
                             "file": str(file_path.relative_to(self.cwd)),
                             "file_type": file_path.suffix,
                             "references": references,
-                            "reference_count": len(references)
+                            "reference_count": len(references),
                         }
                         cross_refs["referenced_by"].append(ref_info)
-                
+
                 except OSError:
                     continue
-        
+
         # If this is a code file, find what it imports/depends on
         if data_file.suffix.lower() in self.code_extensions:
             try:
                 with data_file.open(encoding="utf-8", errors="ignore") as f:
                     content = f.read()
-                
+
                 imports = self._extract_imports_from_content(content, data_file.suffix)
                 cross_refs["imports_from"] = imports
-                
+
                 # Look for data file dependencies
                 data_deps = self._find_data_dependencies_in_content(content)
                 cross_refs["data_dependencies"] = data_deps
-                
+
             except OSError:
                 pass
-        
+
         # Generate summary
         ref_count = len(cross_refs["referenced_by"])
         import_count = len(cross_refs["imports_from"])
         data_dep_count = len(cross_refs["data_dependencies"])
-        
+
         summary_parts = []
         if ref_count > 0:
             summary_parts.append(f"Referenced by {ref_count} file(s)")
@@ -369,28 +370,28 @@ class CodebaseScanner:
             summary_parts.append(f"Imports from {import_count} module(s)")
         if data_dep_count > 0:
             summary_parts.append(f"Depends on {data_dep_count} data file(s)")
-            
+
         cross_refs["summary"] = "; ".join(summary_parts) if summary_parts else "No cross-references found"
-        
+
         return cross_refs
-        
+
     def _find_file_references_in_content(self, content: str, filename: str, file_stem: str, relative_path: str) -> list[dict[str, Any]]:
         """Find references to a specific file in the content."""
         references = []
-        lines = content.split('\n')
-        
+        lines = content.split("\n")
+
         # Patterns to look for file references
         patterns = [
             # Direct filename references
-            (rf'''['"`]{re.escape(filename)}['"`]''', "direct_filename"),
-            (rf'''['"`]{re.escape(file_stem)}['"`]''', "stem_reference"),
-            (rf'''['"`]{re.escape(relative_path)}['"`]''', "path_reference"),
+            (rf"""['"`]{re.escape(filename)}['"`]""", "direct_filename"),
+            (rf"""['"`]{re.escape(file_stem)}['"`]""", "stem_reference"),
+            (rf"""['"`]{re.escape(relative_path)}['"`]""", "path_reference"),
             # Common data loading patterns
-            (rf'''(?:read_csv|load|open|Path)\s*\(\s*['"`][^'"`]*{re.escape(file_stem)}[^'"`]*['"`]''', "data_loading"),
+            (rf"""(?:read_csv|load|open|Path)\s*\(\s*['"`][^'"`]*{re.escape(file_stem)}[^'"`]*['"`]""", "data_loading"),
             # Import patterns for Python modules
-            (rf'''(?:from|import)\s+.*{re.escape(file_stem)}''', "import_statement"),
+            (rf"""(?:from|import)\s+.*{re.escape(file_stem)}""", "import_statement"),
         ]
-        
+
         for line_num, line in enumerate(lines, 1):
             for pattern, ref_type in patterns:
                 matches = re.finditer(pattern, line, re.IGNORECASE)
@@ -400,23 +401,23 @@ class CodebaseScanner:
                         "line_content": line.strip(),
                         "match": match.group(),
                         "reference_type": ref_type,
-                        "context": self._get_line_context(lines, line_num - 1, context_lines=2)
+                        "context": self._get_line_context(lines, line_num - 1, context_lines=2),
                     })
-        
+
         return references
-    
+
     def _extract_imports_from_content(self, content: str, file_extension: str) -> list[dict[str, Any]]:
         """Extract import statements from code content."""
         imports = []
-        lines = content.split('\n')
-        
-        if file_extension == '.py':
+        lines = content.split("\n")
+
+        if file_extension == ".py":
             # Python import patterns
             import_patterns = [
-                (r'^import\s+([^\s#]+)', "standard_import"),
-                (r'^from\s+([^\s#]+)\s+import', "from_import"),
+                (r"^import\s+([^\s#]+)", "standard_import"),
+                (r"^from\s+([^\s#]+)\s+import", "from_import"),
             ]
-            
+
             for line_num, line in enumerate(lines, 1):
                 stripped_line = line.strip()
                 for pattern, import_type in import_patterns:
@@ -426,23 +427,23 @@ class CodebaseScanner:
                             "module": match.group(1),
                             "line_number": line_num,
                             "import_type": import_type,
-                            "full_line": stripped_line
+                            "full_line": stripped_line,
                         })
-        
+
         return imports
-    
+
     def _find_data_dependencies_in_content(self, content: str) -> list[dict[str, Any]]:
         """Find data file dependencies in code content."""
         dependencies = []
-        lines = content.split('\n')
-        
+        lines = content.split("\n")
+
         # Common data file extensions
-        data_extensions = ['.csv', '.json', '.xlsx', '.parquet', '.pkl', '.h5', '.nc', '.geojson']
-        
+        data_extensions = [".csv", ".json", ".xlsx", ".parquet", ".pkl", ".h5", ".nc", ".geojson"]
+
         for line_num, line in enumerate(lines, 1):
             for ext in data_extensions:
                 # Look for file paths with data extensions
-                pattern = rf'''['"`]([^'"`]*\{ext})['"`]'''
+                pattern = rf"""['"`]([^'"`]*\{ext})['"`]"""
                 matches = re.finditer(pattern, line, re.IGNORECASE)
                 for match in matches:
                     dependencies.append({
@@ -450,11 +451,11 @@ class CodebaseScanner:
                         "file_extension": ext,
                         "line_number": line_num,
                         "line_content": line.strip(),
-                        "context": self._get_line_context(lines, line_num - 1, context_lines=1)
+                        "context": self._get_line_context(lines, line_num - 1, context_lines=1),
                     })
-        
+
         return dependencies
-    
+
     def _get_line_context(self, lines: list[str], line_index: int, context_lines: int = 2) -> list[str]:
         """Get surrounding lines for context."""
         start = max(0, line_index - context_lines)

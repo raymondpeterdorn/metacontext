@@ -11,9 +11,9 @@ from typing import Any
 
 import anthropic
 
-from metacontext.ai.handlers.core.exceptions import LLMError
-from metacontext.ai.handlers.core.provider_registry import ProviderRegistry
-from metacontext.ai.handlers.llms.base import SimplifiedLLMProvider
+from src.ai.handlers.core.exceptions import LLMError
+from src.ai.handlers.core.provider_registry import ProviderRegistry
+from src.ai.handlers.llms.base import SimplifiedLLMProvider
 
 logger = logging.getLogger(__name__)
 

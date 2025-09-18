@@ -2,7 +2,7 @@
 
 [![Tests](https://img.shields.io/badge/tests-49%20passing-brightgreen)](tests/)
 [![Coverage](https://img.shields.io/badge/coverage-90%25-brightgreen)](tests/)
-[![Python](https://img.shields.io/badge/python-3.8%2B-blue)](#installation)
+[![Python](https://img.shields.io/badge/python-3.12%2B-blue)](#installation)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 **Metacontext generates intelligent metadata with revolutionary two-tier architecture: deterministic analysis + AI enrichment.**
@@ -20,7 +20,7 @@ Traditional file metadata tells you *what* a file is. **Metacontext tells you *w
 ## 🚀 Quick Start
 
 ```python
-from metacontext.simple_api import metacontextualize
+from metacontext.metacontextualize import metacontextualize
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 import joblib
@@ -132,6 +132,19 @@ poetry shell
 
 ```bash
 pip install metacontext
+```
+
+### Local Development
+
+To use metacontext as a local dependency in another project:
+
+```bash
+# In your project's pyproject.toml
+[tool.poetry.dependencies]
+metacontext = {path = "../path/to/metacontext", develop = true}
+
+# Then install dependencies
+poetry install
 ```
 
 ## Usage

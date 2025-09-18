@@ -1,0 +1,6 @@
+species_name,taxonomic_family,taxonomic_order,asdawas,beak_length,nocturnal_diurnal,brrrrkk,diet_types,closest_relatives
+Strix varia,Strigidae,Strigiformes,35,4.2,Nocturnal,2024-05-10,"{'insects': 0.6, 'rodents': 0.4}","['Strix aluco', 'Strix occidentalis']"
+Cygnus olor,Anatidae,Anseriformes,115,10.1,Diurnal,2024-05-12,"{'plants': 0.9, 'insects': 0.1}","['Cygnus atratus']"
+Gavia immer,Gaviidae,Gaviiformes,70,9.5,Diurnal,2024-05-11,"{'fish': 0.9, 'crustaceans': 0.1}","['Gavia adamsii']"
+Haemorhous mexicanus,Fringillidae,Passeriformes,10,1.2,Diurnal,2024-05-15,"{'seeds': 1.0}","['Haemorhous purpureus', 'Haemorhous cassinii']"
+Pica pica,Corvidae,Passeriformes,20,3.5,Diurnal,2024-05-14,"{'insects': 0.5, 'carrion': 0.3, 'seeds': 0.2}","['Pica hudsonia']"

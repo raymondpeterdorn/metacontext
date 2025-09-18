@@ -1,10 +1,10 @@
 """LLM provider implementations."""
 
-from metacontext.ai.handlers.llms.anthropic_provider import AnthropicProvider
-from metacontext.ai.handlers.llms.base import SimplifiedLLMProvider
-from metacontext.ai.handlers.llms.gemini_provider import GeminiProvider
-from metacontext.ai.handlers.llms.openai_provider import OpenAIProvider
-from metacontext.ai.handlers.llms.provider_interface import (
+from src.ai.handlers.llms.anthropic_provider import AnthropicProvider
+from src.ai.handlers.llms.base import SimplifiedLLMProvider
+from src.ai.handlers.llms.gemini_provider import GeminiProvider
+from src.ai.handlers.llms.openai_provider import OpenAIProvider
+from src.ai.handlers.llms.provider_interface import (
     AbstractLLMProvider,
     BaseLLMProviderConfig,
     LLMProvider,

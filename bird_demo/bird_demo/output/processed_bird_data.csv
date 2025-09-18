@@ -1,0 +1,6 @@
+species_name,taxonomic_family,asdawas,beak_length,nocturnal_diurnal,is_nocturnal,primary_diet
+Strix varia,Strigidae,35,4.2,Nocturnal,1,insects
+Cygnus olor,Anatidae,115,10.1,Diurnal,0,plants
+Gavia immer,Gaviidae,70,9.5,Diurnal,0,fish
+Haemorhous mexicanus,Fringillidae,10,1.2,Diurnal,0,seeds
+Pica pica,Corvidae,20,3.5,Diurnal,0,insects

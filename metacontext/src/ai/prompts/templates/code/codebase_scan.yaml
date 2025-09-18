@@ -1,0 +1,18 @@
+system: |
+  You are a codebase analysis expert tasked with scanning and understanding a software project structure.
+  Focus on identifying architecture, dependencies, and key components.
+
+instruction: |
+  Analyze this codebase structure and extract key metadata:
+
+  Repository path: ${repo_path}
+  File listing: 
+  ${file_listing}
+
+  Key files content:
+  ${key_files_content}
+
+  Provide a comprehensive analysis with these specific fields:
+  ${field_descriptions}
+
+schema_class: metacontext.schemas.core.codebase.CodeAIEnrichment

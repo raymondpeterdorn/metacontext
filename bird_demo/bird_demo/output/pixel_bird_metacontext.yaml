@@ -1,0 +1,18 @@
+metacontext_version: 0.3.0
+generation_info:
+  generated_at: '2025-09-13T23:52:01.881455+00:00'
+  generation_method: fallback
+  function_call: metacontext.metacontextualize()
+file_info:
+  filename: pixel_bird.png
+  extension: .png
+  absolute_path: /Users/bigdawg/Documents/metacontext/example/output/pixel_bird.png
+  directory: example/output
+system_info:
+  working_directory: /Users/bigdawg/Documents/metacontext
+data_analysis:
+  type: generic_object
+  python_type: Image
+  note: Fallback analysis - specialized handler not available
+confidence_assessment:
+  overall: LOW

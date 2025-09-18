@@ -15,7 +15,7 @@ import sys
 import traceback
 from pathlib import Path
 
-from .metacontextualize import MetacontextualizeArgs, metacontextualize
+from src.metacontextualize import MetacontextualizeArgs, metacontextualize
 
 # Constants for file size calculations
 BYTES_PER_KB = 1024
@@ -83,15 +83,13 @@ def create_parser() -> argparse.ArgumentParser:
 def validate_file_path(file_path: str) -> Path:
     """Validate and convert file path to Path object."""
     path = Path(file_path)
-    
+
     if not path.exists():
-        print(f"Error: File '{file_path}' does not exist.", file=sys.stderr)
         sys.exit(1)
-    
+
     if not path.is_file():
-        print(f"Error: '{file_path}' is not a file.", file=sys.stderr)
         sys.exit(1)
-    
+
     return path
 
 
@@ -104,7 +102,6 @@ def main() -> None:
     try:
         file_path = validate_file_path(args.file)
     except KeyboardInterrupt:
-        print("\nOperation cancelled by user.", file=sys.stderr)
         sys.exit(1)
 
     # Create metacontextualize arguments
@@ -116,13 +113,8 @@ def main() -> None:
     )
 
     # Show what we're doing
-    if args.verbose:
-        print(f"Analyzing file: {file_path}")
-        print(f"Output format: {args.output}")
-        print(f"Deep analysis: {'enabled' if args.deep else 'disabled'}")
-        if args.output_file:
-            print(f"Output file: {args.output_file}")
-        print()
+    if args.verbose and args.output_file:
+        pass
 
     try:
         # Generate metacontext
@@ -133,24 +125,20 @@ def main() -> None:
         )
 
         # Success message
-        print(f"✓ Metacontext generated successfully: {output_path}")
 
         if args.verbose:
             # Show file size
             size_bytes = output_path.stat().st_size
             if size_bytes < BYTES_PER_KB:
-                size_str = f"{size_bytes} bytes"
+                pass
             elif size_bytes < BYTES_PER_MB:
-                size_str = f"{size_bytes / BYTES_PER_KB:.1f} KB"
+                f"{size_bytes / BYTES_PER_KB:.1f} KB"
             else:
-                size_str = f"{size_bytes / BYTES_PER_MB:.1f} MB"
-            print(f"  Output size: {size_str}")
+                f"{size_bytes / BYTES_PER_MB:.1f} MB"
 
     except KeyboardInterrupt:
-        print("\nOperation cancelled by user.", file=sys.stderr)
         sys.exit(1)
-    except (FileNotFoundError, PermissionError, OSError) as e:
-        print(f"Error: {e}", file=sys.stderr)
+    except (FileNotFoundError, PermissionError, OSError):
         if args.verbose:
             traceback.print_exc()
         sys.exit(1)

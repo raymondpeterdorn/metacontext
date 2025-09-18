@@ -1,0 +1,18 @@
+metacontext_version: 0.3.0
+generation_info:
+  generated_at: '2025-09-13T23:51:28.375188+00:00'
+  generation_method: fallback
+  function_call: metacontext.metacontextualize()
+file_info:
+  filename: bird_classification_model.pkl
+  extension: .pkl
+  absolute_path: /Users/bigdawg/Documents/metacontext/example/output/bird_classification_model.pkl
+  directory: example/output
+system_info:
+  working_directory: /Users/bigdawg/Documents/metacontext
+data_analysis:
+  type: generic_object
+  python_type: RandomForestClassifier
+  note: Fallback analysis - specialized handler not available
+confidence_assessment:
+  overall: LOW

@@ -2,8 +2,8 @@
 
 import contextlib
 
-from metacontext.ai.handlers.companions.base_companion import BaseCodeCompanionProvider
-from metacontext.ai.handlers.core.provider_registry import ProviderRegistry
+from src.ai.handlers.companions.base_companion import BaseCodeCompanionProvider
+from src.ai.handlers.core.provider_registry import ProviderRegistry
 
 
 class GenericProvider(BaseCodeCompanionProvider):

@@ -9,15 +9,15 @@ from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field
 
-from metacontext.schemas.core.codebase import CodebaseContext
-from metacontext.schemas.core.interfaces import ConfidenceLevel
-from metacontext.schemas.extensions.geospatial import (
+from src.schemas.core.codebase import CodebaseContext
+from src.schemas.core.interfaces import ConfidenceLevel
+from src.schemas.extensions.geospatial import (
     GeospatialRasterContext,
     GeospatialVectorContext,
 )
-from metacontext.schemas.extensions.media import MediaContext
-from metacontext.schemas.extensions.models import ModelContext
-from metacontext.schemas.extensions.tabular import DataStructure
+from src.schemas.extensions.media import MediaContext
+from src.schemas.extensions.models import ModelContext
+from src.schemas.extensions.tabular import DataStructure
 
 
 class GenerationMethod(str, Enum):
@@ -77,15 +77,6 @@ class ConfidenceAssessment(BaseModel):
     overall: ConfidenceLevel | None = None
 
 
-class ConfidenceAssessment(BaseModel):
-    """Overall confidence in the generated context."""
-
-    file_purpose: ConfidenceLevel | None = None
-    schema_interpretation: ConfidenceLevel | None = None
-    business_context: ConfidenceLevel | None = None
-    overall: ConfidenceLevel | None = None
-
-
 class Metacontext(BaseModel):
     """Root metacontext schema with core + extensions architecture.
 
@@ -125,43 +116,6 @@ class Metacontext(BaseModel):
 
 # ========== UTILITY FUNCTIONS ==========
 
-
-def get_extensions_for_file_type(file_extension: str) -> list[str]:
-    """Determine which extensions should be included based on file extension."""
-    extension_mapping = {
-        # Tabular data
-        ".csv": ["data_structure"],
-        ".xlsx": ["data_structure"],
-        ".parquet": ["data_structure"],
-        # ML models
-        ".pkl": ["model_context"],
-        ".joblib": ["model_context"],
-        ".onnx": ["model_context"],
-        ".h5": ["model_context"],
-        ".pt": ["model_context"],
-        # Geospatial Raster
-        ".tif": ["geospatial_context"],
-        ".tiff": ["geospatial_context"],
-        ".nc": ["geospatial_context"],
-        # Geospatial Vector
-        ".shp": ["geospatial_context"],
-        ".geojson": ["geospatial_context"],
-        ".gpkg": ["geospatial_context"],
-        ".geoparquet": ["geospatial_context"],
-        # Media
-        ".jpg": ["media_context"],
-        ".png": ["media_context"],
-        ".mp4": ["media_context"],
-        ".wav": ["media_context"],
-        # Code
-        ".py": ["code_context"],
-        ".js": ["code_context"],
-        ".ts": ["code_context"],
-        ".java": ["code_context"],
-    }
-    return extension_mapping.get(file_extension.lower(), [])
-
-
 def create_base_metacontext(
     filename: str,
     file_purpose: str | None = None,
@@ -188,13 +142,13 @@ def create_base_metacontext(
     )
 
 
-def get_schema_for_prompt(schema_class: type[BaseModel]) -> dict:
+def get_schema_for_prompt(schema_class: type[BaseModel]) -> dict[str, Any]:
     """Generate JSON schema for LLM prompts with validation.
 
     This enables schema-first prompt engineering where LLM prompts
     are automatically generated from Pydantic schema definitions.
     """
-    return schema_class.schema()
+    return schema_class.model_json_schema()
 
 
 # ========== EXTENSION MANAGEMENT ==========
@@ -318,7 +272,7 @@ class ExtensionMapper:
         return cls._EXTENSION_TO_CATEGORY.get(extension_lower, ExtensionCategory.UNKNOWN)
 
     @classmethod
-    def get_extensions_for_file_type(cls, file_extension: str) -> list[str]:
+    def get_file_type_extension(cls, file_extension: str) -> list[str]:
         """Determine which extension schemas should be included based on file extension.
 
         This replaces the previous dictionary-based approach with a more efficient
@@ -381,4 +335,4 @@ def get_extensions_for_file_type(file_extension: str) -> list[str]:
         List of extension schema names to use
 
     """
-    return ExtensionMapper.get_extensions_for_file_type(file_extension)
+    return ExtensionMapper.get_file_type_extension(file_extension)

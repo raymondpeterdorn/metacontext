@@ -1,0 +1,18 @@
+metacontext_version: 0.3.0
+generation_info:
+  generated_at: '2025-09-14T01:18:53.935251+00:00'
+  generation_method: fallback
+  function_call: metacontext.metacontextualize()
+file_info:
+  filename: xlsx.xlsx
+  extension: .xlsx
+  absolute_path: /Users/bigdawg/Documents/metacontext/example/output/xlsx.xlsx
+  directory: example/output
+system_info:
+  working_directory: /Users/bigdawg/Documents/metacontext
+data_analysis:
+  type: generic_object
+  python_type: DataFrame
+  note: Fallback analysis - specialized handler not available
+confidence_assessment:
+  overall: LOW

@@ -7,7 +7,7 @@ token tracking logic across provider implementations.
 from copy import deepcopy
 from typing import Any, ClassVar
 
-from metacontext.schemas.core.core import TokenUsage
+from src.schemas.core.core import TokenUsage
 
 
 class TokenTracker:

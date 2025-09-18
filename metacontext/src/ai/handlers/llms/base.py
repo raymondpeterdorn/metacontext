@@ -9,13 +9,13 @@ from typing import Any
 
 from pydantic import BaseModel, ValidationError
 
-from metacontext.ai.handlers.core.exceptions import LLMError, ValidationRetryError
-from metacontext.ai.handlers.core.token_tracker import TokenTracker
-from metacontext.ai.handlers.llms.provider_interface import (
+from src.ai.handlers.core.exceptions import LLMError, ValidationRetryError
+from src.ai.handlers.core.token_tracker import TokenTracker
+from src.ai.handlers.llms.provider_interface import (
     AbstractLLMProvider,
     parse_json_response,
 )
-from metacontext.core.config import get_config
+from src.core.config import get_config
 
 logger = logging.getLogger(__name__)
 

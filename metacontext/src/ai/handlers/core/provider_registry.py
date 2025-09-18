@@ -2,7 +2,7 @@
 
 from typing import ClassVar
 
-from metacontext.ai.handlers.llms.provider_interface import LLMProvider
+from src.ai.handlers.llms.provider_interface import LLMProvider
 
 
 class ProviderRegistry:

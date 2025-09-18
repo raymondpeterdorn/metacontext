@@ -5,7 +5,7 @@ from unittest.mock import mock_open, patch
 
 import yaml
 
-from metacontext.ai.prompts.prompt_loader import PromptLoader
+from src.ai.prompts.prompt_loader import PromptLoader
 
 
 def test_prompt_loader_basic():
