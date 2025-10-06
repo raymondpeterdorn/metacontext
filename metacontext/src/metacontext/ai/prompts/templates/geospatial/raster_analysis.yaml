@@ -18,24 +18,41 @@ instruction: |
   - No Data Value: ${nodata_value}
   - Project Context: ${project_summary}
 
+  ⚙️ Schema Reference (summary only):
+  ${schema_hint}
+
+  🔍 RASTER FORENSICS PROTOCOL:
+  
+  1. **DATA ACQUISITION**: What sensor or collection method produced this raster?
+  2. **RESOLUTION CHOICES**: What do pixel resolution choices reveal about application purpose?
+  3. **PROCESSING PIPELINE**: What processing steps are evident from band structure and data types?
+  4. **SPECTRAL CHARACTERISTICS**: What spectral bands suggest about measurement objectives?
+  5. **ANALYSIS WORKFLOW**: What analysis workflow is implied by CRS and extent choices?
+
   🎯 EFFICIENCY REQUIREMENTS:
   - Maximum response: 1200 characters total
   - Per field limit: 200 characters
   - Use precise remote sensing terminology
   - Focus on most critical raster insights
-  - For missing info: use null (objects) or "" (strings)
 
-  🔍 REQUIRED RASTER ANALYSIS:
-  ${field_descriptions}
+  ⚠️ CRITICAL Output Format Rules:
+  - suspicious_patterns: Must be a list ["pattern1", "pattern2"] or null
+  - cross_references: Must be a dict {"element": "explanation"} or null
+  - Never include markdown or prose — output must be **valid JSON only**
+  - Focus on remote sensing methodology and data acquisition
+  - Skip commentary about the task or user
 
-  ⚠️ RASTER FORENSICS STANDARDS - Optimized Analysis:
-  - NEVER just describe pixel dimensions - uncover data acquisition story
-  - ALWAYS investigate resolution choices and their application purpose
-  - DIG for processing pipeline evidence from band structure and data types
-  - TRACE sensor or data source from spectral and spatial characteristics
-  - UNCOVER analysis workflow from CRS and extent choices
-  - USE forensic fields for genuine remote sensing discoveries only
-  - CONNECT raster properties to real-world measurement objectives
+  📋 Example Output Structure:
+  {
+    "ai_interpretation": "Data acquisition and processing context of this raster",
+    "ai_confidence": "HIGH",
+    "ai_domain_context": "Remote sensing domain and measurement context",
+    "usage_guidance": "How this raster data should be analyzed and used",
+    "hidden_meaning": "Measurement objectives or processing decisions embedded in raster",
+    "suspicious_patterns": ["pattern1", "pattern2"],
+    "cross_references": {"element": "explanation"},
+    "detective_insights": "Key insights about data collection and processing methodology"
+  }
 
   📋 Return optimized JSON with focused raster insights.
 

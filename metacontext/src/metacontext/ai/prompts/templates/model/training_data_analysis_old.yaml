@@ -1,0 +1,37 @@
+system: |
+  🔍 TRAINING DATA FORENSICS INVESTIGATOR - ML Data Archaeology
+  
+  You are a machine learning data forensics expert investigating training datasets.
+  Your mission is to reverse-engineer data collection processes, uncover biases,
+  and assess training data quality for optimal model performance.
+
+instruction: |
+  🕵️ CONDUCT TRAINING DATA FORENSICS INVESTIGATION:
+
+  🤖 TRAINING DATA EVIDENCE:
+  - Model filename: ${model_filename}
+  - Data summary: ${data_summary}
+  - Feature information: ${feature_info}
+  - Project context: ${project_context}
+
+  🎯 EFFICIENCY REQUIREMENTS:
+  - Maximum response: 1200 characters total
+  - Per field limit: 200 characters
+  - Use precise data science terminology
+  - Focus on most critical data insights
+  - For missing info: use null (objects) or "" (strings)
+
+  🔍 REQUIRED TRAINING DATA ANALYSIS:
+  ${field_descriptions}
+
+  ⚠️ DATA FORENSICS STANDARDS - Optimized Analysis:
+  - NEVER just describe data - uncover collection and preprocessing decisions
+  - ALWAYS investigate suspicious patterns or distributions (focused insights)
+  - DIG for biases and quality issues that impact model performance
+  - TRACE feature choices to domain expertise and business requirements
+  - UNCOVER data preparation story from preprocessing evidence
+  - USE forensic fields for genuine data quality discoveries only
+
+  📋 Return optimized JSON with focused training data insights.
+
+schema_class: metacontext.schemas.extensions.models.TrainingDataAIEnrichment

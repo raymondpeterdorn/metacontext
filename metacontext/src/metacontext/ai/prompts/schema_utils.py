@@ -6,6 +6,104 @@ from typing import Any
 
 from pydantic import BaseModel
 
+# Constants for description truncation
+MAX_DESCRIPTION_LENGTH = 80
+MAX_NESTED_DESCRIPTION_LENGTH = 60
+
+
+def compact_schema_hint(schema_class: type[BaseModel]) -> str:
+    """Generate a compact, low-token summary of a Pydantic schema.
+
+    This function creates a minimal field hint that uses 80% fewer tokens
+    than a full JSON schema while preserving essential structure information.
+
+    Args:
+        schema_class: The Pydantic model class to generate hints for
+
+    Returns:
+        A compact string listing field names, types, and brief descriptions
+
+    Example:
+        - project_purpose: string  # Summarized purpose of the project
+        - architecture_summary: string  # Key design patterns and decisions
+
+    """
+    schema = schema_class.model_json_schema()
+    fields = schema.get("properties", {})
+
+    lines = []
+    for field_name, field_data in fields.items():
+        # Get description if available, truncate to MAX_DESCRIPTION_LENGTH chars max
+        desc = field_data.get("description", "")
+        if desc:
+            desc = desc[:MAX_DESCRIPTION_LENGTH] + "..." if len(desc) > MAX_DESCRIPTION_LENGTH else desc
+
+        # Get field type, defaulting to 'any' if not specified
+        field_type = field_data.get("type", "any")
+
+        # Handle array types
+        if field_type == "array" and "items" in field_data:
+            item_type = field_data["items"].get("type", "any")
+            field_type = f"array[{item_type}]"
+
+        # Compact line for readability + low token cost
+        if desc:
+            lines.append(f"- {field_name}: {field_type}  # {desc}")
+        else:
+            lines.append(f"- {field_name}: {field_type}")
+
+    return "\n".join(lines)
+
+
+def compact_schema_hint_nested(schema_class: type[BaseModel], depth: int = 0) -> str:
+    """Generate a compact schema hint with support for nested objects.
+
+    Args:
+        schema_class: The Pydantic model class to generate hints for
+        depth: Current nesting depth (for indentation)
+
+    Returns:
+        A compact string with nested object support
+
+    """
+    schema = schema_class.model_json_schema()
+    fields = schema.get("properties", {})
+    lines = []
+
+    indent = "  " * depth
+    for name, info in fields.items():
+        field_type = info.get("type", "object")
+        desc = info.get("description", "")
+        if desc:
+            desc = desc[:MAX_DESCRIPTION_LENGTH] + "..." if len(desc) > MAX_DESCRIPTION_LENGTH else desc
+
+        if desc:
+            lines.append(f"{indent}- {name}: {field_type}  # {desc}")
+        else:
+            lines.append(f"{indent}- {name}: {field_type}")
+
+        # Handle nested objects
+        if field_type == "object" and "properties" in info:
+            nested_lines = []
+            nested_indent = "  " * (depth + 1)
+            for nested_name, nested_info in info["properties"].items():
+                nested_type = nested_info.get("type", "any")
+                nested_desc = nested_info.get("description", "")
+                if nested_desc:
+                    nested_desc = (
+                        nested_desc[:MAX_NESTED_DESCRIPTION_LENGTH] + "..."
+                        if len(nested_desc) > MAX_NESTED_DESCRIPTION_LENGTH
+                        else nested_desc
+                    )
+                    nested_lines.append(f"{nested_indent}- {nested_name}: {nested_type}  # {nested_desc}")
+                else:
+                    nested_lines.append(f"{nested_indent}- {nested_name}: {nested_type}")
+
+            if nested_lines:
+                lines.extend(nested_lines)
+
+    return "\n".join(lines)
+
 
 def generate_field_descriptions(model_class: type[BaseModel]) -> str:
     """Generate a numbered list of field descriptions from a Pydantic model."""

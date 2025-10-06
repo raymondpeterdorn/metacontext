@@ -19,24 +19,41 @@ instruction: |
   - Technical Metadata: ${technical_metadata}
   - Project Context: ${project_summary}
 
+  ⚙️ Schema Reference (summary only):
+  ${schema_hint}
+
+  🔍 MEDIA FORENSICS PROTOCOL:
+  
+  1. **PRODUCTION WORKFLOW**: What creation and processing tools produced this media?
+  2. **QUALITY/COMPRESSION**: What do quality and compression choices reveal about usage intent?
+  3. **CREATION CONTEXT**: What context is embedded in metadata and technical specifications?
+  4. **CONTENT PURPOSE**: What delivery requirements guided format and technical choices?
+  5. **MEDIA WORKFLOW**: What processing pipeline is evident from encoding parameters?
+
   🎯 EFFICIENCY REQUIREMENTS:
   - Maximum response: 1000 characters total
   - Per field limit: 180 characters
   - Use precise media terminology
   - Focus on most revealing technical insights
-  - For missing info: use null (objects) or "" (strings)
 
-  🔍 REQUIRED MEDIA ANALYSIS:
-  ${field_descriptions}
+  ⚠️ CRITICAL Output Format Rules:
+  - suspicious_patterns: Must be a list ["pattern1", "pattern2"] or null
+  - cross_references: Must be a dict {"element": "explanation"} or null
+  - Never include markdown or prose — output must be **valid JSON only**
+  - Focus on production workflow and technical decisions
+  - Skip commentary about the task or user
 
-  ⚠️ MEDIA FORENSICS STANDARDS - Optimized Analysis:
-  - NEVER just describe format specs - uncover production workflow story
-  - ALWAYS investigate quality/compression choices and their purpose
-  - DIG for creation context from metadata and technical specifications  
-  - TRACE content purpose from format choices and technical parameters
-  - UNCOVER media workflow from encoding and processing evidence
-  - USE forensic fields for genuine media production discoveries only
-  - CONNECT technical choices to content delivery and usage requirements
+  📋 Example Output Structure:
+  {
+    "ai_interpretation": "Media production context and technical purpose",
+    "ai_confidence": "HIGH",
+    "ai_domain_context": "Media production domain and delivery context",
+    "usage_guidance": "How this media should be used and processed",
+    "hidden_meaning": "Production decisions or workflow requirements embedded in media",
+    "suspicious_patterns": ["pattern1", "pattern2"],
+    "cross_references": {"element": "explanation"},
+    "detective_insights": "Key insights about production workflow and technical choices"
+  }
 
   📋 Return optimized JSON with focused media insights.
 

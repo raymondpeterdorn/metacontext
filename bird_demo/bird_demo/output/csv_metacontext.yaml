@@ -1,18 +1,96 @@
 metacontext_version: 0.3.0
 generation_info:
-  generated_at: '2025-09-14T01:18:13.856332+00:00'
-  generation_method: fallback
+  generated_at: '2025-10-06T11:47:56.467914Z'
+  generation_method: explicit_function
   function_call: metacontext.metacontextualize()
+  token_usage:
+    total_tokens: 3767
+    prompt_tokens: 2886
+    completion_tokens: 2146
+    total_api_calls: 4
+    provider: gemini
+    model: gemini-2.5-flash
 file_info:
   filename: csv.csv
   extension: .csv
-  absolute_path: /Users/bigdawg/Documents/metacontext/example/output/csv.csv
-  directory: example/output
+  file_purpose: Generated file with two-tier architecture
+  project_context_summary: Analysis with CSVHandler
+  creation_timestamp: '2025-10-06T11:47:56.468496Z'
 system_info:
-  working_directory: /Users/bigdawg/Documents/metacontext
-data_analysis:
-  type: generic_object
-  python_type: DataFrame
-  note: Fallback analysis - specialized handler not available
+  working_directory: /Users/bigdawg/Documents/repos/metacontext/bird_demo
 confidence_assessment:
-  overall: LOW
+  overall: MEDIUM
+data_structure:
+  deterministic_metadata:
+    type: pandas_dataframe
+    shape:
+    - 200
+    - 7
+    memory_usage_bytes: 51195
+  ai_enrichment:
+    domain_analysis: ''
+    data_quality_assessment: unknown
+    column_interpretations:
+      species_name:
+        deterministic: {}
+        ai_enrichment:
+          semantic_meaning: Scientific binomial name of the bird species.
+          data_quality_assessment: ''
+          domain_context: Ornithology, biological classification, unique species identification.
+          relationship_to_other_columns:
+          - taxonomic_family
+          - beak_length
+          - primary_diet
+      taxonomic_family:
+        deterministic: {}
+        ai_enrichment:
+          semantic_meaning: The biological family to which the species belongs.
+          data_quality_assessment: ''
+          domain_context: Ornithology, hierarchical biological classification.
+          relationship_to_other_columns:
+          - species_name
+      asdawas:
+        deterministic: {}
+        ai_enrichment:
+          semantic_meaning: Cryptic column name. Likely a numerical biological measurement
+            or derived metric, given float64 dtype and sample values. Unit and exact
+            meaning are unknown.
+          data_quality_assessment: ''
+          domain_context: Ornithology, biological measurements (e.g., body mass, wingspan,
+            metabolic rate).
+      beak_length:
+        deterministic: {}
+        ai_enrichment:
+          semantic_meaning: The measured length of the bird's beak, likely in millimeters
+            or centimeters.
+          data_quality_assessment: ''
+          domain_context: Ornithology, morphology, anatomical measurements.
+          relationship_to_other_columns:
+          - species_name
+      nocturnal_diurnal:
+        deterministic: {}
+        ai_enrichment:
+          semantic_meaning: Categorical classification of the species' primary activity
+            period (Diurnal or Nocturnal).
+          data_quality_assessment: ''
+          domain_context: Ornithology, ethology, behavioral ecology.
+          relationship_to_other_columns:
+          - is_nocturnal
+      is_nocturnal:
+        deterministic: {}
+        ai_enrichment:
+          semantic_meaning: Binary flag indicating if the species is nocturnal (1)
+            or diurnal (0).
+          data_quality_assessment: ''
+          domain_context: Ornithology, ethology, behavioral ecology.
+          relationship_to_other_columns:
+          - nocturnal_diurnal
+      primary_diet:
+        deterministic: {}
+        ai_enrichment:
+          semantic_meaning: The main type of food consumed by the species.
+          data_quality_assessment: ''
+          domain_context: Ornithology, ecology, trophic interactions, food web analysis.
+          relationship_to_other_columns:
+          - species_name
+    business_value_assessment: ''

@@ -303,6 +303,29 @@ class CSVHandler(BaseFileHandler):
             # Fallback to empty result instead of raising
             return {}
 
+    def _convert_column_response_to_legacy_format(self, response_data: dict) -> dict[str, dict[str, Any]]:
+        """Convert raw LLM column response to legacy format for compatibility."""
+        result = {}
+        
+        # Direct column response should already be in the expected format
+        for col_name, col_data in response_data.items():
+            if isinstance(col_data, dict):
+                result[col_name] = col_data
+            else:
+                # Fallback for unexpected format
+                result[col_name] = {
+                    "ai_interpretation": str(col_data),
+                    "ai_confidence": "MEDIUM",
+                    "ai_domain_context": "",
+                    "usage_guidance": "",
+                    "semantic_meaning": str(col_data),
+                    "data_quality_assessment": "",
+                    "domain_context": "",
+                    "relationship_to_other_columns": [],
+                }
+        
+        return result
+
     def _convert_ai_enrichment_to_legacy_format(self, ai_enrichment: DataAIEnrichment) -> dict[str, dict[str, Any]]:
         """Convert schema-first AI enrichment to legacy format for compatibility."""
         result = {}

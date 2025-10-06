@@ -17,24 +17,41 @@ instruction: |
   - Attribute Fields: ${attribute_fields}
   - Project Context: ${project_summary}
 
+  ⚙️ Schema Reference (summary only):
+  ${schema_hint}
+
+  🔍 GIS FORENSICS PROTOCOL:
+  
+  1. **GEOGRAPHIC PURPOSE**: What real-world entities or processes do these geometries represent?
+  2. **CRS CHOICES**: What do coordinate system choices reveal about data collection or usage?
+  3. **SPATIAL PATTERNS**: What business logic is embedded in feature distribution and clustering?
+  4. **ATTRIBUTE SCHEMA**: What domain expertise guided the attribute field design?
+  5. **DATA COLLECTION**: What collection methods are suggested by spatial distribution?
+
   🎯 EFFICIENCY REQUIREMENTS:
   - Maximum response: 1200 characters total
   - Per field limit: 200 characters
   - Use precise GIS terminology
   - Focus on most significant spatial insights
-  - For missing info: use null (objects) or "" (strings)
 
-  🔍 REQUIRED GEOSPATIAL ANALYSIS:
-  ${field_descriptions}
+  ⚠️ CRITICAL Output Format Rules:
+  - suspicious_patterns: Must be a list ["pattern1", "pattern2"] or null
+  - cross_references: Must be a dict {"element": "explanation"} or null
+  - Never include markdown or prose — output must be **valid JSON only**
+  - Focus on spatial relationships and geographic context
+  - Skip commentary about the task or user
 
-  ⚠️ GIS FORENSICS STANDARDS - Optimized Analysis:
-  - NEVER just describe geometries - uncover their geographic purpose
-  - ALWAYS investigate CRS choices and their implications (focused)
-  - DIG for business logic behind attribute schema and spatial patterns
-  - TRACE data collection methods from spatial distribution evidence  
-  - UNCOVER geographic story from feature density and clustering
-  - USE forensic fields for genuine spatial discoveries only
-  - CONNECT geometries to real-world entities and processes
+  📋 Example Output Structure:
+  {
+    "ai_interpretation": "Geographic purpose and context of this vector data",
+    "ai_confidence": "HIGH",
+    "ai_domain_context": "GIS domain and geographic use case",
+    "usage_guidance": "How this geospatial data should be used",
+    "hidden_meaning": "Business logic or domain expertise in spatial design",
+    "suspicious_patterns": ["pattern1", "pattern2"],
+    "cross_references": {"element": "explanation"},
+    "detective_insights": "Key insights about spatial patterns and geographic context"
+  }
 
   📋 Return optimized JSON with focused geographic insights.
 

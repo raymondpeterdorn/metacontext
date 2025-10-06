@@ -14,23 +14,41 @@ instruction: |
   - Feature information: ${feature_info}
   - Project context: ${project_context}
 
+  ⚙️ Schema Reference (summary only):
+  ${schema_hint}
+
+  🔍 DATA FORENSICS PROTOCOL:
+  
+  1. **DATA COLLECTION**: How was this data collected? What sources and processes?
+  2. **BIAS DETECTION**: What biases or skews are present in the dataset?
+  3. **QUALITY ASSESSMENT**: What quality issues impact model performance?
+  4. **FEATURE CHOICES**: What domain expertise guided feature selection?
+  5. **PREPROCESSING**: What data preparation decisions were made and why?
+
   🎯 EFFICIENCY REQUIREMENTS:
   - Maximum response: 1200 characters total
   - Per field limit: 200 characters
   - Use precise data science terminology
   - Focus on most critical data insights
-  - For missing info: use null (objects) or "" (strings)
 
-  🔍 REQUIRED TRAINING DATA ANALYSIS:
-  ${field_descriptions}
+  ⚠️ CRITICAL Output Format Rules:
+  - suspicious_patterns: Must be a list ["pattern1", "pattern2"] or null
+  - cross_references: Must be a dict {"element": "explanation"} or null
+  - Never include markdown or prose — output must be **valid JSON only**
+  - Focus on data quality and collection methodology
+  - Skip commentary about the task or user
 
-  ⚠️ DATA FORENSICS STANDARDS - Optimized Analysis:
-  - NEVER just describe data - uncover collection and preprocessing decisions
-  - ALWAYS investigate suspicious patterns or distributions (focused insights)
-  - DIG for biases and quality issues that impact model performance
-  - TRACE feature choices to domain expertise and business requirements
-  - UNCOVER data preparation story from preprocessing evidence
-  - USE forensic fields for genuine data quality discoveries only
+  📋 Example Output Structure:
+  {
+    "ai_interpretation": "Data collection and preparation summary",
+    "ai_confidence": "HIGH",
+    "ai_domain_context": "Data domain and collection context",
+    "usage_guidance": "How to interpret and use this training data",
+    "hidden_meaning": "Domain expertise or business logic in data preparation",
+    "suspicious_patterns": ["pattern1", "pattern2"],
+    "cross_references": {"element": "explanation"},
+    "detective_insights": "Key insights about data quality and collection methodology"
+  }
 
   📋 Return optimized JSON with focused training data insights.
 
