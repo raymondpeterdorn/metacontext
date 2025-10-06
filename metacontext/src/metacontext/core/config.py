@@ -33,7 +33,7 @@ class LLMConfig:
     """Configuration for LLM providers."""
 
     provider: str = "gemini"
-    model: str = "gemini-1.5-flash"
+    model: str | None = None  # Will be dynamically determined by provider
     api_key: str | None = None
     temperature: float = 0.1
     max_tokens: int = 4000
@@ -86,7 +86,7 @@ class ConfigManager:
     PROVIDER_ENV_VARS: ClassVar[dict[str, str]] = {
         "openai": "OPENAI_API_KEY",
         "anthropic": "ANTHROPIC_API_KEY",
-        "gemini": "GOOGLE_API_KEY",
+        "gemini": "GEMINI_API_KEY",
         "cohere": "COHERE_API_KEY",
         "azure": "AZURE_OPENAI_API_KEY",
     }

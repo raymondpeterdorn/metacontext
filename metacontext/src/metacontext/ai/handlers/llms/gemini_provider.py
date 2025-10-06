@@ -21,6 +21,20 @@ logger = logging.getLogger(__name__)
 class GeminiProvider(SimplifiedLLMProvider):
     """Gemini LLM provider with simplified implementation."""
 
+    def __init__(
+        self,
+        model: str | None,
+        api_key: str | None,
+        temperature: float = 0.1,
+        **kwargs: dict[str, object],
+    ) -> None:
+        """Initialize with dynamic model detection if model is None."""
+        # Use dynamic detection if no model specified
+        if model is None:
+            model = self.get_default_model()
+
+        super().__init__(model, api_key, temperature, **kwargs)
+
     @property
     def provider_name(self) -> str:
         """Return the name of the provider."""
@@ -78,8 +92,13 @@ class GeminiProvider(SimplifiedLLMProvider):
                 "response_mime_type": "application/json",
             }
 
+            # Ensure model name has correct format for Gemini API
+            model_name = self.model
+            if not model_name.startswith("models/"):
+                model_name = f"models/{model_name}"
+
             model = client.GenerativeModel(
-                model_name=self.model,
+                model_name=model_name,
                 generation_config=generation_config,
             )
             response = model.generate_content(prompt)
@@ -135,8 +154,51 @@ class GeminiProvider(SimplifiedLLMProvider):
 
     @classmethod
     def get_default_model(cls) -> str:
-        """Get the default model for Gemini."""
-        return "gemini-1.5-flash"
+        """Get the default model for Gemini by querying available models."""
+        try:
+            # Try to get API key to check available models
+            config = get_config()
+            api_key = config.llm.api_key
+
+            if not api_key:
+                # Fallback to a reasonable default if no API key
+                return "gemini-2.5-flash"
+
+            # Configure and check available models
+            import google.generativeai as genai  # noqa: PLC0415
+            genai.configure(api_key=api_key)
+
+            # Get available models that support generateContent
+            models = list(genai.list_models())
+            available_models = [
+                model.name for model in models
+                if hasattr(model, "supported_generation_methods")
+                and "generateContent" in model.supported_generation_methods
+            ]
+
+            # Prefer newer flash models, then fallback to any available
+            preferred_models = [
+                "models/gemini-2.5-flash",
+                "models/gemini-flash-latest",
+                "models/gemini-2.0-flash",
+                "models/gemini-pro-latest",
+            ]
+
+            for preferred in preferred_models:
+                if preferred in available_models:
+                    # Remove "models/" prefix for internal use
+                    return preferred.replace("models/", "")
+
+            # If no preferred models, use the first available
+            if available_models:
+                return available_models[0].replace("models/", "")
+
+        except Exception as e:  # noqa: BLE001
+            # If anything goes wrong, use a reasonable fallback
+            logger.debug("Could not determine default model dynamically: %s", e)
+
+        # Ultimate fallback
+        return "gemini-2.5-flash"
 
     @classmethod
     def get_api_key_env_var(cls) -> str:

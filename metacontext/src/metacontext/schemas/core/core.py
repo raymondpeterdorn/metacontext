@@ -9,7 +9,6 @@ from typing import Any, ClassVar
 
 from pydantic import BaseModel, Field
 
-from metacontext.schemas.core.codebase import CodebaseContext
 from metacontext.schemas.core.interfaces import ConfidenceLevel
 from metacontext.schemas.extensions.geospatial import (
     GeospatialRasterContext,
@@ -88,7 +87,7 @@ class Metacontext(BaseModel):
     generation_info: GenerationInfo
     file_info: FileInfo
     system_info: SystemInfo | None = None
-    codebase_context: CodebaseContext | None = None
+    # NOTE: codebase_context removed as it provides no valuable information in output
     business_context: str | None = None
     usage_patterns: str | None = None
     confidence_assessment: ConfidenceAssessment | None = None

@@ -112,6 +112,39 @@ class ModelAIEnrichment(ForensicAIEnrichment):
     )
 
 
+class TrainingDataAIEnrichment(ForensicAIEnrichment):
+    """AI-generated forensic insights about training data.
+
+    Inherits forensic capabilities to perform training data archaeology,
+    analyzing data quality, biases, and collection methods.
+    """
+
+    data_quality_assessment: str = Field(
+        default="",
+        description="Assessment of data quality issues including missing values, outliers, inconsistencies, and data integrity problems.",
+    )
+    feature_importance: list[dict[str, str]] | None = Field(
+        default=None,
+        description="Key features and their likely importance based on domain analysis and statistical patterns.",
+    )
+    data_distribution_notes: str = Field(
+        default="",
+        description="Analysis of data distribution including balance/imbalance, skewness, and representativeness.",
+    )
+    preprocessing_recommendations: str = Field(
+        default="",
+        description="Recommended preprocessing steps based on data characteristics and model requirements.",
+    )
+    potential_biases: str = Field(
+        default="",
+        description="Potential biases present in the data including sampling bias, selection bias, and demographic representation issues.",
+    )
+    sample_size_adequacy: str = Field(
+        default="",
+        description="Assessment of whether the sample size is sufficient for the intended modeling task and expected performance.",
+    )
+
+
 class ModelContext(ExtensionContext):
     """Extension for machine learning models.
 

@@ -17,6 +17,11 @@ from pathlib import Path
 from typing import Any, ClassVar
 
 from metacontext.ai.handlers.exceptions import LLMError, ValidationRetryError
+from metacontext.ai.handlers.llms.prompt_constraints import (
+    COMMON_FIELD_CONSTRAINTS,
+    build_schema_constraints,
+    calculate_response_limits,
+)
 from metacontext.ai.handlers.llms.provider_interface import LLMProvider
 from metacontext.handlers.base import BaseFileHandler, register_handler
 from metacontext.schemas.core.interfaces import ConfidenceLevel
@@ -28,6 +33,11 @@ from metacontext.schemas.extensions.models import (
 )
 
 logger = logging.getLogger(__name__)
+
+# Constants for response size constraints
+LARGE_MODEL_SIZE_MB = 100
+MEDIUM_MODEL_SIZE_MB = 10
+DEBUG_FIELD_PREVIEW_LENGTH = 100
 
 
 @register_handler
@@ -293,6 +303,46 @@ class ModelHandler(BaseFileHandler):
         "ai_enrichment": "Analyze this ML model and generate comprehensive AI enrichment including specific training features used",
     }
 
+    def _build_constrained_model_instruction(self, context_data: dict[str, Any]) -> str:
+        """Build instruction with strict response size constraints for model analysis."""
+        # Estimate complexity based on available metadata
+        model_size = context_data.get("model_info", {}).get("file_size_mb", 0)
+
+        # Calculate limits using the utility function
+        if model_size > LARGE_MODEL_SIZE_MB:  # Large model
+            complexity_factor = 1.5
+        elif model_size > MEDIUM_MODEL_SIZE_MB:  # Medium model
+            complexity_factor = 1.0
+        else:  # Small model or unknown size
+            complexity_factor = 0.8
+
+        max_total_chars, max_field_chars = calculate_response_limits(
+            base_fields=7,  # ForensicAIEnrichment base fields
+            extended_fields=6,  # ModelAIEnrichment specific fields
+            complexity_factor=complexity_factor,
+        )
+
+        # Build field-specific constraints
+        field_constraints = {
+            **COMMON_FIELD_CONSTRAINTS,
+            "model_type_analysis": f"Architecture + algorithm (max {max_field_chars} chars)",
+            "purpose": f"Business problem solved (max {max_field_chars} chars)",
+            "training_approach": f"Training method summary (max {max_field_chars} chars)",
+            "expected_inputs": f"Input format description (max {max_field_chars} chars)",
+            "expected_outputs": f"Output format description (max {max_field_chars} chars)",
+            "limitations": f"Key constraints only (max {max_field_chars} chars)",
+        }
+
+        base_instruction = "Analyze this ML model and generate comprehensive AI enrichment"
+        constraints = build_schema_constraints(
+            max_total_chars=max_total_chars,
+            max_field_chars=max_field_chars,
+            field_descriptions=field_constraints,
+            complexity_context=f"Model size: {model_size}MB",
+        )
+
+        return f"{base_instruction} that fit within these STRICT LIMITS:\n\n{constraints}"
+
     def _generate_ai_enrichment(
         self,
         deterministic_metadata: ModelDeterministicMetadata,
@@ -349,8 +399,8 @@ class ModelHandler(BaseFileHandler):
                 raise ValueError(msg) from e
 
         try:
-            # Use schema-first generation with enhanced context
-            instruction = self.INSTRUCTION_CONFIG["ai_enrichment"]
+            # Use schema-first generation with constrained instruction
+            instruction = self._build_constrained_model_instruction(context_data)
             ai_enrichment = self.llm_handler.generate_with_schema(
                 schema_class=ModelAIEnrichment,
                 context_data=context_data,
@@ -362,7 +412,7 @@ class ModelHandler(BaseFileHandler):
                 logger.info("AI Enrichment Content:")
                 for field_name, field_value in ai_enrichment.model_dump().items():
                     if field_value:  # Only show non-empty fields
-                        logger.info("  %s: %s", field_name, field_value[:100] + "..." if isinstance(field_value, str) and len(field_value) > 100 else field_value)
+                        logger.info("  %s: %s", field_name, field_value[:DEBUG_FIELD_PREVIEW_LENGTH] + "..." if isinstance(field_value, str) and len(field_value) > DEBUG_FIELD_PREVIEW_LENGTH else field_value)
 
             logger.info("✅ AI enrichment generated successfully")
             return (
@@ -609,3 +659,14 @@ class ModelHandler(BaseFileHandler):
         features_info["target_variables"] = list(set(features_info["target_variables"]))
 
         return features_info
+
+    # Prompt configuration for bulk analysis
+    PROMPT_CONFIG: ClassVar[dict[str, str]] = {
+        "model_analysis": "templates/model/model_analysis.yaml",
+        "training_data_analysis": "templates/model/training_data_analysis.yaml",
+    }
+
+    def get_bulk_prompts(self, file_path: Path, data_object: object = None) -> dict[str, str]:
+        """Get bulk prompts for this file type from config."""
+        return self.PROMPT_CONFIG.copy()
+

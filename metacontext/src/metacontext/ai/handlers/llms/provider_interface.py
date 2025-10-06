@@ -16,6 +16,9 @@ from metacontext.ai.handlers.core.exceptions import LLMError
 
 logger = logging.getLogger(__name__)
 
+# Constants for logging truncation
+LOG_PREVIEW_LENGTH = 200
+
 
 class LLMProvider(Protocol):
     """Protocol defining the core LLM provider interface.
@@ -144,13 +147,13 @@ def parse_json_response(response: str) -> dict[str, Any]:
     """Extract and parse JSON from LLM response.
 
     This utility function helps extract JSON from text responses that might contain
-    markdown code blocks or other text.
+    markdown code blocks or other text. Includes recovery for truncated JSON.
     """
     # Strip whitespace
     response = response.strip()
 
     # Log the raw response for debugging
-    logger.info("Raw LLM response: %s", response[:200] + "..." if len(response) > 200 else response)
+    logger.info("Raw LLM response: %s", response[:LOG_PREVIEW_LENGTH] + "..." if len(response) > LOG_PREVIEW_LENGTH else response)
 
     # Try to find JSON block using regex (more efficient than multiple string operations)
     json_block_pattern = r"```(?:json)?\s*([\s\S]*?)```"
@@ -166,13 +169,13 @@ def parse_json_response(response: str) -> dict[str, Any]:
         end = response.rfind("}")
 
         json_str = response[start:end + 1] if start >= 0 and end > start else response
-        logger.info("Extracted JSON using object boundaries: %s", json_str[:200] + "..." if len(json_str) > 200 else json_str)
+        logger.info("Extracted JSON using object boundaries: %s", json_str[:LOG_PREVIEW_LENGTH] + "..." if len(json_str) > LOG_PREVIEW_LENGTH else json_str)
 
     try:
         result = json.loads(json_str)
         logger.info("Parsed JSON keys: %s", list(result.keys()) if isinstance(result, dict) else "Not a dict")
         return result if isinstance(result, dict) else {}
     except json.JSONDecodeError as e:
-        logger.exception("Failed to parse JSON. Response: %s...", response[:500])
-        msg = "Invalid JSON response"
+        logger.exception("Failed to parse JSON response")
+        msg = f"Invalid JSON response: {e!s}"
         raise LLMError(msg) from e

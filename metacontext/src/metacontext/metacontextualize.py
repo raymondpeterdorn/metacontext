@@ -17,14 +17,14 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-import yaml
-
 from metacontext.ai.codebase_scanner import scan_codebase_context
 from metacontext.ai.handlers.core.provider_manager import ProviderManager
 from metacontext.ai.handlers.llms.provider_interface import LLMProvider
 from metacontext.core.config import get_config
 from metacontext.core.output_utils import write_output
 from metacontext.core.registry import HandlerRegistry
+from metacontext.handlers.geospatial import GeospatialHandler
+from metacontext.handlers.media import MediaHandler
 from metacontext.handlers.model import ModelHandler
 from metacontext.handlers.tabular import CSVHandler
 from metacontext.inspectors.file_inspector import FileInspector
@@ -46,6 +46,8 @@ logger = logging.getLogger(__name__)
 # Register available handlers
 HandlerRegistry.register(ModelHandler)
 HandlerRegistry.register(CSVHandler)
+HandlerRegistry.register(GeospatialHandler)
+HandlerRegistry.register(MediaHandler)
 
 
 @dataclass
@@ -200,7 +202,7 @@ def _initialize_llm_handler(config: dict) -> LLMProvider | None:
     try:
         llm_config = {
             "provider": config.get("llm_provider", "gemini"),
-            "model": config.get("llm_model", "gemini-1.5-flash"),
+            "model": config.get("llm_model"),  # No fallback - let provider decide
             "api_key": config.get("llm_api_key"),
             "temperature": config.get("llm_temperature", 0.1),
             "max_retries": config.get("llm_max_retries", 3),
@@ -395,13 +397,9 @@ def _generate_context(
             if hasattr(base_context, key):
                 setattr(base_context, key, value)
 
-        if codebase_context:
-            if isinstance(codebase_context, dict):
-                # Convert raw codebase context to proper schema
-                structured_context = _convert_codebase_context_to_schema(codebase_context, file_path)
-                base_context.codebase_context = structured_context
-            else:
-                base_context.codebase_context = codebase_context
+        # NOTE: codebase_context removed from output as it provides no valuable information
+        # and wastes space in the metacontext YAML files. The context is still available
+        # internally for LLM processing but not included in the final output.
 
         overall_conf = _assess_overall_confidence(
             file_specific_context,
@@ -449,7 +447,8 @@ def _assess_overall_confidence(file_specific_context: dict, *, has_llm: bool) ->
 def _generate_fallback_context(data_object: object, file_path: Path) -> dict:
     """Generate basic fallback context when handlers fail."""
     # Get codebase context even in fallback mode
-    codebase_context = _scan_codebase({}, file_path)
+    # NOTE: codebase_context collection removed since it's not included in output
+    # but could be re-enabled if needed for internal processing
 
     context = {
         "metacontext_version": "0.3.0",
@@ -473,24 +472,8 @@ def _generate_fallback_context(data_object: object, file_path: Path) -> dict:
         "confidence_assessment": {"overall": "LOW"},
     }
 
-    # Add codebase context if available
-    if codebase_context:
-        # Convert to dict for serialization, handling any Pydantic models
-        if hasattr(codebase_context, "model_dump"):
-            context["codebase_context"] = codebase_context.model_dump()
-        elif isinstance(codebase_context, dict):
-            # Convert any non-serializable objects to strings
-            serializable_context = {}
-            for key, value in codebase_context.items():
-                try:
-                    # Test serialization
-                    yaml.safe_dump(value)
-                    serializable_context[key] = value
-                except (yaml.representer.RepresenterError, TypeError):
-                    # Convert to string representation
-                    serializable_context[key] = str(value)
-            context["codebase_context"] = serializable_context
-        else:
-            context["codebase_context"] = str(codebase_context)
+    # NOTE: codebase_context removed from output as it provides no valuable information
+    # and wastes space in the metacontext YAML files. The context is still available
+    # internally for LLM processing but not included in the final output.
 
     return context

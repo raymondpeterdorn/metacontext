@@ -4,7 +4,7 @@ This package provides the core schemas and extensions for the metacontext system
 Commonly used types are re-exported at the package level for convenience.
 """
 
-from metacontext.schemas.core.codebase import CodebaseContext
+# NOTE: CodebaseContext removed as it's not included in output anymore
 from metacontext.schemas.core.core import (
     ConfidenceAssessment,
     FileInfo,
@@ -32,8 +32,7 @@ from metacontext.schemas.extensions.tabular import (
 )
 
 __all__ = [
-    # Core schemas
-    "CodebaseContext",
+    # NOTE: CodebaseContext removed from exports as it's not included in output
     # Tabular extension
     "ColumnAIEnrichment",
     "ColumnDeterministicInfo",

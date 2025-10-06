@@ -84,6 +84,16 @@ class SimplifiedLLMProvider(AbstractLLMProvider):
 
         prompt = self.generate_schema_prompt(schema_class, context_data, instruction)
 
+        # DEBUG: Log the COMPLETE prompt being sent to LLM
+        separator = "=" * 80
+        logger.info("\n%s", separator)
+        logger.info("COMPLETE PROMPT BEING SENT TO LLM:")
+        logger.info("%s", separator)
+        logger.info("%s", prompt)
+        logger.info("%s", separator)
+        logger.info("END OF COMPLETE PROMPT")
+        logger.info("%s\n", separator)
+
         for attempt in range(max_retries):
             try:
                 logger.debug("Attempt %s for %s", attempt + 1, schema_class.__name__)

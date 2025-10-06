@@ -51,14 +51,8 @@ class PromptLoader:
         if not prompt_name.endswith(".yaml"):
             prompt_name += ".yaml"
 
-        # Construct the prompt path
-        if "/" in prompt_name or "\\" in prompt_name:
-            # If prompt_name includes a path, use it relative to prompts_dir
-            parts = Path(prompt_name).parts
-            prompt_path = self.prompts_dir.parent / Path(*parts)
-        else:
-            # Otherwise look directly in prompts_dir
-            prompt_path = self.prompts_dir / prompt_name
+        # Construct the prompt path - always relative to prompts_dir
+        prompt_path = self.prompts_dir / prompt_name
 
         if not prompt_path.exists():
             msg = f"Prompt file not found: {prompt_path}"

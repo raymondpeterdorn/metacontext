@@ -9,6 +9,13 @@ from typing import Any, ClassVar
 import pandas as pd
 
 from metacontext.ai.handlers.core.exceptions import LLMError, ValidationRetryError
+from metacontext.ai.handlers.llms.prompt_constraints import (
+    COMMON_FIELD_CONSTRAINTS,
+    build_schema_constraints,
+    calculate_response_limits,
+)
+from metacontext.ai.handlers.llms.provider_interface import parse_json_response
+from metacontext.ai.prompts.prompt_loader import PromptLoader
 from metacontext.handlers.base import BaseFileHandler, register_handler
 from metacontext.schemas.extensions.tabular import (
     ColumnAIEnrichment,
@@ -261,34 +268,38 @@ class CSVHandler(BaseFileHandler):
         codebase_context: dict[str, Any] | None,
         llm_handler: object,
     ) -> dict[str, dict[str, Any]]:
-        """Bulk analysis of all columns using schema-first prompting."""
+        """Bulk analysis of all columns using constraint-aware template prompting."""
         try:
-            # Prepare context for schema-first analysis
+            from metacontext.ai.prompts.prompt_loader import PromptLoader
+            
+            # Prepare context for template-based analysis
             context_summary = self._prepare_context_summary(codebase_context)
 
-            schema_context = {
+            template_context = {
                 "file_name": file_path.name,
                 "project_summary": context_summary.get("project_summary", "Unknown project"),
                 "code_summary": context_summary.get("code_summary", "Limited context"),
-                "columns_data": columns_data,  # Use dict directly, not JSON string
-                "deterministic_metadata": {
-                    "shape": getattr(self, "_current_shape", "unknown"),
-                    "memory_usage": getattr(self, "_current_memory", "unknown"),
-                },
+                "columns_data": columns_data,
             }
 
-            # Use schema-first prompting instead of templates
-            ai_enrichment = llm_handler.generate_with_schema(
-                DataAIEnrichment,
-                schema_context,
-                instruction="Analyze this tabular dataset and generate comprehensive AI enrichment including detailed column interpretations",
+            # Use new constraint-aware template approach
+            prompt_loader = PromptLoader()
+            rendered_prompt = prompt_loader.render_prompt(
+                "tabular/column_analysis",
+                template_context
             )
-
-            # Convert Pydantic model to dict for compatibility with existing code
-            return self._convert_ai_enrichment_to_legacy_format(ai_enrichment)
+            
+            # Call LLM directly with the template-generated prompt
+            response = llm_handler._call_llm(rendered_prompt)
+            
+            # Parse and validate the response manually since we bypassed generate_with_schema
+            response_data = parse_json_response(response)
+            
+            # Convert response to legacy format expected by existing code
+            return self._convert_column_response_to_legacy_format(response_data)
 
         except Exception:
-            logger.exception("Error during schema-first column analysis")
+            logger.exception("Error during template-based column analysis")
             # Fallback to empty result instead of raising
             return {}
 
@@ -349,21 +360,30 @@ class CSVHandler(BaseFileHandler):
         }
 
         try:
-            # Create schema analysis prompt
-            schema_prompt = f"""Analyze this tabular data file's schema and business context:
+            # Use new constraint-aware template approach
+            # Create context for the template using available variables
+            template_context = {
+                "file_name": file_path.name,
+                "rows": rows,
+                "num_columns": num_columns,
+                "project_summary": context_summary.get("project_summary", "Dataset analysis for business insights"),
+                "columns": list(data_analysis.get("columns", {}).keys()),
+            }
 
-File: {file_path.name}
-Rows: {rows}
-Columns: {num_columns}
-Project Context: {context_summary.get("project_summary", "Unknown project")}
-
-Provide insights on the overall data structure, business value, and data quality for this file."""
-
-            # Use schema-first approach for schema analysis
-            ai_enrichment = llm_handler.generate_with_schema(
-                schema_prompt,
-                DataAIEnrichment,
+            # Render the constraint-aware template
+            rendered_prompt = PromptLoader().render_prompt(
+                "tabular/schema_analysis",
+                template_context,
             )
+            
+            # Call LLM with the constraint-aware prompt
+            response = llm_handler._call_llm(rendered_prompt)
+            
+            # Parse the JSON response
+            response_data = parse_json_response(response)
+            
+            # Validate against schema
+            ai_enrichment = DataAIEnrichment(**response_data)
 
             # Convert to legacy format for backward compatibility
             return self._convert_ai_schema_to_legacy_format(ai_enrichment)
@@ -484,6 +504,39 @@ Provide insights on the overall data structure, business value, and data quality
             ai_enrichment=ai_enrichment,
         )
 
+    def _build_constrained_instruction(self, schema_context: dict[str, Any]) -> str:
+        """Build instruction with strict response size constraints."""
+        column_count = len(schema_context.get("column_details", {}).get("columns", []))
+
+        # Calculate limits using the utility function
+        max_total_chars, max_field_chars = calculate_response_limits(
+            base_fields=7,  # ForensicAIEnrichment base fields
+            extended_fields=4,  # DataAIEnrichment specific fields
+            complexity_factor=max(0.5, min(2.0, column_count / 10.0)),  # Scale with column count
+        )
+
+        # Shorter interpretations for many columns
+        max_interpretation_length = min(max_field_chars, 500 // max(column_count, 1))
+
+        # Build field-specific constraints
+        field_constraints = {
+            **COMMON_FIELD_CONSTRAINTS,
+            "domain_analysis": "Business domain + purpose in 1 sentence",
+            "data_quality_assessment": "Quality level + main issues in 1 sentence",
+            "column_interpretations": f"Per column: max {max_interpretation_length} chars each",
+            "business_value_assessment": "Value proposition in 1 sentence",
+        }
+
+        base_instruction = "Analyze this tabular dataset and provide insights"
+        constraints = build_schema_constraints(
+            max_total_chars=max_total_chars,
+            max_field_chars=max_field_chars,
+            field_descriptions=field_constraints,
+            complexity_context=f"Dataset has {column_count} columns",
+        )
+
+        return f"{base_instruction} that fit within these STRICT LIMITS:\n\n{constraints}"
+
     def _create_ai_enrichment(
         self,
         data_analysis: dict[str, Any],
@@ -535,6 +588,6 @@ Provide insights on the overall data structure, business value, and data quality
         "schema_interpretation": "templates/tabular/schema_analysis.yaml",
     }
 
-    def get_bulk_prompts(self, file_path: Path, data_object: object = None) -> dict[str, str]:  # noqa: ARG002
+    def get_bulk_prompts(self, file_path: Path, data_object: object = None) -> dict[str, str]:
         """Get bulk prompts for this file type from config."""
         return self.PROMPT_CONFIG.copy()
