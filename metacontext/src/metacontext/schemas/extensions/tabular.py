@@ -66,7 +66,7 @@ class DataDeterministicMetadata(DeterministicMetadata):
 
 class DataAIEnrichment(ForensicAIEnrichment):
     """AI-generated forensic insights about tabular data.
-    
+
     Inherits forensic capabilities to investigate the true purpose
     of the dataset and uncover hidden business logic.
     """

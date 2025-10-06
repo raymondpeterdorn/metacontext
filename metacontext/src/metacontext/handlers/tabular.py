@@ -69,7 +69,9 @@ class CSVHandler(BaseFileHandler):
 
         return False
 
-    def get_required_extensions(self, file_path: Path, data_object: object = None) -> list[str]:  # noqa: ARG002
+    def get_required_extensions(
+        self, file_path: Path, data_object: object = None
+    ) -> list[str]:
         """Return required extensions for tabular data."""
         return self.required_schema_extensions
 
@@ -100,7 +102,9 @@ class CSVHandler(BaseFileHandler):
             "extension": extension,
         }
 
-    def analyze_deterministic(self, file_path: Path, data_object: object = None) -> dict[str, object]:
+    def analyze_deterministic(
+        self, file_path: Path, data_object: object = None
+    ) -> dict[str, object]:
         """Analyze file without AI - deterministic analysis only."""
         # Basic data analysis (descriptive layer) - no AI needed
         if data_object is not None:
@@ -115,7 +119,11 @@ class CSVHandler(BaseFileHandler):
         deterministic_context: dict[str, object] | None = None,
     ) -> dict[str, object]:
         """Deep analysis using AI and heavy computation."""
-        if not ai_companion or not hasattr(ai_companion, "is_available") or not ai_companion.is_available():
+        if (
+            not ai_companion
+            or not hasattr(ai_companion, "is_available")
+            or not ai_companion.is_available()
+        ):
             return {"error": "AI companion not available for deep analysis"}
 
         # Use deterministic context as base
@@ -134,7 +142,7 @@ class CSVHandler(BaseFileHandler):
         file_path: Path,
         data_object: object | None = None,
         codebase_context: dict[str, object] | None = None,
-        ai_companion: object | None = None,  # noqa: ARG002
+        ai_companion: object | None = None,
     ) -> dict[str, object]:
         """Generate data_structure context using bulk AI prompts.
 
@@ -271,13 +279,15 @@ class CSVHandler(BaseFileHandler):
         """Bulk analysis of all columns using constraint-aware template prompting."""
         try:
             from metacontext.ai.prompts.prompt_loader import PromptLoader
-            
+
             # Prepare context for template-based analysis
             context_summary = self._prepare_context_summary(codebase_context)
 
             template_context = {
                 "file_name": file_path.name,
-                "project_summary": context_summary.get("project_summary", "Unknown project"),
+                "project_summary": context_summary.get(
+                    "project_summary", "Unknown project"
+                ),
                 "code_summary": context_summary.get("code_summary", "Limited context"),
                 "columns_data": columns_data,
             }
@@ -286,15 +296,15 @@ class CSVHandler(BaseFileHandler):
             prompt_loader = PromptLoader()
             rendered_prompt = prompt_loader.render_prompt(
                 "tabular/column_analysis",
-                template_context
+                template_context,
             )
-            
+
             # Call LLM directly with the template-generated prompt
             response = llm_handler._call_llm(rendered_prompt)
-            
+
             # Parse and validate the response manually since we bypassed generate_with_schema
             response_data = parse_json_response(response)
-            
+
             # Convert response to legacy format expected by existing code
             return self._convert_column_response_to_legacy_format(response_data)
 
@@ -303,10 +313,12 @@ class CSVHandler(BaseFileHandler):
             # Fallback to empty result instead of raising
             return {}
 
-    def _convert_column_response_to_legacy_format(self, response_data: dict) -> dict[str, dict[str, Any]]:
+    def _convert_column_response_to_legacy_format(
+        self, response_data: dict
+    ) -> dict[str, dict[str, Any]]:
         """Convert raw LLM column response to legacy format for compatibility."""
         result = {}
-        
+
         # Direct column response should already be in the expected format
         for col_name, col_data in response_data.items():
             if isinstance(col_data, dict):
@@ -323,10 +335,12 @@ class CSVHandler(BaseFileHandler):
                     "domain_context": "",
                     "relationship_to_other_columns": [],
                 }
-        
+
         return result
 
-    def _convert_ai_enrichment_to_legacy_format(self, ai_enrichment: DataAIEnrichment) -> dict[str, dict[str, Any]]:
+    def _convert_ai_enrichment_to_legacy_format(
+        self, ai_enrichment: DataAIEnrichment
+    ) -> dict[str, dict[str, Any]]:
         """Convert schema-first AI enrichment to legacy format for compatibility."""
         result = {}
 
@@ -340,12 +354,15 @@ class CSVHandler(BaseFileHandler):
                     "semantic_meaning": col_info.semantic_meaning or "",
                     "data_quality_assessment": col_info.data_quality_assessment or "",
                     "domain_context": col_info.domain_context or "",
-                    "relationship_to_other_columns": col_info.relationship_to_other_columns or [],
+                    "relationship_to_other_columns": col_info.relationship_to_other_columns
+                    or [],
                 }
 
         return result
 
-    def _convert_ai_schema_to_legacy_format(self, ai_enrichment: DataAIEnrichment) -> dict[str, Any]:
+    def _convert_ai_schema_to_legacy_format(
+        self, ai_enrichment: DataAIEnrichment
+    ) -> dict[str, Any]:
         """Convert schema-first AI enrichment to legacy format for backward compatibility."""
         result = {}
 
@@ -355,7 +372,9 @@ class CSVHandler(BaseFileHandler):
         if ai_enrichment.data_quality_assessment:
             result["data_quality_assessment"] = ai_enrichment.data_quality_assessment
         if ai_enrichment.business_value_assessment:
-            result["business_value_assessment"] = ai_enrichment.business_value_assessment
+            result["business_value_assessment"] = (
+                ai_enrichment.business_value_assessment
+            )
 
         return result
 
@@ -379,7 +398,12 @@ class CSVHandler(BaseFileHandler):
         fallback_response = {
             key: f"{key.replace('_', ' ').capitalize()} unavailable"
             for key in DataAIEnrichment.model_fields
-            if key in ["domain_analysis", "data_quality_assessment", "business_value_assessment"]
+            if key
+            in [
+                "domain_analysis",
+                "data_quality_assessment",
+                "business_value_assessment",
+            ]
         }
 
         try:
@@ -389,7 +413,9 @@ class CSVHandler(BaseFileHandler):
                 "file_name": file_path.name,
                 "rows": rows,
                 "num_columns": num_columns,
-                "project_summary": context_summary.get("project_summary", "Dataset analysis for business insights"),
+                "project_summary": context_summary.get(
+                    "project_summary", "Dataset analysis for business insights"
+                ),
                 "columns": list(data_analysis.get("columns", {}).keys()),
             }
 
@@ -398,13 +424,13 @@ class CSVHandler(BaseFileHandler):
                 "tabular/schema_analysis",
                 template_context,
             )
-            
+
             # Call LLM with the constraint-aware prompt
             response = llm_handler._call_llm(rendered_prompt)
-            
+
             # Parse the JSON response
             response_data = parse_json_response(response)
-            
+
             # Validate against schema
             ai_enrichment = DataAIEnrichment(**response_data)
 
@@ -435,7 +461,9 @@ class CSVHandler(BaseFileHandler):
             ),
         }
 
-    def _query_llm_handler(self, llm_handler: object, prompt: str) -> str | dict[str, Any]:
+    def _query_llm_handler(
+        self, llm_handler: object, prompt: str
+    ) -> str | dict[str, Any]:
         """Query the LLM handler with appropriate error handling."""
         result: str | dict[str, Any] = {}
         try:
@@ -535,7 +563,9 @@ class CSVHandler(BaseFileHandler):
         max_total_chars, max_field_chars = calculate_response_limits(
             base_fields=7,  # ForensicAIEnrichment base fields
             extended_fields=4,  # DataAIEnrichment specific fields
-            complexity_factor=max(0.5, min(2.0, column_count / 10.0)),  # Scale with column count
+            complexity_factor=max(
+                0.5, min(2.0, column_count / 10.0)
+            ),  # Scale with column count
         )
 
         # Shorter interpretations for many columns
@@ -558,7 +588,9 @@ class CSVHandler(BaseFileHandler):
             complexity_context=f"Dataset has {column_count} columns",
         )
 
-        return f"{base_instruction} that fit within these STRICT LIMITS:\n\n{constraints}"
+        return (
+            f"{base_instruction} that fit within these STRICT LIMITS:\n\n{constraints}"
+        )
 
     def _create_ai_enrichment(
         self,
@@ -578,7 +610,9 @@ class CSVHandler(BaseFileHandler):
                     semantic_meaning=col_data.get("semantic_meaning", ""),
                     data_quality_assessment=col_data.get("supporting_evidence", ""),
                     domain_context=col_data.get("domain_context", ""),
-                    relationship_to_other_columns=col_data.get("relationship_to_other_columns", []),
+                    relationship_to_other_columns=col_data.get(
+                        "relationship_to_other_columns", []
+                    ),
                 )
                 column_interpretations[col_name] = ColumnInfo(
                     deterministic=det_info,
@@ -587,7 +621,9 @@ class CSVHandler(BaseFileHandler):
 
         return DataAIEnrichment(
             domain_analysis=schema_interpretation.get("domain_summary", ""),
-            data_quality_assessment=schema_interpretation.get("overall_clarity", "unknown"),
+            data_quality_assessment=schema_interpretation.get(
+                "overall_clarity", "unknown"
+            ),
             column_interpretations=column_interpretations,
             business_value_assessment=schema_interpretation.get("business_impact", ""),
         )
@@ -611,6 +647,8 @@ class CSVHandler(BaseFileHandler):
         "schema_interpretation": "templates/tabular/schema_analysis.yaml",
     }
 
-    def get_bulk_prompts(self, file_path: Path, data_object: object = None) -> dict[str, str]:
+    def get_bulk_prompts(
+        self, file_path: Path, data_object: object = None
+    ) -> dict[str, str]:
         """Get bulk prompts for this file type from config."""
         return self.PROMPT_CONFIG.copy()

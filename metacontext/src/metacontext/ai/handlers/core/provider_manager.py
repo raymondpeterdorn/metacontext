@@ -22,15 +22,15 @@ class ProviderManager:
     # Priority order: Code companions first, then API providers
     PROVIDER_PRIORITY = [
         # Code companions (free, context-aware)
-        "cursor",       # Cursor AI
-        "copilot",      # GitHub Copilot
-        "codeium",      # Codeium
-        "tabnine",      # TabNine
+        "cursor",  # Cursor AI
+        "copilot",  # GitHub Copilot
+        "codeium",  # Codeium
+        "tabnine",  # TabNine
         # API providers (require keys, may have costs)
-        "openai",       # OpenAI GPT
-        "anthropic",    # Claude
-        "gemini",       # Google Gemini
-        "ollama",       # Local Ollama
+        "openai",  # OpenAI GPT
+        "anthropic",  # Claude
+        "gemini",  # Google Gemini
+        "ollama",  # Local Ollama
     ]
 
     @classmethod
@@ -59,7 +59,10 @@ class ProviderManager:
             if cls._is_provider_available(preferred_provider):
                 logger.info("✓ Using preferred provider: %s", preferred_provider)
                 return ProviderFactory.create(preferred_provider, **kwargs)
-            logger.warning("⚠ Preferred provider %s not available, falling back", preferred_provider)
+            logger.warning(
+                "⚠ Preferred provider %s not available, falling back",
+                preferred_provider,
+            )
 
         # Try providers in priority order
         for provider_name in cls.PROVIDER_PRIORITY:
@@ -105,7 +108,7 @@ class ProviderManager:
             "codeium": ["codeium", "--version"],
             "tabnine": ["tabnine", "--version"],
         }
-        
+
         if provider_name in cli_commands:
             return cls._check_cli_available(cli_commands[provider_name])
 
@@ -184,5 +187,7 @@ class ProviderManager:
             "registered": True,
             "available": cls._is_provider_available(provider_name),
             "type": "code_companion" if is_companion else "api_provider",
-            "priority": cls.PROVIDER_PRIORITY.index(provider_name) if provider_name in cls.PROVIDER_PRIORITY else 999,
+            "priority": cls.PROVIDER_PRIORITY.index(provider_name)
+            if provider_name in cls.PROVIDER_PRIORITY
+            else 999,
         }

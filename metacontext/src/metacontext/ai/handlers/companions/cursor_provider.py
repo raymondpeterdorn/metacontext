@@ -52,7 +52,9 @@ class CursorProvider(BaseCodeCompanionProvider):
 
     @classmethod
     def create(
-        cls, model: str = "default", **kwargs: dict[str, Any],
+        cls,
+        model: str = "default",
+        **kwargs: dict[str, Any],
     ) -> "CursorProvider":
         """Create a new CursorProvider instance.
 

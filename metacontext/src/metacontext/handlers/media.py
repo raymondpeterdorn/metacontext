@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 # Try to import optional media libraries
 try:
     from PIL import Image
+
     PIL_AVAILABLE = True
 except ImportError:
     PIL_AVAILABLE = False
@@ -39,6 +40,7 @@ except ImportError:
 
 try:
     import mutagen
+
     MUTAGEN_AVAILABLE = True
 except ImportError:
     MUTAGEN_AVAILABLE = False
@@ -46,6 +48,7 @@ except ImportError:
 
 try:
     import cv2
+
     OPENCV_AVAILABLE = True
 except ImportError:
     OPENCV_AVAILABLE = False
@@ -62,11 +65,35 @@ class MediaHandler(BaseFileHandler):
 
     supported_extensions: ClassVar[list[str]] = [
         # Image formats
-        ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".tif", ".webp", ".svg",
+        ".jpg",
+        ".jpeg",
+        ".png",
+        ".gif",
+        ".bmp",
+        ".tiff",
+        ".tif",
+        ".webp",
+        ".svg",
         # Video formats
-        ".mp4", ".avi", ".mov", ".mkv", ".wmv", ".flv", ".webm", ".m4v", ".mpg", ".mpeg",
+        ".mp4",
+        ".avi",
+        ".mov",
+        ".mkv",
+        ".wmv",
+        ".flv",
+        ".webm",
+        ".m4v",
+        ".mpg",
+        ".mpeg",
         # Audio formats
-        ".mp3", ".wav", ".flac", ".aac", ".ogg", ".wma", ".m4a", ".opus",
+        ".mp3",
+        ".wav",
+        ".flac",
+        ".aac",
+        ".ogg",
+        ".wma",
+        ".m4a",
+        ".opus",
     ]
 
     def __init__(self) -> None:
@@ -76,12 +103,14 @@ class MediaHandler(BaseFileHandler):
         """Check if this is a media file."""
         if file_path.suffix.lower() in self.supported_extensions:
             return True
-        
+
         # Check MIME type as additional verification
         mime_type, _ = mimetypes.guess_type(str(file_path))
         return mime_type and mime_type.startswith(("image/", "video/", "audio/"))
 
-    def get_required_extensions(self, file_path: Path, data_object: object = None) -> list[str]:
+    def get_required_extensions(
+        self, file_path: Path, data_object: object = None
+    ) -> list[str]:
         """Return required extensions for media files."""
         return ["media_context"]
 
@@ -108,18 +137,52 @@ class MediaHandler(BaseFileHandler):
         """Determine the media type (image, audio, video)."""
         # Try MIME type first
         if mime_type:
-            for media_prefix, media_type in [("image/", "image"), ("audio/", "audio"), ("video/", "video")]:
+            for media_prefix, media_type in [
+                ("image/", "image"),
+                ("audio/", "audio"),
+                ("video/", "video"),
+            ]:
                 if mime_type.startswith(media_prefix):
                     return media_type
-        
+
         # Fallback to extension-based detection
         extension = file_path.suffix.lower()
         extension_mapping = {
-            **{ext: "image" for ext in {".jpg", ".jpeg", ".png", ".gif", ".bmp", ".tiff", ".tif", ".webp", ".svg"}},
-            **{ext: "audio" for ext in {".mp3", ".wav", ".flac", ".aac", ".ogg", ".wma", ".m4a", ".opus"}},
-            **{ext: "video" for ext in {".mp4", ".avi", ".mov", ".mkv", ".wmv", ".flv", ".webm", ".m4v", ".mpg", ".mpeg"}},
+            **dict.fromkeys(
+                {
+                    ".jpg",
+                    ".jpeg",
+                    ".png",
+                    ".gif",
+                    ".bmp",
+                    ".tiff",
+                    ".tif",
+                    ".webp",
+                    ".svg",
+                },
+                "image",
+            ),
+            **dict.fromkeys(
+                {".mp3", ".wav", ".flac", ".aac", ".ogg", ".wma", ".m4a", ".opus"},
+                "audio",
+            ),
+            **dict.fromkeys(
+                {
+                    ".mp4",
+                    ".avi",
+                    ".mov",
+                    ".mkv",
+                    ".wmv",
+                    ".flv",
+                    ".webm",
+                    ".m4v",
+                    ".mpg",
+                    ".mpeg",
+                },
+                "video",
+            ),
         }
-        
+
         return extension_mapping.get(extension, "unknown")
 
     def generate_context(
@@ -133,11 +196,13 @@ class MediaHandler(BaseFileHandler):
         try:
             # Deterministic analysis
             deterministic_metadata = self._analyze_media_deterministic(file_path)
-            
+
             # AI enrichment
             ai_enrichment = None
             if ai_companion and hasattr(ai_companion, "generate_with_schema"):
-                ai_enrichment = self._generate_media_ai_enrichment(file_path, deterministic_metadata, ai_companion)
+                ai_enrichment = self._generate_media_ai_enrichment(
+                    file_path, deterministic_metadata, ai_companion
+                )
 
             return {
                 "media_context": MediaContext(
@@ -149,19 +214,21 @@ class MediaHandler(BaseFileHandler):
             logger.exception("Error generating media context for %s", file_path)
             return {"error": "Failed to generate media context"}
 
-    def _analyze_media_deterministic(self, file_path: Path) -> MediaDeterministicMetadata:
+    def _analyze_media_deterministic(
+        self, file_path: Path
+    ) -> MediaDeterministicMetadata:
         """Analyze media file deterministically."""
         metadata = MediaDeterministicMetadata()
-        
+
         # Basic file information
         metadata.file_size_bytes = file_path.stat().st_size
-        
+
         mime_type, _ = mimetypes.guess_type(str(file_path))
         metadata.media_type = self._determine_media_type(file_path, mime_type)
 
         # Create media info based on type
         media_info = MediaInfo()
-        
+
         # Type-specific analysis
         if metadata.media_type == "image":
             self._analyze_image_metadata(file_path, media_info)
@@ -173,7 +240,9 @@ class MediaHandler(BaseFileHandler):
         metadata.media_info = media_info
         return metadata
 
-    def analyze_deterministic(self, file_path: Path, data_object: object = None) -> dict[str, object]:
+    def analyze_deterministic(
+        self, file_path: Path, data_object: object = None
+    ) -> dict[str, object]:
         """Analyze file without AI - deterministic analysis only."""
         metadata = self._analyze_media_deterministic(file_path)
         return {"media_metadata": metadata.model_dump()}
@@ -186,21 +255,33 @@ class MediaHandler(BaseFileHandler):
         deterministic_context: dict[str, object] | None = None,
     ) -> dict[str, object]:
         """Deep analysis using AI and heavy computation."""
-        if not ai_companion or not hasattr(ai_companion, "is_available") or not ai_companion.is_available():
+        if (
+            not ai_companion
+            or not hasattr(ai_companion, "is_available")
+            or not ai_companion.is_available()
+        ):
             return {"error": "AI companion not available for deep analysis"}
 
         try:
             # Get or generate deterministic metadata
-            metadata = deterministic_context.get("media_metadata") if deterministic_context else None
+            metadata = (
+                deterministic_context.get("media_metadata")
+                if deterministic_context
+                else None
+            )
             if not metadata:
                 metadata = self._analyze_media_deterministic(file_path).model_dump()
-            
+
             ai_enrichment = self._generate_media_ai_enrichment(
                 file_path,
                 MediaDeterministicMetadata.model_validate(metadata),
                 ai_companion,
             )
-            return {"media_ai_enrichment": ai_enrichment.model_dump() if ai_enrichment else None}
+            return {
+                "media_ai_enrichment": ai_enrichment.model_dump()
+                if ai_enrichment
+                else None
+            }
         except Exception:
             logger.exception("Error in deep analysis for %s", file_path)
             return {"error": "Deep analysis failed"}
@@ -212,7 +293,7 @@ class MediaHandler(BaseFileHandler):
                 with Image.open(file_path) as img:
                     media_info.dimensions = [img.width, img.height]
                     media_info.color_space = img.mode
-                        
+
             except Exception:
                 logger.warning("Error analyzing image %s", file_path)
 
@@ -224,9 +305,11 @@ class MediaHandler(BaseFileHandler):
                 if audio_file and hasattr(audio_file, "info"):
                     media_info.duration = audio_file.info.length
                     media_info.bit_rate = getattr(audio_file.info, "bitrate", None)
-                    media_info.sample_rate = getattr(audio_file.info, "sample_rate", None)
+                    media_info.sample_rate = getattr(
+                        audio_file.info, "sample_rate", None
+                    )
                     media_info.channels = getattr(audio_file.info, "channels", None)
-                        
+
             except Exception:
                 logger.warning("Error analyzing audio %s", file_path)
 
@@ -252,26 +335,38 @@ class MediaHandler(BaseFileHandler):
         """Build constraints for media AI enrichment."""
         # Calculate complexity based on media type and characteristics
         complexity_factor = 1.0
-        
+
         if metadata.media_info and metadata.media_type == "image":
             # Images with high resolution are more complex
             if metadata.media_info.dimensions:
-                total_pixels = metadata.media_info.dimensions[0] * metadata.media_info.dimensions[1]
+                total_pixels = (
+                    metadata.media_info.dimensions[0]
+                    * metadata.media_info.dimensions[1]
+                )
                 if total_pixels > 2_000_000:  # 2MP+
                     complexity_factor *= 1.3
         elif metadata.media_info and metadata.media_type == "video":
             # Video complexity based on duration and resolution
-            if metadata.media_info.duration and metadata.media_info.duration > 300:  # 5+ minutes
+            if (
+                metadata.media_info.duration and metadata.media_info.duration > 300
+            ):  # 5+ minutes
                 complexity_factor *= 1.4
             if metadata.media_info.dimensions:
-                total_pixels = metadata.media_info.dimensions[0] * metadata.media_info.dimensions[1]
+                total_pixels = (
+                    metadata.media_info.dimensions[0]
+                    * metadata.media_info.dimensions[1]
+                )
                 if total_pixels > 1_000_000:  # HD+
                     complexity_factor *= 1.2
         elif metadata.media_info and metadata.media_type == "audio":
             # Audio complexity based on duration and quality
-            if metadata.media_info.duration and metadata.media_info.duration > 300:  # 5+ minutes
+            if (
+                metadata.media_info.duration and metadata.media_info.duration > 300
+            ):  # 5+ minutes
                 complexity_factor *= 1.3
-            if metadata.media_info.bit_rate and metadata.media_info.bit_rate > 256:  # High quality
+            if (
+                metadata.media_info.bit_rate and metadata.media_info.bit_rate > 256
+            ):  # High quality
                 complexity_factor *= 1.1
 
         max_total_chars, max_field_chars = calculate_response_limits(
@@ -282,7 +377,7 @@ class MediaHandler(BaseFileHandler):
 
         field_constraints = {
             **COMMON_FIELD_CONSTRAINTS,
-            "content_description": f"Visual/audio content ({max_field_chars//2} chars max)",
+            "content_description": f"Visual/audio content ({max_field_chars // 2} chars max)",
             "quality_assessment": "Technical quality + defects",
             "technical_analysis": "Format details + compression",
             "use_case_recommendations": "Likely purpose + applications",
@@ -315,7 +410,7 @@ class MediaHandler(BaseFileHandler):
             }
 
             instruction = self._build_media_constraints(metadata)
-            
+
             # Type: ignore needed because ai_companion is typed as object for flexibility
             return ai_companion.generate_with_schema(  # type: ignore[attr-defined]
                 schema_class=MediaAIEnrichment,
@@ -331,6 +426,8 @@ class MediaHandler(BaseFileHandler):
         "media_analysis": "templates/media/media_analysis.yaml",
     }
 
-    def get_bulk_prompts(self, file_path: Path, data_object: object = None) -> dict[str, str]:  # noqa: ARG002
+    def get_bulk_prompts(
+        self, file_path: Path, data_object: object = None
+    ) -> dict[str, str]:  # noqa: ARG002
         """Get bulk prompts for this file type from config."""
         return self.PROMPT_CONFIG.copy()

@@ -57,7 +57,9 @@ class ModelHandler(BaseFileHandler):
         return file_path.suffix.lower() in self.supported_extensions
 
     def get_required_extensions(
-        self, file_path: Path, data_object: object | None = None,
+        self,
+        file_path: Path,
+        data_object: object | None = None,
     ) -> list[str]:
         """Get required schema extensions for this file type."""
         return ["model_context"]
@@ -81,7 +83,9 @@ class ModelHandler(BaseFileHandler):
             "extension": extension,
         }
 
-    def analyze_deterministic(self, file_path: Path, data_object: object = None) -> dict[str, object]:
+    def analyze_deterministic(
+        self, file_path: Path, data_object: object = None
+    ) -> dict[str, object]:
         """Analyze file without AI - deterministic analysis only."""
         # Basic model file analysis - no AI needed
         return {
@@ -111,12 +115,16 @@ class ModelHandler(BaseFileHandler):
         training_analysis = {}
 
         if training_scripts:
-            training_analysis = self._analyze_training_scripts(training_scripts, ai_companion)
+            training_analysis = self._analyze_training_scripts(
+                training_scripts, ai_companion
+            )
 
-        deep_analysis.update({
-            "training_scripts": [str(script) for script in training_scripts],
-            "training_analysis": training_analysis,
-        })
+        deep_analysis.update(
+            {
+                "training_scripts": [str(script) for script in training_scripts],
+                "training_analysis": training_analysis,
+            }
+        )
 
         return deep_analysis
 
@@ -248,7 +256,8 @@ class ModelHandler(BaseFileHandler):
                     params = actual_model.get_params()
                     hyperparameters = {k: v for k, v in params.items() if v is not None}
                     logger.info(
-                        "   ⚙️  Extracted %s hyperparameters", len(hyperparameters),
+                        "   ⚙️  Extracted %s hyperparameters",
+                        len(hyperparameters),
                     )
                 except AttributeError:
                     logger.warning("   ⚠️  Could not extract hyperparameters")
@@ -333,7 +342,9 @@ class ModelHandler(BaseFileHandler):
             "limitations": f"Key constraints only (max {max_field_chars} chars)",
         }
 
-        base_instruction = "Analyze this ML model and generate comprehensive AI enrichment"
+        base_instruction = (
+            "Analyze this ML model and generate comprehensive AI enrichment"
+        )
         constraints = build_schema_constraints(
             max_total_chars=max_total_chars,
             max_field_chars=max_field_chars,
@@ -341,7 +352,9 @@ class ModelHandler(BaseFileHandler):
             complexity_context=f"Model size: {model_size}MB",
         )
 
-        return f"{base_instruction} that fit within these STRICT LIMITS:\n\n{constraints}"
+        return (
+            f"{base_instruction} that fit within these STRICT LIMITS:\n\n{constraints}"
+        )
 
     def _generate_ai_enrichment(
         self,
@@ -412,7 +425,14 @@ class ModelHandler(BaseFileHandler):
                 logger.info("AI Enrichment Content:")
                 for field_name, field_value in ai_enrichment.model_dump().items():
                     if field_value:  # Only show non-empty fields
-                        logger.info("  %s: %s", field_name, field_value[:DEBUG_FIELD_PREVIEW_LENGTH] + "..." if isinstance(field_value, str) and len(field_value) > DEBUG_FIELD_PREVIEW_LENGTH else field_value)
+                        logger.info(
+                            "  %s: %s",
+                            field_name,
+                            field_value[:DEBUG_FIELD_PREVIEW_LENGTH] + "..."
+                            if isinstance(field_value, str)
+                            and len(field_value) > DEBUG_FIELD_PREVIEW_LENGTH
+                            else field_value,
+                        )
 
             logger.info("✅ AI enrichment generated successfully")
             return (
@@ -508,9 +528,14 @@ class ModelHandler(BaseFileHandler):
 
         # Required string fields that need default values to avoid validation errors
         required_string_fields = [
-            "model_type_analysis", "purpose", "training_approach",
-            "expected_inputs", "expected_outputs", "limitations",
-            "ideal_use_cases", "data_requirements",
+            "model_type_analysis",
+            "purpose",
+            "training_approach",
+            "expected_inputs",
+            "expected_outputs",
+            "limitations",
+            "ideal_use_cases",
+            "data_requirements",
         ]
 
         # Set defaults for all fields based on their type to handle validation
@@ -518,7 +543,9 @@ class ModelHandler(BaseFileHandler):
             field_type = str(field.annotation)
 
             if field_name in required_string_fields or "str" in field_type:
-                enrichment_kwargs[field_name] = ""  # Empty string instead of "Not available"
+                enrichment_kwargs[field_name] = (
+                    ""  # Empty string instead of "Not available"
+                )
             elif "dict" in field_type:
                 enrichment_kwargs[field_name] = {}
             elif "list" in field_type:
@@ -527,15 +554,17 @@ class ModelHandler(BaseFileHandler):
                 enrichment_kwargs[field_name] = None
 
         # Update with any actual values we have
-        enrichment_kwargs.update({
-            "ai_interpretation": ai_interpretation,
-            "ai_confidence": ConfidenceLevel.LOW,
-            "ai_domain_context": ai_domain_context,
-            "usage_guidance": usage_guidance,
-            "training_data": training_data,
-            "evaluation_metrics": {},  # Empty dict instead of None
-            "deployment_recommendations": [],  # Empty list instead of None
-        })
+        enrichment_kwargs.update(
+            {
+                "ai_interpretation": ai_interpretation,
+                "ai_confidence": ConfidenceLevel.LOW,
+                "ai_domain_context": ai_domain_context,
+                "usage_guidance": usage_guidance,
+                "training_data": training_data,
+                "evaluation_metrics": {},  # Empty dict instead of None
+                "deployment_recommendations": [],  # Empty list instead of None
+            }
+        )
         return ModelAIEnrichment(**enrichment_kwargs)
 
     def generate_context(
@@ -666,7 +695,8 @@ class ModelHandler(BaseFileHandler):
         "training_data_analysis": "templates/model/training_data_analysis.yaml",
     }
 
-    def get_bulk_prompts(self, file_path: Path, data_object: object = None) -> dict[str, str]:
+    def get_bulk_prompts(
+        self, file_path: Path, data_object: object = None
+    ) -> dict[str, str]:
         """Get bulk prompts for this file type from config."""
         return self.PROMPT_CONFIG.copy()
-

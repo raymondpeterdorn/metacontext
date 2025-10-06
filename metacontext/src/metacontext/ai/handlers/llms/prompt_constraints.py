@@ -38,7 +38,7 @@ def build_schema_constraints(
         for field, description in field_descriptions.items():
             field_guidance += f"- {field}: {description}\n"
 
-    size_guidance = f"\nEXPECTED SIZE: Target ~{max_total_chars//2} characters total."
+    size_guidance = f"\nEXPECTED SIZE: Target ~{max_total_chars // 2} characters total."
 
     return f"""Provide insights that fit within these STRICT LIMITS:
 

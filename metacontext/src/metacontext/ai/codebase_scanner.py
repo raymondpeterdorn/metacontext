@@ -98,7 +98,8 @@ class CodebaseScanner:
             "documentation_files": len(context["documentation"]),
             "data_model_files": len(context["data_models"]),
             "config_files": len(context["config_files"]),
-            "cross_reference_files": len(context["cross_references"]["referenced_by"]) + len(context["cross_references"]["imports_from"]),
+            "cross_reference_files": len(context["cross_references"]["referenced_by"])
+            + len(context["cross_references"]["imports_from"]),
             "scan_depth": self._get_scan_depth(),
         }
 
@@ -292,7 +293,9 @@ class CodebaseScanner:
             )
         ]
 
-        return config_files[: self.max_config_files]  # Limit to prevent overwhelming output
+        return config_files[
+            : self.max_config_files
+        ]  # Limit to prevent overwhelming output
 
     def _find_cross_references(self, data_file: Path) -> dict[str, Any]:
         """Find cross-file references - which files reference this file and what it imports.
@@ -306,28 +309,36 @@ class CodebaseScanner:
         """
         cross_refs = {
             "referenced_by": [],  # Files that reference/import/load this data file
-            "imports_from": [],   # Files that this data file imports/depends on
+            "imports_from": [],  # Files that this data file imports/depends on
             "data_dependencies": [],  # Other data files this file might depend on
             "summary": "",
         }
 
         data_filename = data_file.name
         data_stem = data_file.stem
-        data_relative_path = str(data_file.relative_to(self.cwd)) if data_file.is_relative_to(self.cwd) else str(data_file)
+        data_relative_path = (
+            str(data_file.relative_to(self.cwd))
+            if data_file.is_relative_to(self.cwd)
+            else str(data_file)
+        )
 
         # Search through all code files for references to this data file
         for file_path in self.cwd.rglob("*"):
-            if (file_path.is_file()
+            if (
+                file_path.is_file()
                 and file_path.suffix.lower() in self.code_extensions
-                and file_path != data_file):
-
+                and file_path != data_file
+            ):
                 try:
                     with file_path.open(encoding="utf-8", errors="ignore") as f:
                         content = f.read()
 
                     # Look for references to this data file
                     references = self._find_file_references_in_content(
-                        content, data_filename, data_stem, data_relative_path,
+                        content,
+                        data_filename,
+                        data_stem,
+                        data_relative_path,
                     )
 
                     if references:
@@ -371,11 +382,15 @@ class CodebaseScanner:
         if data_dep_count > 0:
             summary_parts.append(f"Depends on {data_dep_count} data file(s)")
 
-        cross_refs["summary"] = "; ".join(summary_parts) if summary_parts else "No cross-references found"
+        cross_refs["summary"] = (
+            "; ".join(summary_parts) if summary_parts else "No cross-references found"
+        )
 
         return cross_refs
 
-    def _find_file_references_in_content(self, content: str, filename: str, file_stem: str, relative_path: str) -> list[dict[str, Any]]:
+    def _find_file_references_in_content(
+        self, content: str, filename: str, file_stem: str, relative_path: str
+    ) -> list[dict[str, Any]]:
         """Find references to a specific file in the content."""
         references = []
         lines = content.split("\n")
@@ -387,7 +402,10 @@ class CodebaseScanner:
             (rf"""['"`]{re.escape(file_stem)}['"`]""", "stem_reference"),
             (rf"""['"`]{re.escape(relative_path)}['"`]""", "path_reference"),
             # Common data loading patterns
-            (rf"""(?:read_csv|load|open|Path)\s*\(\s*['"`][^'"`]*{re.escape(file_stem)}[^'"`]*['"`]""", "data_loading"),
+            (
+                rf"""(?:read_csv|load|open|Path)\s*\(\s*['"`][^'"`]*{re.escape(file_stem)}[^'"`]*['"`]""",
+                "data_loading",
+            ),
             # Import patterns for Python modules
             (rf"""(?:from|import)\s+.*{re.escape(file_stem)}""", "import_statement"),
         ]
@@ -396,17 +414,23 @@ class CodebaseScanner:
             for pattern, ref_type in patterns:
                 matches = re.finditer(pattern, line, re.IGNORECASE)
                 for match in matches:
-                    references.append({
-                        "line_number": line_num,
-                        "line_content": line.strip(),
-                        "match": match.group(),
-                        "reference_type": ref_type,
-                        "context": self._get_line_context(lines, line_num - 1, context_lines=2),
-                    })
+                    references.append(
+                        {
+                            "line_number": line_num,
+                            "line_content": line.strip(),
+                            "match": match.group(),
+                            "reference_type": ref_type,
+                            "context": self._get_line_context(
+                                lines, line_num - 1, context_lines=2
+                            ),
+                        }
+                    )
 
         return references
 
-    def _extract_imports_from_content(self, content: str, file_extension: str) -> list[dict[str, Any]]:
+    def _extract_imports_from_content(
+        self, content: str, file_extension: str
+    ) -> list[dict[str, Any]]:
         """Extract import statements from code content."""
         imports = []
         lines = content.split("\n")
@@ -423,12 +447,14 @@ class CodebaseScanner:
                 for pattern, import_type in import_patterns:
                     match = re.match(pattern, stripped_line)
                     if match:
-                        imports.append({
-                            "module": match.group(1),
-                            "line_number": line_num,
-                            "import_type": import_type,
-                            "full_line": stripped_line,
-                        })
+                        imports.append(
+                            {
+                                "module": match.group(1),
+                                "line_number": line_num,
+                                "import_type": import_type,
+                                "full_line": stripped_line,
+                            }
+                        )
 
         return imports
 
@@ -438,7 +464,16 @@ class CodebaseScanner:
         lines = content.split("\n")
 
         # Common data file extensions
-        data_extensions = [".csv", ".json", ".xlsx", ".parquet", ".pkl", ".h5", ".nc", ".geojson"]
+        data_extensions = [
+            ".csv",
+            ".json",
+            ".xlsx",
+            ".parquet",
+            ".pkl",
+            ".h5",
+            ".nc",
+            ".geojson",
+        ]
 
         for line_num, line in enumerate(lines, 1):
             for ext in data_extensions:
@@ -446,17 +481,23 @@ class CodebaseScanner:
                 pattern = rf"""['"`]([^'"`]*\{ext})['"`]"""
                 matches = re.finditer(pattern, line, re.IGNORECASE)
                 for match in matches:
-                    dependencies.append({
-                        "file_path": match.group(1),
-                        "file_extension": ext,
-                        "line_number": line_num,
-                        "line_content": line.strip(),
-                        "context": self._get_line_context(lines, line_num - 1, context_lines=1),
-                    })
+                    dependencies.append(
+                        {
+                            "file_path": match.group(1),
+                            "file_extension": ext,
+                            "line_number": line_num,
+                            "line_content": line.strip(),
+                            "context": self._get_line_context(
+                                lines, line_num - 1, context_lines=1
+                            ),
+                        }
+                    )
 
         return dependencies
 
-    def _get_line_context(self, lines: list[str], line_index: int, context_lines: int = 2) -> list[str]:
+    def _get_line_context(
+        self, lines: list[str], line_index: int, context_lines: int = 2
+    ) -> list[str]:
         """Get surrounding lines for context."""
         start = max(0, line_index - context_lines)
         end = min(len(lines), line_index + context_lines + 1)

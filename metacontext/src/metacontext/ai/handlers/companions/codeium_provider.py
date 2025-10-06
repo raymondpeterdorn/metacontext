@@ -27,7 +27,9 @@ class CodeiumProvider(BaseCodeCompanionProvider):
 
     @classmethod
     def create(
-        cls, model: str = "default", **kwargs: dict[str, Any],
+        cls,
+        model: str = "default",
+        **kwargs: dict[str, Any],
     ) -> "CodeiumProvider":
         """Create a new CodeiumProvider instance.
 

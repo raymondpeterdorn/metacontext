@@ -4,7 +4,6 @@ This module defines the schema for codebase context information that is used
 across the system, avoiding overlapping concepts.
 """
 
-
 from pydantic import BaseModel, Field
 
 from metacontext.schemas.extensions.base import (

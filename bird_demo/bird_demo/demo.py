@@ -73,7 +73,7 @@ def csv_and_xlsx() -> None:
                     "scan_codebase": True,
                     "llm_api_key": os.getenv("GEMINI_API_KEY"),
                     "llm_provider": "gemini",
-                    "llm_model": "gemini-1.5-flash",
+                    
                 },
                 include_llm_analysis=True,
             )
@@ -108,7 +108,7 @@ def csv_and_xlsx() -> None:
                         "scan_codebase": True,
                         "llm_api_key": os.getenv("GEMINI_API_KEY"),
                         "llm_provider": "gemini",
-                        "llm_model": "gemini-1.5-flash",
+                        
                     },
                     include_llm_analysis=True,
                 )
@@ -171,7 +171,7 @@ def ml_models() -> None:
                 "scan_codebase": True,
                 "llm_api_key": os.getenv("GEMINI_API_KEY"),
                 "llm_provider": "gemini",
-                "llm_model": "gemini-1.5-flash",
+                
             },
             include_llm_analysis=True,
         )
@@ -211,7 +211,7 @@ def geospatial_data() -> None:
                     "scan_codebase": True,
                     "llm_api_key": os.getenv("GEMINI_API_KEY"),
                     "llm_provider": "gemini",
-                    "llm_model": "gemini-1.5-flash",
+                    
                 },
                 include_llm_analysis=True,
             )
@@ -243,7 +243,7 @@ def geospatial_data() -> None:
                     "scan_codebase": True,
                     "llm_api_key": os.getenv("GEMINI_API_KEY"),
                     "llm_provider": "gemini",
-                    "llm_model": "gemini-1.5-flash",
+                    
                 },
                 include_llm_analysis=True,
             )
@@ -304,7 +304,7 @@ def media_data() -> None:
             "scan_codebase": True,
             "llm_api_key": os.getenv("GEMINI_API_KEY"),
             "llm_provider": "gemini",
-            "llm_model": "gemini-1.5-flash",
+            
         },
         include_llm_analysis=True,
     )
@@ -315,9 +315,9 @@ def main() -> None:
     """Train and save a simple bird classification model."""
     # Use default config if none provided
     csv_and_xlsx()
-    ml_models()
-    geospatial_data()
-    media_data()
+    #ml_models()
+    #geospatial_data()
+    #media_data()
 
 if __name__ == "__main__":
     main()

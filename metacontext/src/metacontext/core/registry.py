@@ -10,6 +10,7 @@ from typing import Any, ClassVar, Protocol, TypeVar, cast
 
 logger = logging.getLogger(__name__)
 
+
 # Define a Protocol for handlers to avoid circular imports
 class HandlerProtocol(Protocol):
     """Protocol defining the minimum interface for handlers."""
@@ -180,7 +181,9 @@ class HandlerRegistry:
         for handler_class in cls._handlers:
             try:
                 handler = handler_class()
-                if hasattr(handler, "supported_extensions") and hasattr(handler, "required_schema_extensions"):
+                if hasattr(handler, "supported_extensions") and hasattr(
+                    handler, "required_schema_extensions"
+                ):
                     for ext in handler.supported_extensions:
                         extension_map[ext] = handler.required_schema_extensions
             except (AttributeError, TypeError, ValueError) as e:

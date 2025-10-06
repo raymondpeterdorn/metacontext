@@ -59,6 +59,8 @@ class FileInfo(BaseModel):
     source_script: str | None = None
     project_context_summary: str | None = None
     creation_timestamp: datetime | None = None
+
+
 class SystemInfo(BaseModel):
     """System information about the generation environment."""
 
@@ -114,6 +116,7 @@ class Metacontext(BaseModel):
 
 
 # ========== UTILITY FUNCTIONS ==========
+
 
 def create_base_metacontext(
     filename: str,
@@ -193,7 +196,6 @@ class ExtensionMapper:
         ".parquet": ExtensionCategory.TABULAR,
         ".tsv": ExtensionCategory.TABULAR,
         ".feather": ExtensionCategory.TABULAR,
-
         # ML models
         ".pkl": ExtensionCategory.ML_MODEL,
         ".joblib": ExtensionCategory.ML_MODEL,
@@ -203,19 +205,16 @@ class ExtensionMapper:
         ".pth": ExtensionCategory.ML_MODEL,
         ".keras": ExtensionCategory.ML_MODEL,
         ".tflite": ExtensionCategory.ML_MODEL,
-
         # Geospatial Raster
         ".tif": ExtensionCategory.GEOSPATIAL_RASTER,
         ".tiff": ExtensionCategory.GEOSPATIAL_RASTER,
         ".nc": ExtensionCategory.GEOSPATIAL_RASTER,
         ".asc": ExtensionCategory.GEOSPATIAL_RASTER,
-
         # Geospatial Vector
         ".shp": ExtensionCategory.GEOSPATIAL_VECTOR,
         ".geojson": ExtensionCategory.GEOSPATIAL_VECTOR,
         ".gpkg": ExtensionCategory.GEOSPATIAL_VECTOR,
         ".geoparquet": ExtensionCategory.GEOSPATIAL_VECTOR,
-
         # Media
         ".jpg": ExtensionCategory.MEDIA,
         ".jpeg": ExtensionCategory.MEDIA,
@@ -224,7 +223,6 @@ class ExtensionMapper:
         ".mp4": ExtensionCategory.MEDIA,
         ".mp3": ExtensionCategory.MEDIA,
         ".wav": ExtensionCategory.MEDIA,
-
         # Code
         ".py": ExtensionCategory.CODE,
         ".js": ExtensionCategory.CODE,
@@ -238,7 +236,6 @@ class ExtensionMapper:
         ".php": ExtensionCategory.CODE,
         ".swift": ExtensionCategory.CODE,
         ".rs": ExtensionCategory.CODE,
-
         # Documents
         ".md": ExtensionCategory.DOCUMENT,
         ".txt": ExtensionCategory.DOCUMENT,
@@ -268,7 +265,9 @@ class ExtensionMapper:
         extension_lower = extension.lower()
 
         # Return the category or UNKNOWN
-        return cls._EXTENSION_TO_CATEGORY.get(extension_lower, ExtensionCategory.UNKNOWN)
+        return cls._EXTENSION_TO_CATEGORY.get(
+            extension_lower, ExtensionCategory.UNKNOWN
+        )
 
     @classmethod
     def get_file_type_extension(cls, file_extension: str) -> list[str]:

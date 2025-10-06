@@ -36,7 +36,11 @@ def compact_schema_hint(schema_class: type[BaseModel]) -> str:
         # Get description if available, truncate to MAX_DESCRIPTION_LENGTH chars max
         desc = field_data.get("description", "")
         if desc:
-            desc = desc[:MAX_DESCRIPTION_LENGTH] + "..." if len(desc) > MAX_DESCRIPTION_LENGTH else desc
+            desc = (
+                desc[:MAX_DESCRIPTION_LENGTH] + "..."
+                if len(desc) > MAX_DESCRIPTION_LENGTH
+                else desc
+            )
 
         # Get field type, defaulting to 'any' if not specified
         field_type = field_data.get("type", "any")
@@ -75,7 +79,11 @@ def compact_schema_hint_nested(schema_class: type[BaseModel], depth: int = 0) ->
         field_type = info.get("type", "object")
         desc = info.get("description", "")
         if desc:
-            desc = desc[:MAX_DESCRIPTION_LENGTH] + "..." if len(desc) > MAX_DESCRIPTION_LENGTH else desc
+            desc = (
+                desc[:MAX_DESCRIPTION_LENGTH] + "..."
+                if len(desc) > MAX_DESCRIPTION_LENGTH
+                else desc
+            )
 
         if desc:
             lines.append(f"{indent}- {name}: {field_type}  # {desc}")
@@ -95,9 +103,13 @@ def compact_schema_hint_nested(schema_class: type[BaseModel], depth: int = 0) ->
                         if len(nested_desc) > MAX_NESTED_DESCRIPTION_LENGTH
                         else nested_desc
                     )
-                    nested_lines.append(f"{nested_indent}- {nested_name}: {nested_type}  # {nested_desc}")
+                    nested_lines.append(
+                        f"{nested_indent}- {nested_name}: {nested_type}  # {nested_desc}"
+                    )
                 else:
-                    nested_lines.append(f"{nested_indent}- {nested_name}: {nested_type}")
+                    nested_lines.append(
+                        f"{nested_indent}- {nested_name}: {nested_type}"
+                    )
 
             if nested_lines:
                 lines.extend(nested_lines)
@@ -109,7 +121,9 @@ def generate_field_descriptions(model_class: type[BaseModel]) -> str:
     """Generate a numbered list of field descriptions from a Pydantic model."""
     descriptions = []
     for i, (field_name, field) in enumerate(model_class.model_fields.items(), 1):
-        description = field.description or f"The {field_name.replace('_', ' ')} of the item"
+        description = (
+            field.description or f"The {field_name.replace('_', ' ')} of the item"
+        )
         descriptions.append(f"{i}. {field_name}: {description}")
 
     return "\n".join(descriptions)

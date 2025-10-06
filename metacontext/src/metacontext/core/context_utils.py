@@ -8,14 +8,21 @@ from typing import Any, Protocol
 
 import numpy as np
 
-JsonSerializable = str | int | float | bool | None | list["JsonSerializable"] | dict[str, "JsonSerializable"]
+JsonSerializable = (
+    str
+    | int
+    | float
+    | bool
+    | None
+    | list["JsonSerializable"]
+    | dict[str, "JsonSerializable"]
+)
 
 
 class TypeHandler(Protocol):
     """A protocol for type normalization handlers."""
 
-    def __call__(self, value: Any) -> JsonSerializable:
-        ...
+    def __call__(self, value: Any) -> JsonSerializable: ...
 
 
 class ContextNormalizer:
@@ -111,17 +118,21 @@ class ContextNormalizer:
         if len(text) <= cls.MAX_TEXT_LENGTH:
             return text
 
-        truncated = text[:cls.MAX_TEXT_LENGTH]
+        truncated = text[: cls.MAX_TEXT_LENGTH]
         return f"{truncated}... [TRUNCATED: {len(text)} total chars]"
 
     @classmethod
-    def _normalize_list(cls, lst: list[Any]) -> list[JsonSerializable] | dict[str, JsonSerializable]:
+    def _normalize_list(
+        cls, lst: list[Any]
+    ) -> list[JsonSerializable] | dict[str, JsonSerializable]:
         """Normalize a list, truncating if too long."""
         if len(lst) <= cls.MAX_LIST_ITEMS:
             return [cls.normalize_value(item) for item in lst]
 
         # For large lists, return first few items plus metadata
-        normalized_items = [cls.normalize_value(item) for item in lst[:cls.MAX_LIST_ITEMS]]
+        normalized_items = [
+            cls.normalize_value(item) for item in lst[: cls.MAX_LIST_ITEMS]
+        ]
         return {
             "preview_items": normalized_items,
             "total_length": len(lst),
@@ -130,7 +141,9 @@ class ContextNormalizer:
         }
 
     @classmethod
-    def _normalize_array(cls, arr: np.ndarray) -> list[JsonSerializable] | dict[str, JsonSerializable]:
+    def _normalize_array(
+        cls, arr: np.ndarray
+    ) -> list[JsonSerializable] | dict[str, JsonSerializable]:
         """Normalize NumPy arrays."""
         # For small arrays, convert to list
         if arr.size <= cls.MAX_LIST_ITEMS:
@@ -141,7 +154,10 @@ class ContextNormalizer:
             "array_shape": list(arr.shape),
             "array_dtype": str(arr.dtype),
             "array_size": int(arr.size),
-            "preview_values": [cls.normalize_value(item) for item in arr.flat[:cls.MAX_LIST_ITEMS].tolist()],
+            "preview_values": [
+                cls.normalize_value(item)
+                for item in arr.flat[: cls.MAX_LIST_ITEMS].tolist()
+            ],
             "truncated": True,
             "sha256_hash": cls._compute_hash(arr.tobytes()),
         }
@@ -160,7 +176,9 @@ class ContextNormalizer:
                 preview_data = obj.head(cls.MAX_LIST_ITEMS)
                 return {
                     "dataframe_shape": list(obj.shape),
-                    "column_names": list(obj.columns) if hasattr(obj, "columns") else None,
+                    "column_names": list(obj.columns)
+                    if hasattr(obj, "columns")
+                    else None,
                     "dtypes": obj.dtypes.to_dict() if hasattr(obj, "dtypes") else None,
                     "preview_records": list(preview_data.to_dict("records")),
                     "truncated": True,

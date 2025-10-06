@@ -17,6 +17,7 @@ class MetacontextError(Exception):
 
 # ---- LLM-related Exceptions ----
 
+
 class LLMError(MetacontextError):
     """Base exception for LLM-related errors."""
 
@@ -59,6 +60,7 @@ class SchemaValidationError(LLMError):
 
 # ---- Schema-related Exceptions ----
 
+
 class SchemaError(MetacontextError):
     """Base exception for schema-related errors."""
 
@@ -72,6 +74,7 @@ class SchemaConflictError(SchemaError):
 
 
 # ---- File Handler Exceptions ----
+
 
 class HandlerError(MetacontextError):
     """Base exception for handler-related errors."""
@@ -90,6 +93,7 @@ class FileProcessingError(HandlerError):
 
 
 # ---- Codebase Context Exceptions ----
+
 
 class CodebaseError(MetacontextError):
     """Base exception for codebase-related errors."""

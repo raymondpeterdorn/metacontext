@@ -34,6 +34,7 @@ logger = logging.getLogger(__name__)
 # Try to import optional geospatial libraries
 try:
     import rasterio
+
     RASTERIO_AVAILABLE = True
 except ImportError:
     RASTERIO_AVAILABLE = False
@@ -41,6 +42,7 @@ except ImportError:
 
 try:
     import geopandas as gpd
+
     GEOPANDAS_AVAILABLE = True
 except ImportError:
     GEOPANDAS_AVAILABLE = False
@@ -48,6 +50,7 @@ except ImportError:
 
 try:
     import fiona
+
     FIONA_AVAILABLE = True
 except ImportError:
     FIONA_AVAILABLE = False
@@ -63,38 +66,51 @@ class GeospatialHandler(BaseFileHandler):
     """
 
     supported_extensions: ClassVar[list[str]] = [
-        ".geojson", ".json",  # Vector data
-        ".shp", ".kml", ".kmz", ".gpkg",  # Vector data
-        ".tif", ".tiff", ".nc", ".hdf",  # Raster data
+        ".geojson",
+        ".json",  # Vector data
+        ".shp",
+        ".kml",
+        ".kmz",
+        ".gpkg",  # Vector data
+        ".tif",
+        ".tiff",
+        ".nc",
+        ".hdf",  # Raster data
     ]
 
     def __init__(self) -> None:
         """Initialize the geospatial handler."""
-        pass
 
     def can_handle(self, file_path: Path, data_object: object | None = None) -> bool:
         """Check if this is a geospatial data file."""
         if file_path.suffix.lower() in self.supported_extensions:
             return True
-        
+
         # Check if JSON file might be GeoJSON
         if file_path.suffix.lower() == ".json":
             try:
-                with open(file_path, 'r', encoding='utf-8') as f:
+                with open(file_path, encoding="utf-8") as f:
                     data = json.load(f)
                     # Check for GeoJSON structure
-                    return data.get("type") in ["FeatureCollection", "Feature", "Point", "LineString", "Polygon"]
-            except (json.JSONDecodeError, IOError):
+                    return data.get("type") in [
+                        "FeatureCollection",
+                        "Feature",
+                        "Point",
+                        "LineString",
+                        "Polygon",
+                    ]
+            except (OSError, json.JSONDecodeError):
                 pass
-        
+
         return False
 
-    def get_required_extensions(self, file_path: Path, data_object: object = None) -> list[str]:
+    def get_required_extensions(
+        self, file_path: Path, data_object: object = None
+    ) -> list[str]:
         """Return required extensions for geospatial data."""
         if self._is_raster_file(file_path):
             return ["raster_context"]
-        else:
-            return ["vector_context"]
+        return ["vector_context"]
 
     def _is_raster_file(self, file_path: Path) -> bool:
         """Determine if file is raster or vector data."""
@@ -112,8 +128,7 @@ class GeospatialHandler(BaseFileHandler):
         try:
             if self._is_raster_file(file_path):
                 return self._probe_raster_file(file_path, file_size)
-            else:
-                return self._probe_vector_file(file_path, file_size)
+            return self._probe_vector_file(file_path, file_size)
         except Exception as e:
             logger.warning("Error probing geospatial file %s: %s", file_path, e)
             return {
@@ -135,12 +150,14 @@ class GeospatialHandler(BaseFileHandler):
         if RASTERIO_AVAILABLE:
             try:
                 with rasterio.open(file_path) as dataset:
-                    probe_result.update({
-                        "dimensions": [dataset.width, dataset.height],
-                        "band_count": dataset.count,
-                        "crs": str(dataset.crs) if dataset.crs else None,
-                        "bounds": list(dataset.bounds),
-                    })
+                    probe_result.update(
+                        {
+                            "dimensions": [dataset.width, dataset.height],
+                            "band_count": dataset.count,
+                            "crs": str(dataset.crs) if dataset.crs else None,
+                            "bounds": list(dataset.bounds),
+                        }
+                    )
             except Exception as e:
                 probe_result["probe_error"] = str(e)
 
@@ -157,20 +174,26 @@ class GeospatialHandler(BaseFileHandler):
 
         try:
             if file_path.suffix.lower() in [".geojson", ".json"]:
-                with open(file_path, 'r', encoding='utf-8') as f:
+                with open(file_path, encoding="utf-8") as f:
                     data = json.load(f)
                     if data.get("type") == "FeatureCollection":
                         probe_result["feature_count"] = len(data.get("features", []))
                         if data.get("features"):
-                            probe_result["geometry_type"] = data["features"][0].get("geometry", {}).get("type")
+                            probe_result["geometry_type"] = (
+                                data["features"][0].get("geometry", {}).get("type")
+                            )
             elif GEOPANDAS_AVAILABLE:
                 # Use geopandas for other vector formats
                 gdf = gpd.read_file(file_path)
-                probe_result.update({
-                    "feature_count": len(gdf),
-                    "geometry_type": gdf.geometry.type.iloc[0] if len(gdf) > 0 else None,
-                    "crs": str(gdf.crs) if gdf.crs else None,
-                })
+                probe_result.update(
+                    {
+                        "feature_count": len(gdf),
+                        "geometry_type": gdf.geometry.type.iloc[0]
+                        if len(gdf) > 0
+                        else None,
+                        "crs": str(gdf.crs) if gdf.crs else None,
+                    }
+                )
         except Exception as e:
             probe_result["probe_error"] = str(e)
 
@@ -193,15 +216,19 @@ class GeospatialHandler(BaseFileHandler):
             logger.exception("Error generating geospatial context for %s", file_path)
             return {"error": "Failed to generate geospatial context"}
 
-    def _generate_raster_context(self, file_path: Path, ai_companion: object | None) -> dict[str, Any]:
+    def _generate_raster_context(
+        self, file_path: Path, ai_companion: object | None
+    ) -> dict[str, Any]:
         """Generate context for raster geospatial data."""
         # Deterministic analysis
         deterministic_metadata = self._analyze_raster_deterministic(file_path)
-        
+
         # AI enrichment
         ai_enrichment = None
         if ai_companion and hasattr(ai_companion, "generate_with_schema"):
-            ai_enrichment = self._generate_raster_ai_enrichment(file_path, deterministic_metadata, ai_companion)
+            ai_enrichment = self._generate_raster_ai_enrichment(
+                file_path, deterministic_metadata, ai_companion
+            )
 
         return {
             "raster_context": GeospatialRasterContext(
@@ -210,15 +237,19 @@ class GeospatialHandler(BaseFileHandler):
             ).model_dump(),
         }
 
-    def _generate_vector_context(self, file_path: Path, ai_companion: object | None) -> dict[str, Any]:
+    def _generate_vector_context(
+        self, file_path: Path, ai_companion: object | None
+    ) -> dict[str, Any]:
         """Generate context for vector geospatial data."""
-        # Deterministic analysis  
+        # Deterministic analysis
         deterministic_metadata = self._analyze_vector_deterministic(file_path)
-        
+
         # AI enrichment
         ai_enrichment = None
         if ai_companion and hasattr(ai_companion, "generate_with_schema"):
-            ai_enrichment = self._generate_vector_ai_enrichment(file_path, deterministic_metadata, ai_companion)
+            ai_enrichment = self._generate_vector_ai_enrichment(
+                file_path, deterministic_metadata, ai_companion
+            )
 
         return {
             "vector_context": GeospatialVectorContext(
@@ -227,10 +258,12 @@ class GeospatialHandler(BaseFileHandler):
             ).model_dump(),
         }
 
-    def _analyze_raster_deterministic(self, file_path: Path) -> RasterDeterministicMetadata:
+    def _analyze_raster_deterministic(
+        self, file_path: Path
+    ) -> RasterDeterministicMetadata:
         """Analyze raster file deterministically."""
         metadata = RasterDeterministicMetadata()
-        
+
         if RASTERIO_AVAILABLE:
             try:
                 with rasterio.open(file_path) as dataset:
@@ -239,60 +272,72 @@ class GeospatialHandler(BaseFileHandler):
                     metadata.bounds = list(dataset.bounds)
                     metadata.pixel_dimensions = [dataset.width, dataset.height]
                     metadata.band_count = dataset.count
-                    metadata.pixel_size = [abs(dataset.transform[0]), abs(dataset.transform[4])]
-                    metadata.data_type = str(dataset.dtypes[0]) if dataset.dtypes else None
+                    metadata.pixel_size = [
+                        abs(dataset.transform[0]),
+                        abs(dataset.transform[4]),
+                    ]
+                    metadata.data_type = (
+                        str(dataset.dtypes[0]) if dataset.dtypes else None
+                    )
                     metadata.nodata_value = dataset.nodata
-                    
+
                     # Try to get compression info
-                    if hasattr(dataset, 'compression'):
+                    if hasattr(dataset, "compression"):
                         metadata.compression = dataset.compression
-                        
+
             except Exception as e:
                 logger.warning("Error analyzing raster file %s: %s", file_path, e)
 
         return metadata
 
-    def _analyze_vector_deterministic(self, file_path: Path) -> VectorDeterministicMetadata:
+    def _analyze_vector_deterministic(
+        self, file_path: Path
+    ) -> VectorDeterministicMetadata:
         """Analyze vector file deterministically."""
         metadata = VectorDeterministicMetadata()
-        
+
         try:
             if file_path.suffix.lower() in [".geojson", ".json"]:
-                with open(file_path, 'r', encoding='utf-8') as f:
+                with open(file_path, encoding="utf-8") as f:
                     data = json.load(f)
                     metadata.format = "GeoJSON"
                     if data.get("type") == "FeatureCollection":
                         features = data.get("features", [])
                         metadata.feature_count = len(features)
                         if features:
-                            metadata.geometry_type = features[0].get("geometry", {}).get("type")
+                            metadata.geometry_type = (
+                                features[0].get("geometry", {}).get("type")
+                            )
                             # Get property names
                             properties = features[0].get("properties", {})
                             metadata.attribute_fields = list(properties.keys())
-                            
+
             elif GEOPANDAS_AVAILABLE:
                 gdf = gpd.read_file(file_path)
-                metadata.format = file_path.suffix.upper().lstrip('.')
+                metadata.format = file_path.suffix.upper().lstrip(".")
                 metadata.feature_count = len(gdf)
                 metadata.crs = str(gdf.crs) if gdf.crs else None
                 if len(gdf) > 0:
                     metadata.geometry_type = gdf.geometry.type.iloc[0]
                     metadata.bounds = list(gdf.total_bounds)
-                    metadata.property_names = [col for col in gdf.columns if col != 'geometry']
-                    
+                    metadata.property_names = [
+                        col for col in gdf.columns if col != "geometry"
+                    ]
+
         except Exception as e:
             logger.warning("Error analyzing vector file %s: %s", file_path, e)
 
         return metadata
 
-    def analyze_deterministic(self, file_path: Path, data_object: object = None) -> dict[str, object]:
+    def analyze_deterministic(
+        self, file_path: Path, data_object: object = None
+    ) -> dict[str, object]:
         """Analyze file without AI - deterministic analysis only."""
         if self._is_raster_file(file_path):
             metadata = self._analyze_raster_deterministic(file_path)
             return {"raster_metadata": metadata.model_dump()}
-        else:
-            metadata = self._analyze_vector_deterministic(file_path)
-            return {"vector_metadata": metadata.model_dump()}
+        metadata = self._analyze_vector_deterministic(file_path)
+        return {"vector_metadata": metadata.model_dump()}
 
     def analyze_deep(
         self,
@@ -302,37 +347,60 @@ class GeospatialHandler(BaseFileHandler):
         deterministic_context: dict[str, object] | None = None,
     ) -> dict[str, object]:
         """Deep analysis using AI and heavy computation."""
-        if not ai_companion or not hasattr(ai_companion, "is_available") or not ai_companion.is_available():
+        if (
+            not ai_companion
+            or not hasattr(ai_companion, "is_available")
+            or not ai_companion.is_available()
+        ):
             return {"error": "AI companion not available for deep analysis"}
 
         try:
             if self._is_raster_file(file_path):
-                metadata = deterministic_context.get("raster_metadata") if deterministic_context else None
+                metadata = (
+                    deterministic_context.get("raster_metadata")
+                    if deterministic_context
+                    else None
+                )
                 if not metadata:
-                    metadata = self._analyze_raster_deterministic(file_path).model_dump()
-                
+                    metadata = self._analyze_raster_deterministic(
+                        file_path
+                    ).model_dump()
+
                 ai_enrichment = self._generate_raster_ai_enrichment(
-                    file_path, 
-                    RasterDeterministicMetadata.model_validate(metadata),
-                    ai_companion
-                )
-                return {"raster_ai_enrichment": ai_enrichment.model_dump() if ai_enrichment else None}
-            else:
-                metadata = deterministic_context.get("vector_metadata") if deterministic_context else None
-                if not metadata:
-                    metadata = self._analyze_vector_deterministic(file_path).model_dump()
-                
-                ai_enrichment = self._generate_vector_ai_enrichment(
                     file_path,
-                    VectorDeterministicMetadata.model_validate(metadata), 
-                    ai_companion
+                    RasterDeterministicMetadata.model_validate(metadata),
+                    ai_companion,
                 )
-                return {"vector_ai_enrichment": ai_enrichment.model_dump() if ai_enrichment else None}
+                return {
+                    "raster_ai_enrichment": ai_enrichment.model_dump()
+                    if ai_enrichment
+                    else None
+                }
+            metadata = (
+                deterministic_context.get("vector_metadata")
+                if deterministic_context
+                else None
+            )
+            if not metadata:
+                metadata = self._analyze_vector_deterministic(file_path).model_dump()
+
+            ai_enrichment = self._generate_vector_ai_enrichment(
+                file_path,
+                VectorDeterministicMetadata.model_validate(metadata),
+                ai_companion,
+            )
+            return {
+                "vector_ai_enrichment": ai_enrichment.model_dump()
+                if ai_enrichment
+                else None
+            }
         except Exception:
             logger.exception("Error in deep analysis for %s", file_path)
             return {"error": "Deep analysis failed"}
 
-    def _build_raster_constraints(self, file_path: Path, metadata: RasterDeterministicMetadata) -> str:
+    def _build_raster_constraints(
+        self, file_path: Path, metadata: RasterDeterministicMetadata
+    ) -> str:
         """Build constraints for raster AI enrichment."""
         # Calculate complexity based on bands and dimensions
         complexity_factor = 1.0
@@ -369,7 +437,9 @@ class GeospatialHandler(BaseFileHandler):
 
         return f"{base_instruction} and provide insights that fit within these STRICT LIMITS:\\n\\n{constraints}"
 
-    def _build_vector_constraints(self, file_path: Path, metadata: VectorDeterministicMetadata) -> str:
+    def _build_vector_constraints(
+        self, file_path: Path, metadata: VectorDeterministicMetadata
+    ) -> str:
         """Build constraints for vector AI enrichment."""
         # Calculate complexity based on features and properties
         complexity_factor = 1.0
@@ -378,12 +448,12 @@ class GeospatialHandler(BaseFileHandler):
                 complexity_factor *= 1.5
             elif metadata.feature_count < 10:
                 complexity_factor *= 0.8
-        
+
         property_count = len(metadata.attribute_fields or [])
         complexity_factor *= min(2.0, 1.0 + (property_count / 20))
 
         max_total_chars, max_field_chars = calculate_response_limits(
-            base_fields=7,  # ForensicAIEnrichment base fields  
+            base_fields=7,  # ForensicAIEnrichment base fields
             extended_fields=6,  # VectorAIEnrichment specific fields
             complexity_factor=complexity_factor,
         )
@@ -424,7 +494,7 @@ class GeospatialHandler(BaseFileHandler):
             }
 
             instruction = self._build_raster_constraints(file_path, metadata)
-            
+
             # Type: ignore needed because ai_companion is typed as object for flexibility
             return ai_companion.generate_with_schema(  # type: ignore[attr-defined]
                 schema_class=RasterAIEnrichment,
@@ -451,7 +521,7 @@ class GeospatialHandler(BaseFileHandler):
             }
 
             instruction = self._build_vector_constraints(file_path, metadata)
-            
+
             # Type: ignore needed because ai_companion is typed as object for flexibility
             return ai_companion.generate_with_schema(  # type: ignore[attr-defined]
                 schema_class=VectorAIEnrichment,
@@ -468,6 +538,8 @@ class GeospatialHandler(BaseFileHandler):
         "raster_analysis": "templates/geospatial/raster_analysis.yaml",
     }
 
-    def get_bulk_prompts(self, file_path: Path, data_object: object = None) -> dict[str, str]:  # noqa: ARG002
+    def get_bulk_prompts(
+        self, file_path: Path, data_object: object = None
+    ) -> dict[str, str]:  # noqa: ARG002
         """Get bulk prompts for this file type from config."""
         return self.PROMPT_CONFIG.copy()

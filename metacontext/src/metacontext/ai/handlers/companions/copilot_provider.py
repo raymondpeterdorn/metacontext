@@ -83,7 +83,9 @@ class CopilotProvider(BaseCodeCompanionProvider):
         """Handle CLI interaction with GitHub Copilot."""
         try:
             # Use gh copilot suggest command with shell target and output to file for non-interactive mode
-            with tempfile.NamedTemporaryFile(mode="w+", suffix=".txt", delete=False) as f:
+            with tempfile.NamedTemporaryFile(
+                mode="w+", suffix=".txt", delete=False
+            ) as f:
                 temp_file = f.name
 
             cmd = ["gh", "copilot", "suggest", "-t", "shell", "-s", temp_file, prompt]
@@ -223,7 +225,9 @@ class CopilotProvider(BaseCodeCompanionProvider):
 
     @classmethod
     def create(
-        cls, model: str = "default", **kwargs: dict[str, Any],
+        cls,
+        model: str = "default",
+        **kwargs: dict[str, Any],
     ) -> "CopilotProvider":
         """Create a new CopilotProvider instance.
 

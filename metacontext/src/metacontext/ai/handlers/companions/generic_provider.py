@@ -10,7 +10,9 @@ class GenericProvider(BaseCodeCompanionProvider):
     """Generic provider for unknown or custom code companions."""
 
     def __init__(
-        self, model: str = "generic", companion_name: str = "Code Companion",
+        self,
+        model: str = "generic",
+        companion_name: str = "Code Companion",
     ) -> None:
         """Initialize the generic provider with custom companion name."""
         super().__init__(model=model)

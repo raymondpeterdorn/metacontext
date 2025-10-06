@@ -118,6 +118,9 @@ class SchemaRegistry:
         """
         supported_extensions = []
         for ext_name, ext_class in cls._extensions.items():
-            if hasattr(ext_class, "get_supported_extensions") and file_extension in ext_class.get_supported_extensions():
+            if (
+                hasattr(ext_class, "get_supported_extensions")
+                and file_extension in ext_class.get_supported_extensions()
+            ):
                 supported_extensions.append(ext_name)
         return supported_extensions

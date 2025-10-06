@@ -4,7 +4,6 @@ from pathlib import Path
 from unittest.mock import mock_open, patch
 
 import yaml
-
 from src.ai.prompts.prompt_loader import PromptLoader
 
 

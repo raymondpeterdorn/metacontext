@@ -64,7 +64,9 @@ class OpenAIProvider(SimplifiedLLMProvider):
 
         return self.client
 
-    def generate_json(self, prompt: str, schema_class: type[BaseModel] | None = None) -> dict[str, Any]:
+    def generate_json(
+        self, prompt: str, schema_class: type[BaseModel] | None = None
+    ) -> dict[str, Any]:
         """Generate a JSON response from the OpenAI API.
 
         Args:

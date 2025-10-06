@@ -37,21 +37,21 @@ class ArchitecturalComponents:
         section="Two-Tier Architecture",
         line_number=17,
         description="Guaranteed reliability - Deterministic metadata always available, "
-                   "AI enhancement when possible",
+        "AI enhancement when possible",
     )
 
     SCHEMA_FIRST_LLM = ArchitectureReference(
         section="Schema-First LLM Integration",
         line_number=20,
         description="Structured AI calls - Pydantic schemas drive prompts with "
-                   "automatic validation",
+        "automatic validation",
     )
 
     COST_TRACKING = ArchitectureReference(
         section="Comprehensive Cost Tracking",
         line_number=23,
         description="Production monitoring - Real-time token usage and cost estimation "
-                   "across providers",
+        "across providers",
     )
 
     HANDLER_SPECIALIZATION = ArchitectureReference(

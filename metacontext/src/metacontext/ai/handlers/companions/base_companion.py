@@ -113,7 +113,8 @@ class BaseCodeCompanionProvider(AbstractLLMProvider):
         safe_commands = ["gh", "cursor"]
         if self.cli_commands[0] not in safe_commands:
             logger.warning(
-                "Attempted to run an untrusted command: %s", self.cli_commands,
+                "Attempted to run an untrusted command: %s",
+                self.cli_commands,
             )
             return False
 
@@ -224,7 +225,9 @@ class BaseCodeCompanionProvider(AbstractLLMProvider):
             }
 
     def _generate_interaction_instructions(
-        self, prompt_file: Path, response_file: Path,
+        self,
+        prompt_file: Path,
+        response_file: Path,
     ) -> str:
         """Generate instructions for manual interaction."""
         # or write to a dedicated output panel

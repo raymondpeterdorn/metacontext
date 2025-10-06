@@ -7,18 +7,21 @@ from typing import Any, ClassVar
 
 try:
     import magic
+
     HAS_PYTHON_MAGIC = True
 except ImportError:
     HAS_PYTHON_MAGIC = False
 
 try:
     import pandas as pd
+
     HAS_PANDAS = True
 except ImportError:
     HAS_PANDAS = False
 
 try:
     import pyarrow.parquet as pq
+
     HAS_PYARROW = True
 except ImportError:
     HAS_PYARROW = False
@@ -39,17 +42,64 @@ class FileInspector:
 
     # Text file extensions that we can safely read as text
     TEXT_EXTENSIONS: ClassVar[set[str]] = {
-        ".txt", ".md", ".py", ".js", ".ts", ".html", ".css", ".json",
-        ".yaml", ".yml", ".xml", ".csv", ".tsv", ".log", ".sql", ".sh",
-        ".bat", ".ps1", ".r", ".R", ".scala", ".java", ".cpp", ".c", ".h",
-        ".hpp", ".go", ".rs", ".php", ".rb", ".pl", ".swift", ".kt", ".m",
-        ".mm", ".vue", ".jsx", ".tsx", ".scss", ".less", ".toml", ".ini",
-        ".cfg", ".conf", ".properties", ".gitignore", ".dockerignore",
+        ".txt",
+        ".md",
+        ".py",
+        ".js",
+        ".ts",
+        ".html",
+        ".css",
+        ".json",
+        ".yaml",
+        ".yml",
+        ".xml",
+        ".csv",
+        ".tsv",
+        ".log",
+        ".sql",
+        ".sh",
+        ".bat",
+        ".ps1",
+        ".r",
+        ".R",
+        ".scala",
+        ".java",
+        ".cpp",
+        ".c",
+        ".h",
+        ".hpp",
+        ".go",
+        ".rs",
+        ".php",
+        ".rb",
+        ".pl",
+        ".swift",
+        ".kt",
+        ".m",
+        ".mm",
+        ".vue",
+        ".jsx",
+        ".tsx",
+        ".scss",
+        ".less",
+        ".toml",
+        ".ini",
+        ".cfg",
+        ".conf",
+        ".properties",
+        ".gitignore",
+        ".dockerignore",
     }
 
     # Structured data extensions
     STRUCTURED_EXTENSIONS: ClassVar[set[str]] = {
-        ".csv", ".tsv", ".json", ".jsonl", ".parquet", ".xlsx", ".xls",
+        ".csv",
+        ".tsv",
+        ".json",
+        ".jsonl",
+        ".parquet",
+        ".xlsx",
+        ".xls",
     }
 
     def __init__(self) -> None:
@@ -176,7 +226,10 @@ class FileInspector:
             return self._inspect_parquet_file(file_path)
         if extension in [".xlsx", ".xls"]:
             return self._inspect_excel_file(file_path)
-        return {"file_type": "structured", "error": f"Unsupported structured format: {extension}"}
+        return {
+            "file_type": "structured",
+            "error": f"Unsupported structured format: {extension}",
+        }
 
     def _inspect_csv_file(self, file_path: Path) -> dict[str, Any]:
         """Inspect CSV/TSV files with descriptive statistics."""
@@ -194,7 +247,7 @@ class FileInspector:
                 total_rows = sum(1 for _ in f) - 1  # Subtract header
 
             # Limit to CSV_COLUMN_LIMIT columns max for performance
-            columns_to_analyze = df_sample.columns[:self.CSV_COLUMN_LIMIT]
+            columns_to_analyze = df_sample.columns[: self.CSV_COLUMN_LIMIT]
             df_limited = df_sample[columns_to_analyze]
 
             schema = []
@@ -206,7 +259,9 @@ class FileInspector:
                     "dtype": str(df_limited[col].dtype),
                     "non_null_count": int(df_limited[col].count()),
                     "null_count": int(df_limited[col].isna().sum()),
-                    "null_percentage": round((df_limited[col].isna().sum() / len(df_limited)) * 100, 2),
+                    "null_percentage": round(
+                        (df_limited[col].isna().sum() / len(df_limited)) * 100, 2
+                    ),
                 }
 
                 # Add descriptive statistics based on data type
@@ -218,7 +273,9 @@ class FileInspector:
 
                 elif df_limited[col].dtype == "object":
                     # Categorical column statistics
-                    categorical_stats = self._get_categorical_statistics(df_limited[col])
+                    categorical_stats = self._get_categorical_statistics(
+                        df_limited[col]
+                    )
                     col_info.update(categorical_stats)
                     statistics[col] = categorical_stats
 
@@ -238,7 +295,9 @@ class FileInspector:
 
             # Add warning if we truncated columns
             if len(df_sample.columns) > self.CSV_COLUMN_LIMIT:
-                result["column_truncation_warning"] = f"Only first {self.CSV_COLUMN_LIMIT} of {len(df_sample.columns)} columns analyzed"
+                result["column_truncation_warning"] = (
+                    f"Only first {self.CSV_COLUMN_LIMIT} of {len(df_sample.columns)} columns analyzed"
+                )
         except (pd.errors.ParserError, OSError) as e:
             return {
                 "file_type": "csv",
@@ -264,18 +323,24 @@ class FileInspector:
             }
 
             if isinstance(data, dict):
-                metadata["keys"] = list(data.keys())[:self.PREVIEW_LINE_COUNT]  # First 20 keys
+                metadata["keys"] = list(data.keys())[
+                    : self.PREVIEW_LINE_COUNT
+                ]  # First 20 keys
                 metadata["total_keys"] = len(data)
             elif isinstance(data, list):
                 metadata["total_items"] = len(data)
                 if data and isinstance(data[0], dict):
-                    metadata["item_keys"] = list(data[0].keys())[:self.PREVIEW_LINE_COUNT]
+                    metadata["item_keys"] = list(data[0].keys())[
+                        : self.PREVIEW_LINE_COUNT
+                    ]
 
             # Store small preview
             if len(str(data)) < self.JSON_PREVIEW_MAX_LEN:
                 metadata["preview"] = data
             else:
-                metadata["preview_truncated"] = str(data)[:self.JSON_PREVIEW_MAX_LEN] + "..."
+                metadata["preview_truncated"] = (
+                    str(data)[: self.JSON_PREVIEW_MAX_LEN] + "..."
+                )
 
             return metadata
 
@@ -322,7 +387,7 @@ class FileInspector:
                 df = table.to_pandas()
 
                 # Limit to EXCEL_COLUMN_LIMIT columns for performance
-                columns_to_analyze = df.columns[:self.EXCEL_COLUMN_LIMIT]
+                columns_to_analyze = df.columns[: self.EXCEL_COLUMN_LIMIT]
                 df_limited = df[columns_to_analyze]
 
                 schema_info = []
@@ -335,16 +400,25 @@ class FileInspector:
                         "type": col_type,
                         "non_null_count": int(df_limited[name].count()),
                         "null_count": int(df_limited[name].isna().sum()),
-                        "null_percentage": round((df_limited[name].isna().sum() / len(df_limited)) * 100, 2),
+                        "null_percentage": round(
+                            (df_limited[name].isna().sum() / len(df_limited)) * 100, 2
+                        ),
                     }
 
                     # Add statistics based on data type
-                    if df_limited[name].dtype in ["int64", "float64", "int32", "float32"]:
+                    if df_limited[name].dtype in [
+                        "int64",
+                        "float64",
+                        "int32",
+                        "float32",
+                    ]:
                         numeric_stats = self._get_numeric_statistics(df_limited[name])
                         col_info.update(numeric_stats)
                         statistics[name] = numeric_stats
                     elif df_limited[name].dtype == "object":
-                        categorical_stats = self._get_categorical_statistics(df_limited[name])
+                        categorical_stats = self._get_categorical_statistics(
+                            df_limited[name]
+                        )
                         col_info.update(categorical_stats)
                         statistics[name] = categorical_stats
 
@@ -362,17 +436,21 @@ class FileInspector:
 
                 # Add warning if we truncated columns
                 if len(table.columns) > self.EXCEL_COLUMN_LIMIT:
-                    result["column_truncation_warning"] = f"Only first {self.EXCEL_COLUMN_LIMIT} of {len(table.columns)} columns analyzed"
+                    result["column_truncation_warning"] = (
+                        f"Only first {self.EXCEL_COLUMN_LIMIT} of {len(table.columns)} columns analyzed"
+                    )
 
                 return result
             # Fallback without statistics
             schema_info = []
             for i, name in enumerate(table.column_names):
                 col_type = str(table.schema.field(i).type)
-                schema_info.append({
-                    "name": name,
-                    "type": col_type,
-                })
+                schema_info.append(
+                    {
+                        "name": name,
+                        "type": col_type,
+                    }
+                )
 
             return {
                 "file_type": "parquet",
@@ -532,8 +610,12 @@ class FileInspector:
 
             stats: dict[str, Any] = {
                 "unique_count": int(clean_series.nunique()),
-                "most_frequent": str(value_counts.index[0]) if len(value_counts) > 0 else None,
-                "most_frequent_count": int(value_counts.iloc[0]) if len(value_counts) > 0 else 0,
+                "most_frequent": str(value_counts.index[0])
+                if len(value_counts) > 0
+                else None,
+                "most_frequent_count": int(value_counts.iloc[0])
+                if len(value_counts) > 0
+                else 0,
                 "top_5_values": [
                     {"value": str(val), "count": int(count)}
                     for val, count in value_counts.items()

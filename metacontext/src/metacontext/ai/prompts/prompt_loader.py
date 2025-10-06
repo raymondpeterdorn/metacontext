@@ -1,24 +1,25 @@
 """Prompt loading and templating utilities."""
 
 import importlib
-import time
 from pathlib import Path
 from string import Template
-from typing import Any, Optional
+from typing import Any
 
 import yaml
 
+from metacontext.ai.prompts.performance_monitor import PerformanceMonitor
 from metacontext.ai.prompts.schema_utils import (
     compact_schema_hint,
     generate_prompt_from_schema,
 )
-from metacontext.ai.prompts.performance_monitor import PerformanceMonitor
 
 
 class PromptLoader:
     """Loads and processes prompt templates from YAML files."""
 
-    def __init__(self, prompts_dir: Path | None = None, enable_monitoring: bool = False) -> None:
+    def __init__(
+        self, prompts_dir: Path | None = None, enable_monitoring: bool = False
+    ) -> None:
         """Initialize the prompt loader.
 
         Args:
@@ -37,7 +38,7 @@ class PromptLoader:
         if not self.prompts_dir.exists():
             msg = f"Prompts directory not found: {self.prompts_dir}"
             raise ValueError(msg)
-        
+
         # Initialize performance monitoring if enabled
         self.performance_monitor = None
         if enable_monitoring:
@@ -77,7 +78,7 @@ class PromptLoader:
 
     def render_prompt(self, prompt_name: str, context: dict[str, Any]) -> str:
         """Load and render a prompt template with the given context, using dynamic structure from YAML.
-        
+
         If the template contains a schema_class, automatically inject a compact schema hint.
         """
         prompt_data = self.load_prompt(prompt_name)
@@ -87,14 +88,14 @@ class PromptLoader:
             schema_class_path = prompt_data["schema_class"]
             system_message = prompt_data.get("system", "")
             instruction_template = prompt_data.get("instruction", "")
-            
+
             # Import and generate schema hint
             schema_class = self._import_schema_class(schema_class_path)
             schema_hint = compact_schema_hint(schema_class)  # type: ignore[arg-type]
 
             # Add schema hint to context
             enhanced_context = {**context, "schema_hint": schema_hint}
-            
+
             return self.load_schema_prompt(
                 schema_class_path,
                 system_message=system_message,
@@ -215,7 +216,9 @@ class PromptLoader:
             prompt_parts.append(prompt_data["instruction"])
 
         # Add context information (but skip schema_hint since it's already embedded)
-        filtered_context = {k: v for k, v in enhanced_context.items() if k != "schema_hint"}
+        filtered_context = {
+            k: v for k, v in enhanced_context.items() if k != "schema_hint"
+        }
         if filtered_context:
             context_section = self._format_context(filtered_context)
             prompt_parts.append(context_section)

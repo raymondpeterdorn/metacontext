@@ -116,8 +116,7 @@ class AbstractLLMProvider(ABC, BaseLLMProviderConfig):
         if instruction is None:
             instruction = self.INSTRUCTION_CONFIG["default_schema"]
 
-        return (
-            f"""{instruction}
+        return f"""{instruction}
 
 CONTEXT DATA:
 {json.dumps(context_data, indent=2, default=str)}
@@ -140,7 +139,6 @@ INSTRUCTIONS:
 7. For model analysis, include detailed assessments of model capabilities, limitations, and suggested uses
 8. Return ONLY valid JSON - no markdown formatting or additional text
 """
-        )
 
 
 def parse_json_response(response: str) -> dict[str, Any]:
@@ -153,7 +151,12 @@ def parse_json_response(response: str) -> dict[str, Any]:
     response = response.strip()
 
     # Log the raw response for debugging
-    logger.info("Raw LLM response: %s", response[:LOG_PREVIEW_LENGTH] + "..." if len(response) > LOG_PREVIEW_LENGTH else response)
+    logger.info(
+        "Raw LLM response: %s",
+        response[:LOG_PREVIEW_LENGTH] + "..."
+        if len(response) > LOG_PREVIEW_LENGTH
+        else response,
+    )
 
     # Try to find JSON block using regex (more efficient than multiple string operations)
     json_block_pattern = r"```(?:json)?\s*([\s\S]*?)```"
@@ -168,12 +171,20 @@ def parse_json_response(response: str) -> dict[str, Any]:
         start = response.find("{")
         end = response.rfind("}")
 
-        json_str = response[start:end + 1] if start >= 0 and end > start else response
-        logger.info("Extracted JSON using object boundaries: %s", json_str[:LOG_PREVIEW_LENGTH] + "..." if len(json_str) > LOG_PREVIEW_LENGTH else json_str)
+        json_str = response[start : end + 1] if start >= 0 and end > start else response
+        logger.info(
+            "Extracted JSON using object boundaries: %s",
+            json_str[:LOG_PREVIEW_LENGTH] + "..."
+            if len(json_str) > LOG_PREVIEW_LENGTH
+            else json_str,
+        )
 
     try:
         result = json.loads(json_str)
-        logger.info("Parsed JSON keys: %s", list(result.keys()) if isinstance(result, dict) else "Not a dict")
+        logger.info(
+            "Parsed JSON keys: %s",
+            list(result.keys()) if isinstance(result, dict) else "Not a dict",
+        )
         return result if isinstance(result, dict) else {}
     except json.JSONDecodeError as e:
         logger.exception("Failed to parse JSON response")

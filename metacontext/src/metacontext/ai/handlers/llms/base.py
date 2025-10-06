@@ -28,7 +28,10 @@ class SimplifiedLLMProvider(AbstractLLMProvider):
     """
 
     def __init__(
-        self, model: str, api_key: str | None, temperature: float = 0.1,
+        self,
+        model: str,
+        api_key: str | None,
+        temperature: float = 0.1,
     ) -> None:
         """Initialize the base provider.
 
@@ -49,7 +52,9 @@ class SimplifiedLLMProvider(AbstractLLMProvider):
         )
 
         logger.info(
-            "Initialized %s provider with model %s", self.provider_name, self.model,
+            "Initialized %s provider with model %s",
+            self.provider_name,
+            self.model,
         )
 
     def _call_llm(self, prompt: str) -> str:
@@ -144,4 +149,3 @@ class SimplifiedLLMProvider(AbstractLLMProvider):
             "available": self.is_available(),
             "temperature": self.temperature,
         }
-

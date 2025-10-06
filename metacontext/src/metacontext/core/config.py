@@ -132,14 +132,16 @@ class ConfigManager:
 
         # LLM API key - try provider-specific first, then generic
         provider = self.config.llm.provider
-        if (provider in self.PROVIDER_ENV_VARS and
-                (api_key := os.getenv(self.PROVIDER_ENV_VARS[provider]))):
+        if provider in self.PROVIDER_ENV_VARS and (
+            api_key := os.getenv(self.PROVIDER_ENV_VARS[provider])
+        ):
             self.config.llm.api_key = api_key
             self.config.llm.sources["api_key"] = ConfigSource.ENV_VAR
 
         # Generic API key fallback
-        if (not self.config.llm.api_key and
-                (api_key := os.getenv(f"{self.ENV_PREFIX}LLM_API_KEY"))):
+        if not self.config.llm.api_key and (
+            api_key := os.getenv(f"{self.ENV_PREFIX}LLM_API_KEY")
+        ):
             self.config.llm.api_key = api_key
             self.config.llm.sources["api_key"] = ConfigSource.ENV_VAR
 
@@ -158,7 +160,11 @@ class ConfigManager:
 
         # Feature flags
         if include_llm := os.getenv(f"{self.ENV_PREFIX}INCLUDE_LLM_ANALYSIS"):
-            self.config.include_llm_analysis = include_llm.lower() in ("true", "1", "yes")
+            self.config.include_llm_analysis = include_llm.lower() in (
+                "true",
+                "1",
+                "yes",
+            )
             self.config.sources["include_llm_analysis"] = ConfigSource.ENV_VAR
 
         if scan_codebase := os.getenv(f"{self.ENV_PREFIX}SCAN_CODEBASE"):

@@ -84,7 +84,9 @@ class GeminiProvider(SimplifiedLLMProvider):
             self._token_tracker.track_api_call()
 
             logger.info("🔍 Calling Gemini with model: %s", self.model)
-            logger.debug("Prompt: %s", prompt[:200] + "..." if len(prompt) > 200 else prompt)
+            logger.debug(
+                "Prompt: %s", prompt[:200] + "..." if len(prompt) > 200 else prompt
+            )
 
             # Configure generation for JSON format
             generation_config = {
@@ -109,18 +111,26 @@ class GeminiProvider(SimplifiedLLMProvider):
             # Try multiple ways to extract token usage from Gemini response
             if hasattr(response, "usage_metadata"):
                 usage = response.usage_metadata
-                if hasattr(usage, "prompt_token_count") and hasattr(usage, "candidates_token_count"):
+                if hasattr(usage, "prompt_token_count") and hasattr(
+                    usage, "candidates_token_count"
+                ):
                     prompt_tokens = getattr(usage, "prompt_token_count", 0)
                     completion_tokens = getattr(usage, "candidates_token_count", 0)
-                    total_tokens = getattr(usage, "total_token_count", prompt_tokens + completion_tokens)
+                    total_tokens = getattr(
+                        usage, "total_token_count", prompt_tokens + completion_tokens
+                    )
 
                     self._token_tracker.track_response(
                         prompt_tokens=prompt_tokens,
                         completion_tokens=completion_tokens,
                         total_tokens=total_tokens,
                     )
-                    logger.info("Token usage: %d prompt + %d completion = %d total",
-                              prompt_tokens, completion_tokens, total_tokens)
+                    logger.info(
+                        "Token usage: %d prompt + %d completion = %d total",
+                        prompt_tokens,
+                        completion_tokens,
+                        total_tokens,
+                    )
                 elif hasattr(usage, "total_token_count"):
                     total_tokens = getattr(usage, "total_token_count", 0)
                     self._token_tracker.add_total_tokens(total_tokens)
@@ -135,13 +145,23 @@ class GeminiProvider(SimplifiedLLMProvider):
             if hasattr(response, "text"):
                 logger.info("Response text available via .text")
                 response_text = str(response.text)
-                logger.debug("Raw response: %s", response_text[:500] + "..." if len(response_text) > 500 else response_text)
+                logger.debug(
+                    "Raw response: %s",
+                    response_text[:500] + "..."
+                    if len(response_text) > 500
+                    else response_text,
+                )
                 return response_text
 
             if hasattr(response, "parts") and response.parts:
                 logger.info("Response text available via .parts[0].text")
                 response_text = str(response.parts[0].text)
-                logger.debug("Raw response: %s", response_text[:500] + "..." if len(response_text) > 500 else response_text)
+                logger.debug(
+                    "Raw response: %s",
+                    response_text[:500] + "..."
+                    if len(response_text) > 500
+                    else response_text,
+                )
                 return response_text
 
             logger.warning("⚠️ No text found in Gemini response")
@@ -166,12 +186,14 @@ class GeminiProvider(SimplifiedLLMProvider):
 
             # Configure and check available models
             import google.generativeai as genai  # noqa: PLC0415
+
             genai.configure(api_key=api_key)
 
             # Get available models that support generateContent
             models = list(genai.list_models())
             available_models = [
-                model.name for model in models
+                model.name
+                for model in models
                 if hasattr(model, "supported_generation_methods")
                 and "generateContent" in model.supported_generation_methods
             ]

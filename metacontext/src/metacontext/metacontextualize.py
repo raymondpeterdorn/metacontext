@@ -100,7 +100,9 @@ def _merge_config_with_args(args: MetacontextualizeArgs) -> dict[str, Any]:
         merged_config["output_format"] = central_config.output_format
 
     # Verbosity from args takes precedence
-    merged_config["verbose"] = args.verbose if hasattr(args, "verbose") else central_config.verbosity
+    merged_config["verbose"] = (
+        args.verbose if hasattr(args, "verbose") else central_config.verbosity
+    )
 
     return merged_config
 
@@ -185,7 +187,8 @@ def metacontextualize(
     logger.info("   🏗️  Architecture: Two-tier (deterministic + AI enrichment)")
     logger.info("   📊 Schema: Core + Extensions pattern")
     logger.info(
-        "   🤖 AI Analysis: %s", "Enabled" if args.include_llm_analysis else "Disabled",
+        "   🤖 AI Analysis: %s",
+        "Enabled" if args.include_llm_analysis else "Disabled",
     )
     if args.verbose:
         logger.info("   ⏱️  Total time: %.2f seconds", total_time)
@@ -234,7 +237,9 @@ def _initialize_llm_handler(config: dict) -> LLMProvider | None:
     return None
 
 
-def _convert_codebase_context_to_schema(raw_context: dict[str, Any], file_path: Path) -> CodebaseContext:
+def _convert_codebase_context_to_schema(
+    raw_context: dict[str, Any], file_path: Path
+) -> CodebaseContext:
     """Convert raw codebase context to structured CodebaseContext schema."""
     # Extract cross-references if they exist
     cross_refs = raw_context.get("cross_references", {})
@@ -274,7 +279,9 @@ def _convert_codebase_context_to_schema(raw_context: dict[str, Any], file_path: 
     # Create the CodebaseContext with our structured data
     return CodebaseContext(
         file_relationships=file_relationships,
-        context_summary=cross_refs.get("summary", "No cross-references found") if cross_refs else None,
+        context_summary=cross_refs.get("summary", "No cross-references found")
+        if cross_refs
+        else None,
     )
 
 
@@ -327,7 +334,9 @@ def _generate_context(
             return _generate_fallback_context(data_object, file_path)
 
         logger.info(
-            "✓ Using %s for %s files", handler.__class__.__name__, file_path.suffix,
+            "✓ Using %s for %s files",
+            handler.__class__.__name__,
+            file_path.suffix,
         )
 
         # Initialize LLM handler if needed
@@ -369,13 +378,20 @@ def _generate_context(
             # Add statistics to the existing data structure if it exists
             if "data_structure" in file_specific_context:
                 data_struct = file_specific_context["data_structure"]
-                if hasattr(data_struct, "deterministic_metadata") and data_struct.deterministic_metadata:
+                if (
+                    hasattr(data_struct, "deterministic_metadata")
+                    and data_struct.deterministic_metadata
+                ):
                     # Add as dict to deterministic metadata (it's flexible)
                     metadata_dict = data_struct.deterministic_metadata
                     if isinstance(metadata_dict, dict):
-                        metadata_dict["file_statistics"] = universal_metadata["statistics"]
+                        metadata_dict["file_statistics"] = universal_metadata[
+                            "statistics"
+                        ]
                         if "schema" in universal_metadata:
-                            metadata_dict["enhanced_schema"] = universal_metadata["schema"]
+                            metadata_dict["enhanced_schema"] = universal_metadata[
+                                "schema"
+                            ]
 
         base_context = create_base_metacontext(
             filename=file_path.name,
@@ -450,7 +466,7 @@ def _generate_fallback_context(data_object: object, file_path: Path) -> dict:
     # NOTE: codebase_context collection removed since it's not included in output
     # but could be re-enabled if needed for internal processing
 
-    context = {
+    return {
         "metacontext_version": "0.3.0",
         "generation_info": {
             "generated_at": datetime.now(UTC).isoformat(),
@@ -475,5 +491,3 @@ def _generate_fallback_context(data_object: object, file_path: Path) -> dict:
     # NOTE: codebase_context removed from output as it provides no valuable information
     # and wastes space in the metacontext YAML files. The context is still available
     # internally for LLM processing but not included in the final output.
-
-    return context

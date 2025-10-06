@@ -115,7 +115,9 @@ class AnthropicProvider(SimplifiedLLMProvider):
         """Create Anthropic provider from configuration."""
         model = config.get("model", cls.get_default_model())
         api_key = config.get("api_key") or os.getenv(cls.get_api_key_env_var())
-        temperature = config.get("temperature", cls.DEFAULT_CONFIG["default_temperature"])
+        temperature = config.get(
+            "temperature", cls.DEFAULT_CONFIG["default_temperature"]
+        )
 
         return cls(model=model, api_key=api_key, temperature=temperature)
 

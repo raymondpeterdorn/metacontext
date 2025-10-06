@@ -74,7 +74,9 @@ class BaseFileHandler(ABC):
         """
 
     @abstractmethod
-    def analyze_deterministic(self, file_path: Path, data_object: object = None) -> dict[str, object]:
+    def analyze_deterministic(
+        self, file_path: Path, data_object: object = None
+    ) -> dict[str, object]:
         """Analyze file without AI - deterministic analysis only.
 
         This includes schema detection, basic statistics, structure analysis,
