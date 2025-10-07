@@ -1,12 +1,12 @@
 metacontext_version: 0.3.0
 generation_info:
-  generated_at: '2025-10-07T16:51:53.985675Z'
+  generated_at: '2025-10-07T18:48:21.704715Z'
   generation_method: explicit_function
   function_call: metacontext.metacontextualize()
   token_usage:
-    total_tokens: 3345
-    prompt_tokens: 2812
-    completion_tokens: 2148
+    total_tokens: 3730
+    prompt_tokens: 2800
+    completion_tokens: 1742
     total_api_calls: 4
     provider: gemini
     model: gemini-2.5-flash
@@ -15,7 +15,7 @@ file_info:
   extension: .csv
   file_purpose: Generated file with two-tier architecture
   project_context_summary: Analysis with CSVHandler
-  creation_timestamp: '2025-10-07T16:51:53.985800Z'
+  creation_timestamp: '2025-10-07T18:48:21.704808Z'
 system_info:
   working_directory: /Users/bigdawg/Documents/repos/metacontext/bird_demo
 confidence_assessment:
@@ -34,66 +34,788 @@ data_structure:
       species_name:
         deterministic: {}
         ai_enrichment:
-          semantic_meaning: Scientific binomial name of the bird species.
+          semantic_meaning: Scientific bird species name.
           data_quality_assessment: ''
-          domain_context: Ornithology, for precise identification and taxonomic grouping
-            of individual birds.
+          domain_context: Ornithology, biological classification.
           relationship_to_other_columns:
           - taxonomic_family
+        code_evidence:
+          related_snippets:
+          - content: 'species_name: str'
+            file_path: bird_demo/models.py
+            start_line: 13
+            end_line: 13
+          - content: 'species_name: str'
+            file_path: bird_demo/scripts/exploratory_data_analysis.py
+            start_line: 24
+            end_line: 24
+          field_descriptions: []
+          associated_comments: []
+          data_transformations:
+          - content: "            df_csv[\"is_nocturnal\"] = (df_csv[\"nocturnal_diurnal\"\
+              ] == \"Nocturnal\").astype(int)\n            processed_df = df_csv[\n\
+              \                [\n                    \"species_name\",\n        \
+              \            \"taxonomic_family\",\n                    \"asdawas\"\
+              ,\n                    \"beak_length\",\n                    \"nocturnal_diurnal\"\
+              ,\n                    \"is_nocturnal\",\n                    \"primary_diet\"\
+              ,\n                ]\n            ]\n            processed_df.to_csv(output_csv_path,\
+              \ index=False)\n"
+            file_path: bird_demo/demo.py
+            start_line: 56
+            end_line: 69
+          - content: "        x = df_csv[available_features]\n        y = df_csv[\"\
+              species_name\"]\n\n        model_config = DEFAULT_MODEL_CONFIG.copy()"
+            file_path: bird_demo/demo.py
+            start_line: 147
+            end_line: 150
+          - content: "    features = df[[\"observation_month\", \"location_type\"\
+              ]]\n    target = df[\"species_name\"]\n\n    # Convert categorical features\
+              \ to numeric"
+            file_path: bird_demo/scripts/train_model.py
+            start_line: 51
+            end_line: 54
+          - content: "    \"\"\"\n    categorical_cols = [\"species_name\", \"taxonomic_family\"\
+              , \"habitat_type\"]\n    analysis_results = {}\n"
+            file_path: bird_demo/scripts/exploratory_data_analysis.py
+            start_line: 146
+            end_line: 149
+          validation_logic: []
+          cross_references: {}
       taxonomic_family:
         deterministic: {}
         ai_enrichment:
-          semantic_meaning: The biological family to which the species belongs.
+          semantic_meaning: Scientific family classification.
           data_quality_assessment: ''
-          domain_context: Ornithology, for higher-level classification and grouping
-            of related species.
+          domain_context: Ornithology, hierarchy.
           relationship_to_other_columns:
           - species_name
+        code_evidence:
+          related_snippets:
+          - content: 'taxonomic_family: str'
+            file_path: bird_demo/models.py
+            start_line: 14
+            end_line: 14
+          - content: 'taxonomic_family: str'
+            file_path: bird_demo/scripts/exploratory_data_analysis.py
+            start_line: 25
+            end_line: 25
+          field_descriptions: []
+          associated_comments: []
+          data_transformations:
+          - content: "            df_csv[\"is_nocturnal\"] = (df_csv[\"nocturnal_diurnal\"\
+              ] == \"Nocturnal\").astype(int)\n            processed_df = df_csv[\n\
+              \                [\n                    \"species_name\",\n        \
+              \            \"taxonomic_family\",\n                    \"asdawas\"\
+              ,\n                    \"beak_length\",\n                    \"nocturnal_diurnal\"\
+              ,\n                    \"is_nocturnal\",\n                    \"primary_diet\"\
+              ,\n                ]\n            ]\n            processed_df.to_csv(output_csv_path,\
+              \ index=False)\n"
+            file_path: bird_demo/demo.py
+            start_line: 56
+            end_line: 69
+          - content: "            # Drop some columns\n            columns_to_drop\
+              \ = [col for col in [\"beak_length\", \"taxonomic_family\"] if col in\
+              \ gpkg.columns]\n\n            gpkg_filtered = gpkg.drop(columns=columns_to_drop)\
+              \ if columns_to_drop else gpkg.copy()"
+            file_path: bird_demo/demo.py
+            start_line: 225
+            end_line: 228
+          - content: "    \"\"\"\n    categorical_cols = [\"species_name\", \"taxonomic_family\"\
+              , \"habitat_type\"]\n    analysis_results = {}\n"
+            file_path: bird_demo/scripts/exploratory_data_analysis.py
+            start_line: 146
+            end_line: 149
+          validation_logic: []
+          cross_references: {}
       asdawas:
         deterministic: {}
         ai_enrichment:
-          semantic_meaning: Wing Length, likely in millimeters or centimeters, a key
-            morphological measurement.
+          semantic_meaning: Unidentified numerical measurement/ID.
           data_quality_assessment: ''
-          domain_context: Ornithology/Morphometrics, crucial for species identification,
-            flight capability, and ecological niche analysis.
+          domain_context: Likely biological measurement.
+        code_evidence:
+          related_snippets:
+          - content: 'asdawas: float | None = Field(description = "Wing Length")'
+            file_path: bird_demo/scripts/exploratory_data_analysis.py
+            start_line: 27
+            end_line: 27
+          field_descriptions:
+          - field_name: asdawas
+            description: Wing Length
+            field_type: float | None
+            source_context:
+              content: 'asdawas: float | None = Field(description = "Wing Length")'
+              file_path: bird_demo/scripts/exploratory_data_analysis.py
+              start_line: 27
+              end_line: 27
+          associated_comments: []
+          data_transformations:
+          - content: "            df_csv[\"is_nocturnal\"] = (df_csv[\"nocturnal_diurnal\"\
+              ] == \"Nocturnal\").astype(int)\n            processed_df = df_csv[\n\
+              \                [\n                    \"species_name\",\n        \
+              \            \"taxonomic_family\",\n                    \"asdawas\"\
+              ,\n                    \"beak_length\",\n                    \"nocturnal_diurnal\"\
+              ,\n                    \"is_nocturnal\",\n                    \"primary_diet\"\
+              ,\n                ]\n            ]\n            processed_df.to_csv(output_csv_path,\
+              \ index=False)\n"
+            file_path: bird_demo/demo.py
+            start_line: 56
+            end_line: 69
+          - content: "    \"\"\"\n    numerical_cols = [\"beak_length\", \"weight_g\"\
+              , \"temperature_c\", \"altitude_m\", \"asdawas\"]\n    return df[numerical_cols].describe().T\n"
+            file_path: bird_demo/scripts/exploratory_data_analysis.py
+            start_line: 93
+            end_line: 96
+          validation_logic: []
+          cross_references: {}
       beak_length:
         deterministic: {}
         ai_enrichment:
-          semantic_meaning: Length of the bird's beak, likely in millimeters or centimeters.
+          semantic_meaning: Bird beak length (cm/mm).
           data_quality_assessment: ''
-          domain_context: Ornithology/Morphometrics, directly related to feeding ecology
-            and dietary specialization.
+          domain_context: Ornithology, morphology.
           relationship_to_other_columns:
-          - primary_diet
+          - species_name
+        code_evidence:
+          related_snippets:
+          - content: 'beak_length: float'
+            file_path: bird_demo/scripts/exploratory_data_analysis.py
+            start_line: 28
+            end_line: 28
+          field_descriptions: []
+          associated_comments: []
+          data_transformations:
+          - content: "            df_csv[\"is_nocturnal\"] = (df_csv[\"nocturnal_diurnal\"\
+              ] == \"Nocturnal\").astype(int)\n            processed_df = df_csv[\n\
+              \                [\n                    \"species_name\",\n        \
+              \            \"taxonomic_family\",\n                    \"asdawas\"\
+              ,\n                    \"beak_length\",\n                    \"nocturnal_diurnal\"\
+              ,\n                    \"is_nocturnal\",\n                    \"primary_diet\"\
+              ,\n                ]\n            ]\n            processed_df.to_csv(output_csv_path,\
+              \ index=False)\n"
+            file_path: bird_demo/demo.py
+            start_line: 56
+            end_line: 69
+          - content: "            # Drop some columns\n            columns_to_drop\
+              \ = [col for col in [\"beak_length\", \"taxonomic_family\"] if col in\
+              \ gpkg.columns]\n\n            gpkg_filtered = gpkg.drop(columns=columns_to_drop)\
+              \ if columns_to_drop else gpkg.copy()"
+            file_path: bird_demo/demo.py
+            start_line: 225
+            end_line: 228
+          - content: "    \"\"\"\n    numerical_cols = [\"beak_length\", \"weight_g\"\
+              , \"temperature_c\", \"altitude_m\", \"asdawas\"]\n    return df[numerical_cols].describe().T\n"
+            file_path: bird_demo/scripts/exploratory_data_analysis.py
+            start_line: 93
+            end_line: 96
+          validation_logic: []
+          cross_references: {}
       nocturnal_diurnal:
         deterministic: {}
         ai_enrichment:
-          semantic_meaning: 'Categorical indicator of the species'' primary activity
-            period: ''Nocturnal'' or ''Diurnal''.'
+          semantic_meaning: 'Activity pattern: Nocturnal/Diurnal.'
           data_quality_assessment: ''
-          domain_context: Ethology/Ecology, describing the species' behavioral rhythm
-            and temporal niche.
+          domain_context: Ornithology, behavioral ecology.
           relationship_to_other_columns:
           - is_nocturnal
+        code_evidence:
+          related_snippets:
+          - content: 'nocturnal_diurnal: str'
+            file_path: bird_demo/scripts/exploratory_data_analysis.py
+            start_line: 30
+            end_line: 30
+          field_descriptions: []
+          associated_comments:
+          - comment_text: 'if all(col in df_xlsx.columns for col in ["diet_types",
+              "nocturnal_diurnal"]):'
+            comment_type: inline
+            related_code:
+              content: "\n    #         # Process Excel file if it has similar columns\n\
+                \    #         if all(col in df_xlsx.columns for col in [\"diet_types\"\
+                , \"nocturnal_diurnal\"]):\n    #             df_xlsx[\"diet_dict\"\
+                ] = df_xlsx[\"diet_types\"].apply(ast.literal_eval)\n    #       \
+                \      df_xlsx[\"primary_diet\"] = df_xlsx[\"diet_dict\"].apply(lambda\
+                \ x: max(x, key=x.get))"
+              file_path: bird_demo/demo.py
+              start_line: 95
+              end_line: 99
+          - comment_text: df_xlsx["nocturn_alley"] = (df_xlsx["nocturnal_diurnal"]
+              == "Nocturnal").astype(int)
+            comment_type: inline
+            related_code:
+              content: "    #             df_xlsx[\"diet_dict\"] = df_xlsx[\"diet_types\"\
+                ].apply(ast.literal_eval)\n    #             df_xlsx[\"primary_diet\"\
+                ] = df_xlsx[\"diet_dict\"].apply(lambda x: max(x, key=x.get))\n  \
+                \  #             df_xlsx[\"nocturn_alley\"] = (df_xlsx[\"nocturnal_diurnal\"\
+                ] == \"Nocturnal\").astype(int)\n    #             df_xlsx.to_excel(output_xlsx_path,\
+                \ index=False)\n"
+              file_path: bird_demo/demo.py
+              start_line: 98
+              end_line: 102
+          data_transformations:
+          - content: "    df_xlsx[\"primary_diet\"] = df_xlsx[\"diet_dict\"].apply(lambda\
+              \ x: max(x, key=x.get))\n    df_xlsx[\"nocturn_alley\"] = (df_xlsx[\"\
+              nocturnal_diurnal\"] == \"Nocturnal\").astype(int)\n    print(f\"  \
+              \ Processed shape: {df_xlsx.shape}\")\n    "
+            file_path: debug_xlsx.py
+            start_line: 30
+            end_line: 33
+          - content: "            df_csv[\"primary_diet\"] = df_csv[\"diet_dict\"\
+              ].apply(lambda x: max(x, key=x.get))\n            df_csv[\"is_nocturnal\"\
+              ] = (df_csv[\"nocturnal_diurnal\"] == \"Nocturnal\").astype(int)\n \
+              \           processed_df = df_csv[\n                ["
+            file_path: bird_demo/demo.py
+            start_line: 55
+            end_line: 58
+          - content: "            df_csv[\"is_nocturnal\"] = (df_csv[\"nocturnal_diurnal\"\
+              ] == \"Nocturnal\").astype(int)\n            processed_df = df_csv[\n\
+              \                [\n                    \"species_name\",\n        \
+              \            \"taxonomic_family\",\n                    \"asdawas\"\
+              ,\n                    \"beak_length\",\n                    \"nocturnal_diurnal\"\
+              ,\n                    \"is_nocturnal\",\n                    \"primary_diet\"\
+              ,\n                ]\n            ]\n            processed_df.to_csv(output_csv_path,\
+              \ index=False)\n"
+            file_path: bird_demo/demo.py
+            start_line: 56
+            end_line: 69
+          - content: "    if \"nocturnal_diurnal\" in df_csv.columns and \"is_nocturnal\"\
+              \ not in df_csv.columns:\n        df_csv[\"is_nocturnal\"] = (df_csv[\"\
+              nocturnal_diurnal\"] == \"Nocturnal\").astype(int)\n\n    # Determine\
+              \ available feature columns"
+            file_path: bird_demo/demo.py
+            start_line: 132
+            end_line: 135
+          - content: "    \"\"\"\n    diurnal_weights = df[df[\"nocturnal_diurnal\"\
+              ] == \"Diurnal\"][\"weight_g\"]\n    nocturnal_weights = df[df[\"nocturnal_diurnal\"\
+              ] == \"Nocturnal\"][\"weight_g\"]\n    weights = 2"
+            file_path: bird_demo/scripts/exploratory_data_analysis.py
+            start_line: 108
+            end_line: 111
+          - content: "    diurnal_weights = df[df[\"nocturnal_diurnal\"] == \"Diurnal\"\
+              ][\"weight_g\"]\n    nocturnal_weights = df[df[\"nocturnal_diurnal\"\
+              ] == \"Nocturnal\"][\"weight_g\"]\n    weights = 2\n    if len(diurnal_weights)\
+              \ < weights or len(nocturnal_weights) < weights:"
+            file_path: bird_demo/scripts/exploratory_data_analysis.py
+            start_line: 109
+            end_line: 112
+          validation_logic: []
+          cross_references: {}
       is_nocturnal:
         deterministic: {}
         ai_enrichment:
-          semantic_meaning: Binary indicator (1=Nocturnal, 0=Diurnal) of the species'
-            primary activity period.
+          semantic_meaning: 'Binary flag: 1=nocturnal, 0=diurnal.'
           data_quality_assessment: ''
-          domain_context: Ethology/Ecology, a boolean representation of the species'
-            temporal activity niche.
+          domain_context: Ornithology, behavioral ecology.
           relationship_to_other_columns:
           - nocturnal_diurnal
+        code_evidence:
+          related_snippets: []
+          field_descriptions: []
+          associated_comments:
+          - comment_text: Preprocess data and calculate is_nocturnal if needed
+            comment_type: inline
+            related_code:
+              content: "    df_csv = pd.read_csv(csv_path)\n\n    # Preprocess data\
+                \ and calculate is_nocturnal if needed\n    if \"nocturnal_diurnal\"\
+                \ in df_csv.columns and \"is_nocturnal\" not in df_csv.columns:\n\
+                \        df_csv[\"is_nocturnal\"] = (df_csv[\"nocturnal_diurnal\"\
+                ] == \"Nocturnal\").astype(int)"
+              file_path: bird_demo/demo.py
+              start_line: 129
+              end_line: 133
+          data_transformations:
+          - content: "            df_csv[\"primary_diet\"] = df_csv[\"diet_dict\"\
+              ].apply(lambda x: max(x, key=x.get))\n            df_csv[\"is_nocturnal\"\
+              ] = (df_csv[\"nocturnal_diurnal\"] == \"Nocturnal\").astype(int)\n \
+              \           processed_df = df_csv[\n                ["
+            file_path: bird_demo/demo.py
+            start_line: 55
+            end_line: 58
+          - content: "            df_csv[\"is_nocturnal\"] = (df_csv[\"nocturnal_diurnal\"\
+              ] == \"Nocturnal\").astype(int)\n            processed_df = df_csv[\n\
+              \                [\n                    \"species_name\",\n        \
+              \            \"taxonomic_family\",\n                    \"asdawas\"\
+              ,\n                    \"beak_length\",\n                    \"nocturnal_diurnal\"\
+              ,\n                    \"is_nocturnal\",\n                    \"primary_diet\"\
+              ,\n                ]\n            ]\n            processed_df.to_csv(output_csv_path,\
+              \ index=False)\n"
+            file_path: bird_demo/demo.py
+            start_line: 56
+            end_line: 69
+          - content: "    if \"nocturnal_diurnal\" in df_csv.columns and \"is_nocturnal\"\
+              \ not in df_csv.columns:\n        df_csv[\"is_nocturnal\"] = (df_csv[\"\
+              nocturnal_diurnal\"] == \"Nocturnal\").astype(int)\n\n    # Determine\
+              \ available feature columns"
+            file_path: bird_demo/demo.py
+            start_line: 132
+            end_line: 135
+          validation_logic: []
+          cross_references: {}
       primary_diet:
         deterministic: {}
         ai_enrichment:
-          semantic_meaning: The main food source or dietary classification of the
-            species (e.g., seeds, insects).
+          semantic_meaning: Main food source/dietary classification.
           data_quality_assessment: ''
-          domain_context: Ecology, describing the species' trophic level and feeding
-            habits.
+          domain_context: Ornithology, ecological niche.
           relationship_to_other_columns:
-          - beak_length
+          - species_name
+        code_evidence:
+          related_snippets: []
+          field_descriptions: []
+          associated_comments:
+          - comment_text: 'df_xlsx["primary_diet"] = df_xlsx["diet_dict"].apply(lambda
+              x: max(x, key=x.get))'
+            comment_type: inline
+            related_code:
+              content: "    #         if all(col in df_xlsx.columns for col in [\"\
+                diet_types\", \"nocturnal_diurnal\"]):\n    #             df_xlsx[\"\
+                diet_dict\"] = df_xlsx[\"diet_types\"].apply(ast.literal_eval)\n \
+                \   #             df_xlsx[\"primary_diet\"] = df_xlsx[\"diet_dict\"\
+                ].apply(lambda x: max(x, key=x.get))\n    #             df_xlsx[\"\
+                nocturn_alley\"] = (df_xlsx[\"nocturnal_diurnal\"] == \"Nocturnal\"\
+                ).astype(int)\n    #             df_xlsx.to_excel(output_xlsx_path,\
+                \ index=False)"
+              file_path: bird_demo/demo.py
+              start_line: 97
+              end_line: 101
+          data_transformations:
+          - content: "    df_xlsx[\"diet_dict\"] = df_xlsx[\"diet_types\"].apply(ast.literal_eval)\n\
+              \    df_xlsx[\"primary_diet\"] = df_xlsx[\"diet_dict\"].apply(lambda\
+              \ x: max(x, key=x.get))\n    df_xlsx[\"nocturn_alley\"] = (df_xlsx[\"\
+              nocturnal_diurnal\"] == \"Nocturnal\").astype(int)\n    print(f\"  \
+              \ Processed shape: {df_xlsx.shape}\")"
+            file_path: debug_xlsx.py
+            start_line: 29
+            end_line: 32
+          - content: "            df_csv[\"diet_dict\"] = df_csv[\"diet_types\"].apply(ast.literal_eval)\n\
+              \            df_csv[\"primary_diet\"] = df_csv[\"diet_dict\"].apply(lambda\
+              \ x: max(x, key=x.get))\n            df_csv[\"is_nocturnal\"] = (df_csv[\"\
+              nocturnal_diurnal\"] == \"Nocturnal\").astype(int)\n            processed_df\
+              \ = df_csv["
+            file_path: bird_demo/demo.py
+            start_line: 54
+            end_line: 57
+          - content: "            df_csv[\"is_nocturnal\"] = (df_csv[\"nocturnal_diurnal\"\
+              ] == \"Nocturnal\").astype(int)\n            processed_df = df_csv[\n\
+              \                [\n                    \"species_name\",\n        \
+              \            \"taxonomic_family\",\n                    \"asdawas\"\
+              ,\n                    \"beak_length\",\n                    \"nocturnal_diurnal\"\
+              ,\n                    \"is_nocturnal\",\n                    \"primary_diet\"\
+              ,\n                ]\n            ]\n            processed_df.to_csv(output_csv_path,\
+              \ index=False)\n"
+            file_path: bird_demo/demo.py
+            start_line: 56
+            end_line: 69
+          validation_logic: []
+          cross_references: {}
     business_value_assessment: ''
+  code_evidence:
+    related_snippets:
+    - content: df_xlsx = pd.read_excel(xlsx_path, sheet_name=0)
+      file_path: debug_xlsx.py
+      start_line: 22
+      end_line: 22
+    - content: df_xlsx["diet_dict"] = df_xlsx["diet_types"].apply(ast.literal_eval)
+      file_path: debug_xlsx.py
+      start_line: 29
+      end_line: 29
+    - content: 'df_xlsx["primary_diet"] = df_xlsx["diet_dict"].apply(lambda x: max(x,
+        key=x.get))'
+      file_path: debug_xlsx.py
+      start_line: 30
+      end_line: 30
+    - content: df_xlsx.to_excel(output_xlsx_path, index=False)
+      file_path: debug_xlsx.py
+      start_line: 36
+      end_line: 36
+    - content: df_csv = pd.read_csv(csv_path)
+      file_path: bird_demo/demo.py
+      start_line: 50
+      end_line: 50
+    - content: df_csv["diet_dict"] = df_csv["diet_types"].apply(ast.literal_eval)
+      file_path: bird_demo/demo.py
+      start_line: 54
+      end_line: 54
+    - content: 'df_csv["primary_diet"] = df_csv["diet_dict"].apply(lambda x: max(x,
+        key=x.get))'
+      file_path: bird_demo/demo.py
+      start_line: 55
+      end_line: 55
+    - content: processed_df.to_csv(output_csv_path, index=False)
+      file_path: bird_demo/demo.py
+      start_line: 68
+      end_line: 68
+    - content: df_csv = pd.read_csv(csv_path)
+      file_path: bird_demo/demo.py
+      start_line: 129
+      end_line: 129
+    - content: df = pd.read_csv(file_path)
+      file_path: bird_demo/scripts/train_model.py
+      start_line: 41
+      end_line: 41
+    - content: df["diet_types"] = df["diet_types"].apply(ast.literal_eval)
+      file_path: bird_demo/scripts/exploratory_data_analysis.py
+      start_line: 58
+      end_line: 58
+    - content: df["closest_relatives"] = df["closest_relatives"].apply(ast.literal_eval)
+      file_path: bird_demo/scripts/exploratory_data_analysis.py
+      start_line: 59
+      end_line: 59
+    - content: return pd.DataFrame(validated_records)
+      file_path: bird_demo/scripts/exploratory_data_analysis.py
+      start_line: 77
+      end_line: 77
+    - content: analysis_df = counts.merge(percentages, on=col)
+      file_path: bird_demo/scripts/exploratory_data_analysis.py
+      start_line: 157
+      end_line: 157
+    - content: return pd.DataFrame(report_dict)
+      file_path: bird_demo/scripts/exploratory_data_analysis.py
+      start_line: 216
+      end_line: 216
+    field_descriptions: []
+    associated_comments:
+    - comment_text: 1. Load and process data exactly like demo
+      comment_type: inline
+      related_code:
+        content: "    print(\"=== DEBUGGING XLSX PROCESSING ===\")\n    \n    # 1.\
+          \ Load and process data exactly like demo\n    print(\"\\n1. Loading xlsx\
+          \ data...\")\n    df_xlsx = pd.read_excel(xlsx_path, sheet_name=0)"
+        file_path: debug_xlsx.py
+        start_line: 18
+        end_line: 22
+    - comment_text: 2. Process data
+      comment_type: inline
+      related_code:
+        content: "    print(f\"   Is DataFrame: {isinstance(df_xlsx, pd.DataFrame)}\"\
+          )\n    \n    # 2. Process data\n    print(\"\\n2. Processing data...\")\n\
+          \    df_xlsx[\"diet_dict\"] = df_xlsx[\"diet_types\"].apply(ast.literal_eval)"
+        file_path: debug_xlsx.py
+        start_line: 25
+        end_line: 29
+    - comment_text: 4. Test CSVHandler directly
+      comment_type: inline
+      related_code:
+        content: "    print(f\"   Saved to: {output_xlsx_path}\")\n    \n    # 4.\
+          \ Test CSVHandler directly\n    print(\"\\n4. Testing CSVHandler directly...\"\
+          )\n    handler = CSVHandler()"
+        file_path: debug_xlsx.py
+        start_line: 37
+        end_line: 41
+    - comment_text: Test data
+      comment_type: inline
+      related_code:
+        content: "    print(\"=\" * 80)\n    \n    # Test data\n    context_data =\
+          \ \"\"\"\n    TABULAR DATA ANALYSIS FOR: birdos.csv"
+        file_path: test_constraint_templates.py
+        start_line: 21
+        end_line: 25
+    - comment_text: Create sample context data for testing
+      comment_type: inline
+      related_code:
+        content: "        from metacontext.schemas.extensions.tabular import DataAIEnrichment\n\
+          \        \n        # Create sample context data for testing\n        template_context\
+          \ = {\n            \"file_name\": \"birdos.csv\","
+        file_path: test_direct_templates.py
+        start_line: 21
+        end_line: 25
+    - comment_text: Test the column analysis template too
+      comment_type: inline
+      related_code:
+        content: "            print(\"✅ No contradictory instructions found\")\n \
+          \       \n        # Test the column analysis template too\n        print(\"\
+          \\n\" + \"=\" * 80)\n        print(\"\U0001F4CB TESTING CONSTRAINT-AWARE\
+          \ COLUMN ANALYSIS TEMPLATE:\")"
+        file_path: test_direct_templates.py
+        start_line: 59
+        end_line: 63
+    - comment_text: Return a mock response that won't be processed
+      comment_type: inline
+      related_code:
+        content: "    def mock_llm_call(prompt):\n        captured_prompts.append(prompt)\n\
+          \        # Return a mock response that won't be processed\n        return\
+          \ '{\"mock\": \"response\"}'\n    "
+        file_path: test_prompt_capture.py
+        start_line: 27
+        end_line: 31
+    - comment_text: Test with the bird data
+      comment_type: inline
+      related_code:
+        content: "            from metacontext.metacontextualize import metacontextualize\n\
+          \            \n            # Test with the bird data\n            print(\"\
+          \U0001F50D Running metacontext analysis to capture prompts...\")\n     \
+          \       "
+        file_path: test_prompt_capture.py
+        start_line: 75
+        end_line: 79
+    - comment_text: Read CSV
+      comment_type: inline
+      related_code:
+        content: "    OUTPUT_DIR.mkdir(exist_ok=True, parents=True)\n\n    # Read\
+          \ CSV\n    if csv_path.exists():\n        df_csv = pd.read_csv(csv_path)"
+        file_path: bird_demo/demo.py
+        start_line: 46
+        end_line: 50
+    - comment_text: Create some simple features from the data-- let's see if the LLM
+        will figure what these mean
+      comment_type: inline
+      related_code:
+        content: "        df_csv = pd.read_csv(csv_path)\n\n        # Create some\
+          \ simple features from the data-- let's see if the LLM will figure what\
+          \ these mean\n        try:\n            df_csv[\"diet_dict\"] = df_csv[\"\
+          diet_types\"].apply(ast.literal_eval)"
+        file_path: bird_demo/demo.py
+        start_line: 50
+        end_line: 54
+    - comment_text: eda_output = eda(df_csv)
+      comment_type: inline
+      related_code:
+        content: "            logger.exception(\"Error processing CSV\")\n       \
+          \ # try:\n        #     eda_output = eda(df_csv)\n        #     eda_output_path\
+          \ = OUTPUT_DIR / \"eda_csv.csv\"\n        #     eda_output.to_csv(eda_output_path)"
+        file_path: bird_demo/demo.py
+        start_line: 80
+        end_line: 84
+    - comment_text: eda_output_path = OUTPUT_DIR / "eda_csv.csv"
+      comment_type: inline
+      related_code:
+        content: "        # try:\n        #     eda_output = eda(df_csv)\n       \
+          \ #     eda_output_path = OUTPUT_DIR / \"eda_csv.csv\"\n        #     eda_output.to_csv(eda_output_path)\n\
+          \        #     metacontextualize(eda_output, eda_output_path, args)"
+        file_path: bird_demo/demo.py
+        start_line: 81
+        end_line: 85
+    - comment_text: eda_output.to_csv(eda_output_path)
+      comment_type: inline
+      related_code:
+        content: "        #     eda_output = eda(df_csv)\n        #     eda_output_path\
+          \ = OUTPUT_DIR / \"eda_csv.csv\"\n        #     eda_output.to_csv(eda_output_path)\n\
+          \        #     metacontextualize(eda_output, eda_output_path, args)\n  \
+          \      # except Exception:"
+        file_path: bird_demo/demo.py
+        start_line: 82
+        end_line: 86
+    - comment_text: Read Excel
+      comment_type: inline
+      related_code:
+        content: "        logger.warning(\"CSV file not found: %s\", csv_path)\n\n\
+          \    # Read Excel\n    # if xlsx_path.exists():\n    #     try:"
+        file_path: bird_demo/demo.py
+        start_line: 89
+        end_line: 93
+    - comment_text: df_xlsx = pd.read_excel(xlsx_path, sheet_name=0)
+      comment_type: inline
+      related_code:
+        content: "    # if xlsx_path.exists():\n    #     try:\n    #         df_xlsx\
+          \ = pd.read_excel(xlsx_path, sheet_name=0)\n\n    #         # Process Excel\
+          \ file if it has similar columns"
+        file_path: bird_demo/demo.py
+        start_line: 92
+        end_line: 96
+    - comment_text: '# Process Excel file if it has similar columns'
+      comment_type: inline
+      related_code:
+        content: "    #         df_xlsx = pd.read_excel(xlsx_path, sheet_name=0)\n\
+          \n    #         # Process Excel file if it has similar columns\n    #  \
+          \       if all(col in df_xlsx.columns for col in [\"diet_types\", \"nocturnal_diurnal\"\
+          ]):\n    #             df_xlsx[\"diet_dict\"] = df_xlsx[\"diet_types\"].apply(ast.literal_eval)"
+        file_path: bird_demo/demo.py
+        start_line: 94
+        end_line: 98
+    - comment_text: 'if all(col in df_xlsx.columns for col in ["diet_types", "nocturnal_diurnal"]):'
+      comment_type: inline
+      related_code:
+        content: "\n    #         # Process Excel file if it has similar columns\n\
+          \    #         if all(col in df_xlsx.columns for col in [\"diet_types\"\
+          , \"nocturnal_diurnal\"]):\n    #             df_xlsx[\"diet_dict\"] = df_xlsx[\"\
+          diet_types\"].apply(ast.literal_eval)\n    #             df_xlsx[\"primary_diet\"\
+          ] = df_xlsx[\"diet_dict\"].apply(lambda x: max(x, key=x.get))"
+        file_path: bird_demo/demo.py
+        start_line: 95
+        end_line: 99
+    - comment_text: df_xlsx.to_excel(output_xlsx_path, index=False)
+      comment_type: inline
+      related_code:
+        content: "    #             df_xlsx[\"primary_diet\"] = df_xlsx[\"diet_dict\"\
+          ].apply(lambda x: max(x, key=x.get))\n    #             df_xlsx[\"nocturn_alley\"\
+          ] = (df_xlsx[\"nocturnal_diurnal\"] == \"Nocturnal\").astype(int)\n    #\
+          \             df_xlsx.to_excel(output_xlsx_path, index=False)\n\n    # \
+          \            args = MetacontextualizeArgs("
+        file_path: bird_demo/demo.py
+        start_line: 99
+        end_line: 103
+    - comment_text: logger.warning("Excel file doesn't have expected columns")
+      comment_type: inline
+      related_code:
+        content: "    #             metacontextualize(df_xlsx, output_xlsx_path, args)\n\
+          \    #         else:\n    #             logger.warning(\"Excel file doesn't\
+          \ have expected columns\")\n    #     except Exception:\n    #         logger.exception(\"\
+          Error processing Excel\")"
+        file_path: bird_demo/demo.py
+        start_line: 113
+        end_line: 117
+    - comment_text: logger.exception("Error processing Excel")
+      comment_type: inline
+      related_code:
+        content: "    #             logger.warning(\"Excel file doesn't have expected\
+          \ columns\")\n    #     except Exception:\n    #         logger.exception(\"\
+          Error processing Excel\")\n    # else:\n    #     logger.warning(\"Excel\
+          \ file not found: %s\", xlsx_path)"
+        file_path: bird_demo/demo.py
+        start_line: 115
+        end_line: 119
+    - comment_text: 'logger.warning("Excel file not found: %s", xlsx_path)'
+      comment_type: inline
+      related_code:
+        content: "    #         logger.exception(\"Error processing Excel\")\n   \
+          \ # else:\n    #     logger.warning(\"Excel file not found: %s\", xlsx_path)\n\
+          \ndef ml_models() -> None:"
+        file_path: bird_demo/demo.py
+        start_line: 117
+        end_line: 121
+    - comment_text: Preprocess data and calculate is_nocturnal if needed
+      comment_type: inline
+      related_code:
+        content: "    df_csv = pd.read_csv(csv_path)\n\n    # Preprocess data and\
+          \ calculate is_nocturnal if needed\n    if \"nocturnal_diurnal\" in df_csv.columns\
+          \ and \"is_nocturnal\" not in df_csv.columns:\n        df_csv[\"is_nocturnal\"\
+          ] = (df_csv[\"nocturnal_diurnal\"] == \"Nocturnal\").astype(int)"
+        file_path: bird_demo/demo.py
+        start_line: 129
+        end_line: 133
+    - comment_text: Determine available feature columns
+      comment_type: inline
+      related_code:
+        content: "        df_csv[\"is_nocturnal\"] = (df_csv[\"nocturnal_diurnal\"\
+          ] == \"Nocturnal\").astype(int)\n\n    # Determine available feature columns\n\
+          \    available_features = []\n    for col in [\"asdawas\", \"beak_length\"\
+          , \"is_nocturnal\"]:"
+        file_path: bird_demo/demo.py
+        start_line: 133
+        end_line: 137
+    - comment_text: Process GeoJSON
+      comment_type: inline
+      related_code:
+        content: "    gpkg_output_path = OUTPUT_DIR / \"filtered_locations.gpkg\"\n\
+          \n    # Process GeoJSON\n    if geojson_path.exists():\n        try:"
+        file_path: bird_demo/demo.py
+        start_line: 188
+        end_line: 192
+    - comment_text: Process GeoPackage
+      comment_type: inline
+      related_code:
+        content: "        logger.warning(\"GeoJSON file not found: %s\", geojson_path)\n\
+          \n    # Process GeoPackage\n    if gpkg_path.exists():\n        try:"
+        file_path: bird_demo/demo.py
+        start_line: 217
+        end_line: 221
+    - comment_text: Drop some columns
+      comment_type: inline
+      related_code:
+        content: "            gpkg = gpd.read_file(str(gpkg_path), driver=\"GPKG\"\
+          )\n\n            # Drop some columns\n            columns_to_drop = [col\
+          \ for col in [\"beak_length\", \"taxonomic_family\"] if col in gpkg.columns]\n"
+        file_path: bird_demo/demo.py
+        start_line: 223
+        end_line: 227
+    - comment_text: Save the filtered GeoPackage
+      comment_type: inline
+      related_code:
+        content: "            gpkg_filtered = gpkg.drop(columns=columns_to_drop) if\
+          \ columns_to_drop else gpkg.copy()\n\n            # Save the filtered GeoPackage\n\
+          \            gpkg_filtered.to_file(str(gpkg_output_path), driver=\"GPKG\"\
+          )\n"
+        file_path: bird_demo/demo.py
+        start_line: 228
+        end_line: 232
+    - comment_text: geospatial_data()
+      comment_type: inline
+      related_code:
+        content: "    csv_and_xlsx()\n    # ml_models()\n    # geospatial_data()\n\
+          \    # media_data()\n"
+        file_path: bird_demo/demo.py
+        start_line: 306
+        end_line: 310
+    - comment_text: media_data()
+      comment_type: inline
+      related_code:
+        content: "    # ml_models()\n    # geospatial_data()\n    # media_data()\n\
+          \nif __name__ == \"__main__\":"
+        file_path: bird_demo/demo.py
+        start_line: 307
+        end_line: 311
+    - comment_text: Split data
+      comment_type: inline
+      related_code:
+        content: "    target_encoded = label_encoder.fit_transform(target)\n\n   \
+          \ # Split data\n    x_train, x_test, y_train, y_test = train_test_split(\n\
+          \        features,"
+        file_path: bird_demo/scripts/train_model.py
+        start_line: 59
+        end_line: 63
+    - comment_text: '--- Pydantic Data Model for Validation ---'
+      comment_type: inline
+      related_code:
+        content: "\n\n# --- Pydantic Data Model for Validation ---\nclass BirdObservation(BaseModel):\n\
+          \    \"\"\"Pydantic model for validating the bird observation data."
+        file_path: bird_demo/scripts/exploratory_data_analysis.py
+        start_line: 14
+        end_line: 18
+    - comment_text: An unusual column name, representing a date
+      comment_type: inline
+      related_code:
+        content: "    weight_g: float\n    nocturnal_diurnal: str\n    brrrrkk: date\
+          \  # An unusual column name, representing a date\n    diet_types: dict[str,\
+          \ float]\n    closest_relatives: list[str]"
+        file_path: bird_demo/scripts/exploratory_data_analysis.py
+        start_line: 29
+        end_line: 33
+    - comment_text: Clean and preprocess columns with string-serialized data structures
+      comment_type: inline
+      related_code:
+        content: "\n    \"\"\"\n    # Clean and preprocess columns with string-serialized\
+          \ data structures\n    try:\n        df[\"diet_types\"] = df[\"diet_types\"\
+          ].apply(ast.literal_eval)"
+        file_path: bird_demo/scripts/exploratory_data_analysis.py
+        start_line: 54
+        end_line: 58
+    - comment_text: If all records are valid, create the final DataFrame
+      comment_type: inline
+      related_code:
+        content: "                raise ValueError(msg) from e\n\n        # If all\
+          \ records are valid, create the final DataFrame\n        return pd.DataFrame(validated_records)\n"
+        file_path: bird_demo/scripts/exploratory_data_analysis.py
+        start_line: 74
+        end_line: 78
+    - comment_text: Merge counts and percentages into a single DataFrame
+      comment_type: inline
+      related_code:
+        content: "        percentages.columns = [col, \"percentage\"]\n\n        #\
+          \ Merge counts and percentages into a single DataFrame\n        analysis_df\
+          \ = counts.merge(percentages, on=col)\n        analysis_results[col] = analysis_df.sort_values(by=\"\
+          count\", ascending=False)"
+        file_path: bird_demo/scripts/exploratory_data_analysis.py
+        start_line: 154
+        end_line: 158
+    - comment_text: Create the final report DataFrame using a dictionary
+      comment_type: inline
+      related_code:
+        content: "    t_test_results = perform_t_test_on_weights(df)\n\n    # Create\
+          \ the final report DataFrame using a dictionary\n    report_dict = {\n \
+          \       \"Analysis Type\": [],"
+        file_path: bird_demo/scripts/exploratory_data_analysis.py
+        start_line: 179
+        end_line: 183
+    - comment_text: 1. Load and validate the data
+      comment_type: inline
+      related_code:
+        content: "    print(\"--- Starting Data Analysis Workflow ---\")\n    try:\n\
+          \        # 1. Load and validate the data\n        validated_data = load_and_validate_data(csv_data)\n\
+          \        print(\"\\nData loaded and successfully validated! DataFrame shape:\"\
+          , validated_data.shape)"
+        file_path: bird_demo/scripts/exploratory_data_analysis.py
+        start_line: 221
+        end_line: 225
+    data_transformations: []
+    validation_logic: []
+    cross_references: {}

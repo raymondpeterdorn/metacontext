@@ -1857,7 +1857,9 @@ class AdvancedSemanticExtractor(ast.NodeVisitor):
         # Extract key-value pairs with their semantic meanings
         mappings = []
         for key_node, value_node in zip(
-            node.value.keys, node.value.values, strict=False
+            node.value.keys,
+            node.value.values,
+            strict=False,
         ):
             if key_node and value_node:
                 try:

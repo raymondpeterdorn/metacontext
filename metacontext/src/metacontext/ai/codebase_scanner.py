@@ -93,7 +93,8 @@ class CodebaseScanner:
 
         logger.info("🔍 DEBUG: Collecting file inventory from: %s", self.cwd)
         logger.info(
-            "🔍 DEBUG: Excluding dependency/cache directories: %s", excluded_dirs
+            "🔍 DEBUG: Excluding dependency/cache directories: %s",
+            excluded_dirs,
         )
 
         # Single directory traversal - only include user project files
@@ -111,7 +112,8 @@ class CodebaseScanner:
             if suffix in self.code_extensions:
                 inventory["code_files"].append(file_path)
                 logger.info(
-                    "🔍 DEBUG: Found code file: %s", file_path.relative_to(self.cwd)
+                    "🔍 DEBUG: Found code file: %s",
+                    file_path.relative_to(self.cwd),
                 )
             elif suffix in self.doc_extensions:
                 inventory["doc_files"].append(file_path)
@@ -139,7 +141,8 @@ class CodebaseScanner:
         return inventory
 
     def _aggregate_file_contents(
-        self, file_inventory: dict[str, list[Path]]
+        self,
+        file_inventory: dict[str, list[Path]],
     ) -> dict[str, str]:
         """Aggregate file contents into searchable documents."""
         aggregated = {
@@ -250,7 +253,7 @@ class CodebaseScanner:
                     "file_type": Path(file_path).suffix,
                     "reference_type": ref_type,
                     "reference_count": 1,  # Simplified for performance
-                }
+                },
             )
 
         # Generate summary
@@ -340,7 +343,7 @@ class CodebaseScanner:
                     "path": str(file_path.relative_to(self.cwd)),
                     "file_type": file_path.suffix,
                     "size_bytes": file_path.stat().st_size,
-                }
+                },
             )
         return docs
 
@@ -385,7 +388,7 @@ class CodebaseScanner:
                         "file_type": full_path.suffix,
                         "size_bytes": full_path.stat().st_size,
                         "relevance": "Contains model/schema definitions",
-                    }
+                    },
                 )
             except OSError:
                 continue
@@ -405,7 +408,7 @@ class CodebaseScanner:
                     "path": str(file_path.relative_to(self.cwd)),
                     "file_type": file_path.suffix,
                     "size_bytes": file_path.stat().st_size,
-                }
+                },
             )
         return configs
 
@@ -434,7 +437,8 @@ class CodebaseScanner:
 
         # Debug logging to see what we're working with
         logger.info(
-            "🔍 DEBUG: Found %d Python files for semantic analysis", len(python_files)
+            "🔍 DEBUG: Found %d Python files for semantic analysis",
+            len(python_files),
         )
         for f in python_files[:5]:  # Show first 5
             logger.info("🔍 DEBUG: Python file: %s", f.relative_to(self.cwd))
@@ -458,7 +462,8 @@ class CodebaseScanner:
         }
 
     def _extract_semantic_patterns_from_code(
-        self, all_code: str
+        self,
+        all_code: str,
     ) -> dict[str, Any] | None:
         """Extract semantic patterns from aggregated code content."""
         patterns = {
@@ -491,7 +496,8 @@ class CodebaseScanner:
                 # Look for patterns like: field_name: Type = Field(description="Description")
                 # or: field_name: Type  # Comment about meaning
                 field_match = re.match(
-                    r"(\w+)\s*:\s*([^=]+)(?:=.*)?(?:\s*#\s*(.+))?", stripped
+                    r"(\w+)\s*:\s*([^=]+)(?:=.*)?(?:\s*#\s*(.+))?",
+                    stripped,
                 )
                 if field_match:
                     field_name, field_type, comment = field_match.groups()
@@ -500,7 +506,8 @@ class CodebaseScanner:
                     description = None
                     if "Field(" in stripped:
                         desc_match = re.search(
-                            r'description\s*=\s*["\']([^"\']+)["\']', stripped
+                            r'description\s*=\s*["\']([^"\']+)["\']',
+                            stripped,
                         )
                         if desc_match:
                             description = desc_match.group(1)
@@ -522,7 +529,7 @@ class CodebaseScanner:
                             "text": comment_text,
                             "file": current_file,
                             "line": line_num,
-                        }
+                        },
                     )
 
         # Extract all semantic patterns found in the code
@@ -618,43 +625,53 @@ class CodebaseScanner:
         # Step 3: Fast analysis on aggregated content
         project_start = time.time()
         project_info = self._analyze_project_info_from_aggregate(
-            aggregated_content, file_inventory
+            aggregated_content,
+            file_inventory,
         )
         timing_log["project_info"] = time.time() - project_start
 
         code_start = time.time()
         related_code = self._find_related_code_from_aggregate(
-            data_file, aggregated_content, file_inventory
+            data_file,
+            aggregated_content,
+            file_inventory,
         )
         timing_log["related_code"] = time.time() - code_start
 
         docs_start = time.time()
         documentation = self._find_documentation_from_aggregate(
-            aggregated_content, file_inventory
+            aggregated_content,
+            file_inventory,
         )
         timing_log["documentation"] = time.time() - docs_start
 
         models_start = time.time()
         data_models = self._find_data_models_from_aggregate(
-            data_file, aggregated_content, file_inventory
+            data_file,
+            aggregated_content,
+            file_inventory,
         )
         timing_log["data_models"] = time.time() - models_start
 
         config_start = time.time()
         config_files = self._find_config_files_from_aggregate(
-            aggregated_content, file_inventory
+            aggregated_content,
+            file_inventory,
         )
         timing_log["config_files"] = time.time() - config_start
 
         refs_start = time.time()
         cross_references = self._find_cross_references_from_aggregate(
-            data_file, aggregated_content, file_inventory
+            data_file,
+            aggregated_content,
+            file_inventory,
         )
         timing_log["cross_references"] = time.time() - refs_start
 
         semantic_start = time.time()
         semantic_knowledge = self._extract_semantic_knowledge_from_aggregate(
-            aggregated_content, file_inventory
+            aggregated_content,
+            file_inventory,
         )
         timing_log["semantic_knowledge"] = time.time() - semantic_start
 
