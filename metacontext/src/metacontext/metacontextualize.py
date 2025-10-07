@@ -111,14 +111,51 @@ def _merge_config_with_args(args: MetacontextualizeArgs) -> dict[str, Any]:
 def metacontextualize(
     data_object: object,
     file_path: str | Path,
-    args: MetacontextualizeArgs,
+    args: MetacontextualizeArgs | None = None,
+    *,
+    output_path: str | Path | None = None,
+    output_format: str = "yaml",
+    include_llm_analysis: bool = True,
+    verbose: bool = False,
+    scan_codebase: bool = True,
+    llm_provider: str | None = None,
+    llm_model: str | None = None,
+    llm_api_key: str | None = None,
+    llm_temperature: float | None = None,
+    llm_max_retries: int | None = None,
 ) -> Path:
     """Generate intelligent metacontext with revolutionary two-tier architecture.
+
+    This function supports both legacy and simplified interfaces for backward compatibility:
+
+    Legacy interface (backward compatible):
+        metacontextualize(data_object, file_path, MetacontextualizeArgs(...))
+
+    Simplified interface (new):
+        metacontextualize(
+            data_object,
+            file_path,
+            output_format="yaml",
+            llm_provider="gemini",
+            llm_api_key="...",
+            include_llm_analysis=True
+        )
 
     Args:
         data_object: The data object to analyze
         file_path: Path to the file being analyzed
-        args: Dataclass containing all optional arguments.
+        args: (Legacy) Dataclass containing all optional arguments. If provided, other
+              keyword arguments are ignored for backward compatibility.
+        output_path: Path for output file (if None, auto-generated)
+        output_format: Output format ("yaml", "json", etc.)
+        include_llm_analysis: Enable AI-powered analysis
+        verbose: Enable verbose logging
+        scan_codebase: Enable codebase context scanning
+        llm_provider: LLM provider ("gemini", "openai", etc.)
+        llm_model: Specific model to use
+        llm_api_key: API key for LLM provider
+        llm_temperature: Temperature for LLM generation (0.0-1.0)
+        llm_max_retries: Max retry attempts for LLM calls
 
     Returns:
         Path to the generated metacontext file
@@ -132,16 +169,45 @@ def metacontextualize(
     """
     file_path = Path(file_path)
 
+    # Handle backward compatibility vs. new simplified interface
+    if args is not None:
+        # Legacy interface - use provided args as-is
+        effective_args = args
+    else:
+        # New simplified interface - convert parameters to MetacontextualizeArgs
+        config = {"scan_codebase": scan_codebase}
+
+        # Add LLM configuration if provided
+        if llm_provider is not None:
+            config["llm_provider"] = llm_provider
+        if llm_model is not None:
+            config["llm_model"] = llm_model
+        if llm_api_key is not None:
+            config["llm_api_key"] = llm_api_key
+        if llm_temperature is not None:
+            config["llm_temperature"] = llm_temperature
+        if llm_max_retries is not None:
+            config["llm_max_retries"] = llm_max_retries
+
+        # Create MetacontextualizeArgs from simplified parameters
+        effective_args = MetacontextualizeArgs(
+            output_path=output_path,
+            config=config,
+            include_llm_analysis=include_llm_analysis,
+            output_format=output_format,
+            verbose=verbose,
+        )
+
     # Merge centralized config with runtime arguments
-    merged_config = _merge_config_with_args(args)
+    merged_config = _merge_config_with_args(effective_args)
 
     start_time = time.time()
 
     # Generate output path
-    if args.output_path is None:
-        output_path = _generate_output_path(file_path, args.output_format)
+    if effective_args.output_path is None:
+        output_path = _generate_output_path(file_path, effective_args.output_format)
     else:
-        output_path = Path(args.output_path)
+        output_path = Path(effective_args.output_path)
 
     logger.info("\n🚀 METACONTEXT v0.3.0 - Two-Tier Architecture")
     logger.info("📁 File: %s", file_path.name)
@@ -160,13 +226,13 @@ def metacontextualize(
         data_object=data_object,
         file_path=file_path,
         config=merged_config,
-        include_llm_analysis=args.include_llm_analysis,
-        verbose=args.verbose,
+        include_llm_analysis=effective_args.include_llm_analysis,
+        verbose=effective_args.verbose,
         universal_metadata=universal_metadata,
     )
 
     analysis_time = time.time() - analysis_start
-    if args.verbose:
+    if effective_args.verbose:
         logger.info("✓ Analysis completed in %.2f seconds", analysis_time)
 
     # Ensure output directory exists
@@ -176,12 +242,12 @@ def metacontextualize(
     logger.info("💾 Writing output file...")
     write_start = time.time()
 
-    write_output(context, output_path, args.output_format)
+    write_output(context, output_path, effective_args.output_format)
 
     write_time = time.time() - write_start
     total_time = time.time() - start_time
 
-    if args.verbose:
+    if effective_args.verbose:
         logger.info("✓ Output written in %.2f seconds", write_time)
 
     logger.info("\n✅ Metacontext generated: %s", output_path)
@@ -189,9 +255,9 @@ def metacontextualize(
     logger.info("   📊 Schema: Core + Extensions pattern")
     logger.info(
         "   🤖 AI Analysis: %s",
-        "Enabled" if args.include_llm_analysis else "Disabled",
+        "Enabled" if effective_args.include_llm_analysis else "Disabled",
     )
-    if args.verbose:
+    if effective_args.verbose:
         logger.info("   ⏱️  Total time: %.2f seconds", total_time)
 
     return output_path
@@ -312,13 +378,16 @@ def _convert_codebase_context_to_schema(
         # Extract column knowledge from the knowledge graph
         if hasattr(knowledge_graph, "columns") and knowledge_graph.columns:
             logger.info(
-                "🔍 DEBUG: Knowledge graph has %d columns", len(knowledge_graph.columns),
+                "🔍 DEBUG: Knowledge graph has %d columns",
+                len(knowledge_graph.columns),
             )
             for col_name, col_knowledge in knowledge_graph.columns.items():
                 logger.info("🔍 DEBUG: Processing column: %s", col_name)
                 semantic_knowledge_dict["columns"][col_name] = {
                     "pydantic_description": getattr(
-                        col_knowledge, "pydantic_description", None,
+                        col_knowledge,
+                        "pydantic_description",
+                        None,
                     ),
                     "definition": getattr(col_knowledge, "definition", None),
                     "aliases": getattr(col_knowledge, "aliases", []),

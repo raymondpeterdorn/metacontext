@@ -160,7 +160,9 @@ class LLMOptimizedOutputGenerator:
         if high_conf:
             sections.append("### Core Data Elements")
             for col in sorted(
-                high_conf, key=lambda x: x.confidence_score, reverse=True,
+                high_conf,
+                key=lambda x: x.confidence_score,
+                reverse=True,
             )[:15]:
                 col_name = next(
                     (
@@ -182,7 +184,9 @@ class LLMOptimizedOutputGenerator:
         if medium_conf and config.llm_context != LLMContext.CODE_COMPLETION:
             sections.append("### Supporting Data Elements")
             for col in sorted(
-                medium_conf, key=lambda x: x.confidence_score, reverse=True,
+                medium_conf,
+                key=lambda x: x.confidence_score,
+                reverse=True,
             )[:10]:
                 col_name = next(
                     (
@@ -234,7 +238,9 @@ class LLMOptimizedOutputGenerator:
             sections.append("")
 
             for col in sorted(
-                pydantic_columns, key=lambda x: x.confidence_score, reverse=True,
+                pydantic_columns,
+                key=lambda x: x.confidence_score,
+                reverse=True,
             ):
                 col_name = next(
                     (
@@ -271,7 +277,9 @@ class LLMOptimizedOutputGenerator:
             sections.append("")
 
             for col in sorted(
-                other_high_conf, key=lambda x: x.confidence_score, reverse=True,
+                other_high_conf,
+                key=lambda x: x.confidence_score,
+                reverse=True,
             )[:10]:
                 col_name = next(
                     (
@@ -355,7 +363,9 @@ class LLMOptimizedOutputGenerator:
         # Top elements by confidence
         all_columns = list(self.knowledge_graph.columns.items())
         top_columns = sorted(
-            all_columns, key=lambda x: x[1].confidence_score, reverse=True,
+            all_columns,
+            key=lambda x: x[1].confidence_score,
+            reverse=True,
         )[:10]
 
         sections.append("## Top Data Elements")
@@ -373,7 +383,9 @@ class LLMOptimizedOutputGenerator:
 
             sections.append("## Relationship Types")
             for rel_type, count in sorted(
-                rel_counts.items(), key=lambda x: x[1], reverse=True,
+                rel_counts.items(),
+                key=lambda x: x[1],
+                reverse=True,
             ):
                 sections.append(f"- **{rel_type.replace('_', ' ').title()}:** {count}")
             sections.append("")

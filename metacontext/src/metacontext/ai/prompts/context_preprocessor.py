@@ -673,7 +673,8 @@ def _process_file_worker(args: tuple[str, str]) -> tuple[str, dict[str, Any]]:
 
 
 def process_files_parallel(
-    file_contents: dict[str, str], progress_callback=None,
+    file_contents: dict[str, str],
+    progress_callback=None,
 ) -> dict[str, dict[str, Any]]:
     """Process multiple files in parallel for better performance.
 
@@ -738,7 +739,8 @@ def process_files_parallel(
 
 
 def _process_files_sequential(
-    file_contents: dict[str, str], progress_callback=None,
+    file_contents: dict[str, str],
+    progress_callback=None,
 ) -> dict[str, dict[str, Any]]:
     """Sequential fallback for file processing."""
     results = {}
@@ -763,7 +765,11 @@ class ProgressTracker:
         self.last_update = self.start_time
 
     def update(
-        self, completed: int, total: int, current_item: str = "", error: str = "",
+        self,
+        completed: int,
+        total: int,
+        current_item: str = "",
+        error: str = "",
     ):
         """Update progress with current status."""
         current_time = time.time()
@@ -1079,7 +1085,9 @@ def extract_column_derivations(
 
 
 def _find_nearby_comment(
-    lines: list[str], line_index: int, search_range: int = 3,
+    lines: list[str],
+    line_index: int,
+    search_range: int = 3,
 ) -> str:
     """Find explanatory comments near a line of code."""
     # Check lines before and after for comments
@@ -1127,7 +1135,8 @@ def format_column_derivations_for_llm(derivations: dict[str, dict[str, str]]) ->
 
 
 def _extract_business_logic_comments(
-    lines: list[str], file_path: str,
+    lines: list[str],
+    file_path: str,
 ) -> list[dict[str, Any]]:
     """Extract business logic comments from file lines."""
     business_logic_comments = []
@@ -1338,7 +1347,8 @@ class PydanticSchemaExtractor(ast.NodeVisitor):
             # Process class body to extract fields and validators
             for child in node.body:
                 if isinstance(child, ast.AnnAssign) and isinstance(
-                    child.target, ast.Name,
+                    child.target,
+                    ast.Name,
                 ):
                     field_info = self._extract_field_info(child)
                     if field_info:
@@ -1413,11 +1423,13 @@ class PydanticSchemaExtractor(ast.NodeVisitor):
                 # Extract arguments from Field() call
                 for keyword in value_node.keywords:
                     if keyword.arg == "description" and isinstance(
-                        keyword.value, ast.Constant,
+                        keyword.value,
+                        ast.Constant,
                     ):
                         field_info["description"] = keyword.value.value
                     elif keyword.arg == "alias" and isinstance(
-                        keyword.value, ast.Constant,
+                        keyword.value,
+                        ast.Constant,
                     ):
                         field_info["alias"] = keyword.value.value
                     elif keyword.arg == "default":
@@ -1800,7 +1812,9 @@ class AdvancedSemanticExtractor(ast.NodeVisitor):
         return any(pattern in name.upper() for pattern in constant_patterns)
 
     def _extract_constant_info(
-        self, node: ast.Assign, var_name: str,
+        self,
+        node: ast.Assign,
+        var_name: str,
     ) -> dict[str, Any] | None:
         """Extract detailed information about a constant definition."""
         line_num = node.lineno
@@ -1829,7 +1843,9 @@ class AdvancedSemanticExtractor(ast.NodeVisitor):
         }
 
     def _extract_lookup_table_info(
-        self, node: ast.Assign, var_name: str,
+        self,
+        node: ast.Assign,
+        var_name: str,
     ) -> dict[str, Any] | None:
         """Extract information about dictionary-based lookup tables."""
         if not isinstance(node.value, ast.Dict):
@@ -1840,7 +1856,9 @@ class AdvancedSemanticExtractor(ast.NodeVisitor):
 
         # Extract key-value pairs with their semantic meanings
         mappings = []
-        for key_node, value_node in zip(node.value.keys, node.value.values, strict=False):
+        for key_node, value_node in zip(
+            node.value.keys, node.value.values, strict=False
+        ):
             if key_node and value_node:
                 try:
                     key_repr = ast.unparse(key_node)
@@ -1891,7 +1909,10 @@ class AdvancedSemanticExtractor(ast.NodeVisitor):
 
                         # Infer semantic meaning from name and comment
                         semantic_meaning = self._infer_enum_value_meaning(
-                            node.name, value_name, value_repr, comment,
+                            node.name,
+                            value_name,
+                            value_repr,
+                            comment,
                         )
 
                         values.append(
@@ -1917,7 +1938,8 @@ class AdvancedSemanticExtractor(ast.NodeVisitor):
         """Extract magic numbers from an AST node."""
         for child in ast.walk(node):
             if isinstance(child, ast.Constant) and isinstance(
-                child.value, (int, float),
+                child.value,
+                (int, float),
             ):
                 # Skip obvious non-magic numbers
                 if child.value in [0, 1, -1, 0.0, 1.0]:
@@ -1935,7 +1957,9 @@ class AdvancedSemanticExtractor(ast.NodeVisitor):
                     "comment": comment,
                     "context": context,
                     "semantic_guess": self._guess_magic_number_meaning(
-                        child.value, context, comment,
+                        child.value,
+                        context,
+                        comment,
                     ),
                     "file": self.file_path,
                 }
@@ -1976,12 +2000,11 @@ class AdvancedSemanticExtractor(ast.NodeVisitor):
             for pattern in ["_THRESHOLD", "_LIMIT", "_MAX", "_MIN"]
         ):
             return "threshold_constant"
-        if any(
-            pattern in name_upper for pattern in ["_CONFIG", "_SETTING", "_PARAM"]
-        ):
+        if any(pattern in name_upper for pattern in ["_CONFIG", "_SETTING", "_PARAM"]):
             return "configuration_constant"
         if isinstance(value_node, ast.Constant) and isinstance(
-            value_node.value, (int, float),
+            value_node.value,
+            (int, float),
         ):
             return "numeric_constant"
         if isinstance(value_node, ast.Constant) and isinstance(value_node.value, str):
@@ -2009,7 +2032,10 @@ class AdvancedSemanticExtractor(ast.NodeVisitor):
         return f"Constant value: {value}"
 
     def _infer_lookup_purpose(
-        self, name: str, mappings: list[dict], comment: str,
+        self,
+        name: str,
+        mappings: list[dict],
+        comment: str,
     ) -> str:
         """Infer the purpose of a lookup table."""
         if comment:
@@ -2028,7 +2054,11 @@ class AdvancedSemanticExtractor(ast.NodeVisitor):
         return f"Data structure: {name}"
 
     def _infer_enum_value_meaning(
-        self, enum_name: str, value_name: str, value_repr: str, comment: str,
+        self,
+        enum_name: str,
+        value_name: str,
+        value_repr: str,
+        comment: str,
     ) -> str:
         """Infer the semantic meaning of an enum value."""
         if comment:
@@ -2049,7 +2079,10 @@ class AdvancedSemanticExtractor(ast.NodeVisitor):
         return f"{enum_name} option: {value_name.replace('_', ' ').title()}"
 
     def _infer_enum_domain(
-        self, enum_name: str, docstring: str, values: list[dict],
+        self,
+        enum_name: str,
+        docstring: str,
+        values: list[dict],
     ) -> str:
         """Infer the domain/category of an enum."""
         if docstring:
@@ -2070,7 +2103,9 @@ class AdvancedSemanticExtractor(ast.NodeVisitor):
         return f"Enumerated values for {enum_name}"
 
     def _get_magic_number_context(
-        self, number_node: ast.Constant, parent_node: ast.AST,
+        self,
+        number_node: ast.Constant,
+        parent_node: ast.AST,
     ) -> str:
         """Get context information for a magic number."""
         try:
@@ -2085,7 +2120,10 @@ class AdvancedSemanticExtractor(ast.NodeVisitor):
             return "unknown_context"
 
     def _guess_magic_number_meaning(
-        self, value: float, context: str, comment: str,
+        self,
+        value: float,
+        context: str,
+        comment: str,
     ) -> str:
         """Guess the semantic meaning of a magic number."""
         if comment:
@@ -2123,7 +2161,8 @@ class AdvancedSemanticExtractor(ast.NodeVisitor):
         return f"Numeric literal: {value}"
 
     def _extract_function_analysis(
-        self, node: ast.FunctionDef,
+        self,
+        node: ast.FunctionDef,
     ) -> dict[str, Any] | None:
         """Extract function analysis focusing on data transformations and business logic."""
         try:
@@ -2254,7 +2293,10 @@ class AdvancedSemanticExtractor(ast.NodeVisitor):
                     {
                         "function": node.name,
                         "type": self._classify_transformation_type(
-                            node, creates_data, returns_data, modifies_data,
+                            node,
+                            creates_data,
+                            returns_data,
+                            modifies_data,
                         ),
                         "input_data": [arg["name"] for arg in args],
                         "output_data": returns_data or [return_type]
@@ -2314,7 +2356,11 @@ class AdvancedSemanticExtractor(ast.NodeVisitor):
         return list(set(transformations))  # Remove duplicates
 
     def _classify_transformation_type(
-        self, node: ast.FunctionDef, creates: list, returns: list, modifies: list,
+        self,
+        node: ast.FunctionDef,
+        creates: list,
+        returns: list,
+        modifies: list,
     ) -> str:
         """Classify the type of data transformation."""
         name_lower = node.name.lower()
@@ -2372,7 +2418,9 @@ class AdvancedSemanticExtractor(ast.NodeVisitor):
 
             # Determine business logic type
             logic_type = self._classify_business_logic(
-                condition_code, if_actions, else_actions,
+                condition_code,
+                if_actions,
+                else_actions,
             )
 
             return {
@@ -2437,7 +2485,11 @@ class AdvancedSemanticExtractor(ast.NodeVisitor):
         complexity = 0
 
         for child in ast.walk(node):
-            if isinstance(child, (ast.BoolOp, ast.Compare)) or isinstance(child, ast.Call) or isinstance(child, (ast.BinOp, ast.UnaryOp)):
+            if (
+                isinstance(child, (ast.BoolOp, ast.Compare))
+                or isinstance(child, ast.Call)
+                or isinstance(child, (ast.BinOp, ast.UnaryOp))
+            ):
                 complexity += 1
 
         return complexity
@@ -2450,7 +2502,8 @@ class AdvancedSemanticExtractor(ast.NodeVisitor):
             if isinstance(child, ast.Compare):
                 for op, comp in zip(child.ops, child.comparators, strict=False):
                     if isinstance(comp, ast.Constant) and isinstance(
-                        comp.value, (int, float),
+                        comp.value,
+                        (int, float),
                     ):
                         threshold_info = {
                             "value": comp.value,
@@ -2481,7 +2534,10 @@ class AdvancedSemanticExtractor(ast.NodeVisitor):
         return actions
 
     def _classify_business_logic(
-        self, condition: str, if_actions: list[str], else_actions: list[str],
+        self,
+        condition: str,
+        if_actions: list[str],
+        else_actions: list[str],
     ) -> str:
         """Classify the type of business logic pattern."""
         condition_lower = condition.lower()
@@ -3100,7 +3156,8 @@ class SemanticExtractor(ast.NodeVisitor):
             # Handle DataFrame column assignments like df["col"] = value
             elif isinstance(target, ast.Subscript):
                 if isinstance(target.value, ast.Name) and isinstance(
-                    target.slice, ast.Constant,
+                    target.slice,
+                    ast.Constant,
                 ):
                     assignment_info = {
                         "variable": f"{target.value.id}[{target.slice.value!r}]",
@@ -3424,7 +3481,9 @@ def link_comments_to_code(
         "function_contexts": _link_functions_to_columns(ast_info, proximity_lines),
         "class_contexts": [],  # Placeholder for future implementation
         "column_contexts": _link_constants_to_columns(
-            comment_data, ast_info, proximity_lines,
+            comment_data,
+            ast_info,
+            proximity_lines,
         ),
         "business_rules": _link_business_logic_to_code(
             comment_data,

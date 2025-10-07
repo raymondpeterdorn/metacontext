@@ -3,6 +3,7 @@
 import json
 import logging
 import re
+import time
 from pathlib import Path
 from typing import Any, ClassVar
 
@@ -197,7 +198,8 @@ class CSVHandler(BaseFileHandler):
 
                         # Format semantic knowledge for AI analysis
                         if semantic_knowledge and hasattr(
-                            semantic_knowledge, "columns",
+                            semantic_knowledge,
+                            "columns",
                         ):
                             logger.info(
                                 "🔍 DEBUG: Semantic knowledge has %d columns",
@@ -393,25 +395,42 @@ class CSVHandler(BaseFileHandler):
         This replaces the old field-by-field approach with efficient bulk analysis.
         """
         ai_analysis = {}
+        start_time = time.time()
 
         # Bulk column analysis prompt - pass full data_analysis which includes semantic knowledge
         if data_analysis.get("columns"):
+            logger.info("🔍 Starting column analysis...")
+            column_start = time.time()
             column_analysis = self._bulk_analyze_columns(
                 data_analysis,  # Pass full context including semantic knowledge
                 file_path,
                 codebase_context,
                 llm_handler,
             )
+            column_time = time.time() - column_start
+            logger.info("🔍 Column analysis completed in %.2f seconds", column_time)
             ai_analysis["column_analysis"] = column_analysis
 
         # Schema interpretation prompt
+        logger.info("🔍 Starting schema analysis...")
+        schema_start = time.time()
         schema_interpretation = self._bulk_analyze_schema(
             data_analysis,
             file_path,
             codebase_context,
             llm_handler,
         )
+        schema_time = time.time() - schema_start
+        logger.info("🔍 Schema analysis completed in %.2f seconds", schema_time)
         ai_analysis["domain_summary"] = schema_interpretation
+
+        total_time = time.time() - start_time
+        logger.info(
+            "🔍 Total AI analysis time: %.2f seconds (column: %.2f, schema: %.2f)",
+            total_time,
+            column_time,
+            schema_time,
+        )
 
         return ai_analysis
 
@@ -440,7 +459,8 @@ class CSVHandler(BaseFileHandler):
                 "columns_data": columns_data,
                 # Include semantic knowledge from the enhanced context
                 "semantic_column_knowledge": data_analysis.get(
-                    "semantic_column_knowledge", "No semantic knowledge available.",
+                    "semantic_column_knowledge",
+                    "No semantic knowledge available.",
                 ),
             }
 
@@ -454,7 +474,8 @@ class CSVHandler(BaseFileHandler):
             # DEBUG: Print the complete prompt that gets sent to the LLM
             logger.info("🔍 DEBUG: Complete template context being sent:")
             logger.info(
-                "🔍 DEBUG: Template context keys: %s", list(template_context.keys()),
+                "🔍 DEBUG: Template context keys: %s",
+                list(template_context.keys()),
             )
             if "semantic_column_knowledge" in template_context:
                 logger.info(
@@ -471,7 +492,7 @@ class CSVHandler(BaseFileHandler):
             logger.info("%s", rendered_prompt)
             logger.info("=" * 80)
 
-            # Call LLM directly with the template-generated prompt
+            # Call LLM using standard method
             if hasattr(llm_handler, "generate_completion"):
                 response = llm_handler.generate_completion(rendered_prompt)
             else:

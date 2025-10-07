@@ -5,16 +5,17 @@
 [![Python](https://img.shields.io/badge/python-3.12%2B-blue)](#installation)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
-**Metacontext generates intelligent metadata with revolutionary two-tier architecture: deterministic analysis + AI enrichment with dynamic model selection and cost optimization.**
+**Metacontext generates intelligent metadata with revolutionary two-tier architecture: deterministic analysis + AI enrichment with dynamic model selection, cost optimization, and semantic codebase analysis.**
 
 ## 🎯 Mission: Production-Ready Intelligent Metadata
 
-Traditional file metadata tells you *what* a file is. **Metacontext tells you *why* it exists, *how* it was created, and *what* it means** - with guaranteed availability and smart AI enhancement.
+Traditional file metadata tells you *what* a file is. **Metacontext tells you *why* it exists, *how* it was created, and *what* it means** - with guaranteed availability, smart AI enhancement, and deep codebase understanding.
 
 **Current Architecture:** 
 - **🔍 Universal File Intelligence**: Automatic handler routing for any file type (.pkl, .csv, .geojson, .png, etc.)
 - **🏗️ Two-Tier Analysis**: Deterministic metadata + AI enrichment with graceful degradation
-- **🤖 Dynamic AI Provider Selection**: Auto-detects available models (Gemini, OpenAI, Anthropic)
+- **� Semantic Codebase Analysis**: Revolutionary system that extracts business context from code comments, docstrings, and schemas
+- **�🤖 Dynamic AI Provider Selection**: Auto-detects available models (Gemini, OpenAI, Anthropic)
 - **💰 Cost-Optimized Prompts**: 66% token reduction through constraint-aware template system
 - **📊 Schema-Based Architecture**: Pydantic-validated extension schemas for each file type
 

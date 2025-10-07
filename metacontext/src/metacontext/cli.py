@@ -15,7 +15,7 @@ import sys
 import traceback
 from pathlib import Path
 
-from metacontext.metacontextualize import MetacontextualizeArgs, metacontextualize
+from metacontext.metacontextualize import metacontextualize
 
 # Constants for file size calculations
 BYTES_PER_KB = 1024
@@ -104,24 +104,15 @@ def main() -> None:
     except KeyboardInterrupt:
         sys.exit(1)
 
-    # Create metacontextualize arguments
-    metacontext_args = MetacontextualizeArgs(
-        output_format=args.output,
-        include_llm_analysis=args.deep,
-        output_path=args.output_file,
-        verbose=args.verbose,
-    )
-
-    # Show what we're doing
-    if args.verbose and args.output_file:
-        pass
-
     try:
-        # Generate metacontext
+        # Generate metacontext using simplified interface
         output_path = metacontextualize(
             data_object=None,  # We're analyzing a file directly
             file_path=file_path,
-            args=metacontext_args,
+            output_format=args.output,
+            include_llm_analysis=args.deep,
+            output_path=args.output_file,
+            verbose=args.verbose,
         )
 
         # Success message

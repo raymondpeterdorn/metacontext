@@ -8,6 +8,7 @@ and project information.
 import logging
 import os
 import re
+import time
 from pathlib import Path
 from typing import Any
 
@@ -48,6 +49,526 @@ class CodebaseScanner:
 
         self.config_extensions = {".yaml", ".yml", ".json", ".toml", ".ini", ".cfg"}
 
+    def _collect_file_inventory(self, data_file: Path) -> dict[str, list[Path]]:
+        """Single directory traversal to collect all relevant files by type.
+
+        Only includes user-written project files, excludes dependencies and virtual environments.
+        """
+        inventory = {
+            "code_files": [],
+            "doc_files": [],
+            "config_files": [],
+            "data_files": [],
+            "all_files": [],
+        }
+
+        # Directories to exclude (dependencies, virtual environments, caches)
+        excluded_dirs = {
+            "__pycache__",
+            ".git",
+            ".pytest_cache",
+            ".mypy_cache",
+            ".ruff_cache",
+            ".coverage",
+            ".tox",
+            ".idea",
+            ".vscode",
+            ".DS_Store",
+            "node_modules",
+            ".venv",
+            "venv",
+            "env",
+            ".env",
+            "site-packages",
+            "dist",
+            "build",
+            "pip-wheel-metadata",
+            ".eggs",
+            "*.egg-info",
+            ".cache",
+            ".local",
+            ".ipynb_checkpoints",
+            ".gitignore",
+        }
+
+        logger.info("🔍 DEBUG: Collecting file inventory from: %s", self.cwd)
+        logger.info(
+            "🔍 DEBUG: Excluding dependency/cache directories: %s", excluded_dirs
+        )
+
+        # Single directory traversal - only include user project files
+        for file_path in self.cwd.rglob("*"):
+            if not file_path.is_file() or file_path == data_file:
+                continue
+
+            # Skip files in excluded directories
+            if any(excluded_dir in file_path.parts for excluded_dir in excluded_dirs):
+                continue
+
+            inventory["all_files"].append(file_path)
+
+            suffix = file_path.suffix.lower()
+            if suffix in self.code_extensions:
+                inventory["code_files"].append(file_path)
+                logger.info(
+                    "🔍 DEBUG: Found code file: %s", file_path.relative_to(self.cwd)
+                )
+            elif suffix in self.doc_extensions:
+                inventory["doc_files"].append(file_path)
+            elif suffix in self.config_extensions:
+                inventory["config_files"].append(file_path)
+            elif suffix in {
+                ".csv",
+                ".json",
+                ".yaml",
+                ".yml",
+                ".xlsx",
+                ".xls",
+                ".parquet",
+                ".tsv",
+            }:
+                inventory["data_files"].append(file_path)
+
+        logger.info("🔍 DEBUG: File inventory summary:")
+        logger.info("   Code files: %d", len(inventory["code_files"]))
+        logger.info("   Doc files: %d", len(inventory["doc_files"]))
+        logger.info("   Config files: %d", len(inventory["config_files"]))
+        logger.info("   Data files: %d", len(inventory["data_files"]))
+        logger.info("   Total files: %d", len(inventory["all_files"]))
+
+        return inventory
+
+    def _aggregate_file_contents(
+        self, file_inventory: dict[str, list[Path]]
+    ) -> dict[str, str]:
+        """Aggregate file contents into searchable documents."""
+        aggregated = {
+            "all_code": "",
+            "all_docs": "",
+            "all_configs": "",
+            "file_map": {},  # Maps line ranges to original files
+        }
+
+        # Aggregate code files
+        code_sections = []
+        for file_path in file_inventory["code_files"]:
+            try:
+                with file_path.open(encoding="utf-8", errors="ignore") as f:
+                    content = f.read()
+                rel_path = str(file_path.relative_to(self.cwd))
+                section = f"\n# FILE: {rel_path}\n{content}\n# END FILE: {rel_path}\n"
+                code_sections.append(section)
+            except OSError:
+                continue
+        aggregated["all_code"] = "\n".join(code_sections)
+
+        # Aggregate documentation
+        doc_sections = []
+        for file_path in file_inventory["doc_files"]:
+            try:
+                with file_path.open(encoding="utf-8", errors="ignore") as f:
+                    content = f.read()
+                rel_path = str(file_path.relative_to(self.cwd))
+                section = f"\n# DOC: {rel_path}\n{content}\n# END DOC: {rel_path}\n"
+                doc_sections.append(section)
+            except OSError:
+                continue
+        aggregated["all_docs"] = "\n".join(doc_sections)
+
+        # Aggregate config files
+        config_sections = []
+        for file_path in file_inventory["config_files"]:
+            try:
+                with file_path.open(encoding="utf-8", errors="ignore") as f:
+                    content = f.read()
+                rel_path = str(file_path.relative_to(self.cwd))
+                section = (
+                    f"\n# CONFIG: {rel_path}\n{content}\n# END CONFIG: {rel_path}\n"
+                )
+                config_sections.append(section)
+            except OSError:
+                continue
+        aggregated["all_configs"] = "\n".join(config_sections)
+
+        return aggregated
+
+    def _find_cross_references_from_aggregate(
+        self,
+        data_file: Path,
+        aggregated_content: dict[str, str],
+        file_inventory: dict[str, list[Path]],
+    ) -> dict[str, Any]:
+        """Fast cross-reference analysis using aggregated content."""
+        cross_refs = {
+            "referenced_by": [],
+            "imports_from": [],
+            "data_dependencies": [],
+            "summary": "",
+        }
+
+        data_filename = data_file.name
+        data_stem = data_file.stem
+        data_relative_path = (
+            str(data_file.relative_to(self.cwd))
+            if data_file.is_relative_to(self.cwd)
+            else str(data_file)
+        )
+
+        # Fast search in aggregated code content
+        all_code = aggregated_content["all_code"]
+
+        # Build patterns for the specific file
+        patterns = [
+            (rf"""['"`]{re.escape(data_filename)}['"`]""", "direct_filename"),
+            (rf"""['"`]{re.escape(data_stem)}['"`]""", "stem_reference"),
+            (rf"""['"`]{re.escape(data_relative_path)}['"`]""", "path_reference"),
+            (
+                rf"""(?:read_csv|load|open|Path)\s*\(\s*['"`][^'"`]*{re.escape(data_stem)}[^'"`]*['"`]""",
+                "data_loading",
+            ),
+        ]
+
+        # Find which files contain references
+        referenced_files = set()
+        for pattern, ref_type in patterns:
+            matches = re.finditer(pattern, all_code, re.IGNORECASE)
+            for match in matches:
+                # Find which file this match belongs to by looking for file markers
+                file_start = all_code.rfind("# FILE:", 0, match.start())
+                if file_start != -1:
+                    file_end = all_code.find("\n", file_start)
+                    if file_end != -1:
+                        file_line = all_code[file_start:file_end]
+                        file_path = file_line.replace("# FILE:", "").strip()
+                        referenced_files.add((file_path, ref_type))
+
+        # Convert to structured format
+        for file_path, ref_type in referenced_files:
+            cross_refs["referenced_by"].append(
+                {
+                    "file": file_path,
+                    "file_type": Path(file_path).suffix,
+                    "reference_type": ref_type,
+                    "reference_count": 1,  # Simplified for performance
+                }
+            )
+
+        # Generate summary
+        ref_count = len(cross_refs["referenced_by"])
+        cross_refs["summary"] = (
+            f"Referenced by {ref_count} file(s)"
+            if ref_count > 0
+            else "No cross-references found"
+        )
+
+        return cross_refs
+
+    def _find_related_code_from_aggregate(
+        self,
+        data_file: Path,
+        aggregated_content: dict[str, str],
+        file_inventory: dict[str, list[Path]],
+    ) -> list[dict[str, Any]]:
+        """Fast related code analysis using aggregated content."""
+        related_files = []
+        data_stem = data_file.stem
+        data_name_parts = re.split(r"[_\-\.]", data_stem.lower())
+
+        # Search for relevance in aggregated content
+        all_code = aggregated_content["all_code"]
+
+        for file_path in file_inventory["code_files"]:
+            rel_path = str(file_path.relative_to(self.cwd))
+
+            # Calculate relevance score based on filename similarity
+            relevance_score = 0.0
+            file_stem = file_path.stem.lower()
+
+            # Check for direct name matches
+            for part in data_name_parts:
+                if len(part) >= self.MIN_PART_LEN and part in file_stem:
+                    relevance_score += 0.3
+
+            # Check if file content appears in aggregated content around our data file references
+            if data_stem.lower() in all_code.lower():
+                file_marker = f"# FILE: {rel_path}"
+                if file_marker in all_code:
+                    relevance_score += 0.2
+
+            if relevance_score > 0:
+                file_info = {
+                    "path": rel_path,
+                    "relevance_score": relevance_score,
+                    "file_type": file_path.suffix,
+                    "size_bytes": file_path.stat().st_size,
+                    "preview": f"Found in aggregated scan (score: {relevance_score:.2f})",
+                }
+                related_files.append(file_info)
+
+        # Sort by relevance and return top 10
+        related_files.sort(key=lambda x: x["relevance_score"], reverse=True)
+        return related_files[:10]
+
+    def _analyze_project_info_from_aggregate(
+        self,
+        aggregated_content: dict[str, str],
+        file_inventory: dict[str, list[Path]],
+    ) -> dict[str, Any]:
+        """Fast project info analysis using aggregated content."""
+        return {
+            "total_files": len(file_inventory["all_files"]),
+            "code_files": len(file_inventory["code_files"]),
+            "doc_files": len(file_inventory["doc_files"]),
+            "config_files": len(file_inventory["config_files"]),
+            "has_readme": any(
+                "readme" in f.name.lower() for f in file_inventory["doc_files"]
+            ),
+            "languages": list(set(f.suffix for f in file_inventory["code_files"])),
+            "project_name": self.cwd.name,
+        }
+
+    def _find_documentation_from_aggregate(
+        self,
+        aggregated_content: dict[str, str],
+        file_inventory: dict[str, list[Path]],
+    ) -> list[dict[str, Any]]:
+        """Fast documentation analysis using aggregated content."""
+        docs = []
+        for file_path in file_inventory["doc_files"][:5]:  # Limit for performance
+            docs.append(
+                {
+                    "path": str(file_path.relative_to(self.cwd)),
+                    "file_type": file_path.suffix,
+                    "size_bytes": file_path.stat().st_size,
+                }
+            )
+        return docs
+
+    def _find_data_models_from_aggregate(
+        self,
+        data_file: Path,
+        aggregated_content: dict[str, str],
+        file_inventory: dict[str, list[Path]],
+    ) -> list[dict[str, Any]]:
+        """Fast data models analysis using aggregated content."""
+        model_files = []
+        all_code = aggregated_content["all_code"]
+
+        # Look for model-related patterns in aggregated content
+        model_patterns = [
+            "class.*Model",
+            "BaseModel",
+            "pydantic",
+            "schema",
+            "dataclass",
+        ]
+
+        found_models = set()
+        for pattern in model_patterns:
+            matches = re.finditer(pattern, all_code, re.IGNORECASE)
+            for match in matches:
+                # Find which file this match belongs to
+                file_start = all_code.rfind("# FILE:", 0, match.start())
+                if file_start != -1:
+                    file_end = all_code.find("\n", file_start)
+                    if file_end != -1:
+                        file_line = all_code[file_start:file_end]
+                        file_path = file_line.replace("# FILE:", "").strip()
+                        found_models.add(file_path)
+
+        for file_path in list(found_models)[:5]:  # Limit for performance
+            try:
+                full_path = self.cwd / file_path
+                model_files.append(
+                    {
+                        "path": file_path,
+                        "file_type": full_path.suffix,
+                        "size_bytes": full_path.stat().st_size,
+                        "relevance": "Contains model/schema definitions",
+                    }
+                )
+            except OSError:
+                continue
+
+        return model_files
+
+    def _find_config_files_from_aggregate(
+        self,
+        aggregated_content: dict[str, str],
+        file_inventory: dict[str, list[Path]],
+    ) -> list[dict[str, Any]]:
+        """Fast config files analysis using aggregated content."""
+        configs = []
+        for file_path in file_inventory["config_files"][:10]:  # Limit for performance
+            configs.append(
+                {
+                    "path": str(file_path.relative_to(self.cwd)),
+                    "file_type": file_path.suffix,
+                    "size_bytes": file_path.stat().st_size,
+                }
+            )
+        return configs
+
+    def _extract_semantic_knowledge_from_aggregate(
+        self,
+        aggregated_content: dict[str, str],
+        file_inventory: dict[str, list[Path]],
+    ) -> dict[str, Any]:
+        """Fast semantic knowledge extraction using aggregated content."""
+        # Use the aggregated code content for semantic analysis
+        all_code = aggregated_content["all_code"]
+
+        if not all_code.strip():
+            return {
+                "semantic_knowledge": None,
+                "message": "No code content found for semantic analysis",
+            }
+
+        python_files = [f for f in file_inventory["code_files"] if f.suffix == ".py"]
+
+        if not python_files:
+            return {
+                "semantic_knowledge": None,
+                "message": "No Python files found for semantic analysis",
+            }
+
+        # Debug logging to see what we're working with
+        logger.info(
+            "🔍 DEBUG: Found %d Python files for semantic analysis", len(python_files)
+        )
+        for f in python_files[:5]:  # Show first 5
+            logger.info("🔍 DEBUG: Python file: %s", f.relative_to(self.cwd))
+
+        logger.info("🔍 DEBUG: Aggregated code length: %d characters", len(all_code))
+        logger.info("🔍 DEBUG: First 500 chars of aggregated code:")
+        logger.info("🔍 DEBUG: %s", all_code[:500])
+
+        # Extract semantic patterns from aggregated content
+        semantic_patterns = self._extract_semantic_patterns_from_code(all_code)
+        logger.info("🔍 DEBUG: Semantic patterns result: %s", semantic_patterns)
+
+        if semantic_patterns:
+            return {
+                "semantic_knowledge": semantic_patterns,
+                "message": f"Extracted from {len(python_files)} Python files via aggregation",
+            }
+        return {
+            "semantic_knowledge": None,
+            "message": "No semantic patterns found in aggregated code",
+        }
+
+    def _extract_semantic_patterns_from_code(
+        self, all_code: str
+    ) -> dict[str, Any] | None:
+        """Extract semantic patterns from aggregated code content."""
+        patterns = {
+            "pydantic_fields": {},
+            "class_definitions": [],
+            "function_definitions": [],
+            "variable_assignments": {},
+            "comments": [],
+        }
+
+        lines = all_code.split("\n")
+        current_file = None
+
+        for line_num, line in enumerate(lines):
+            # Track which file we're in
+            if line.startswith("# FILE:"):
+                current_file = line.replace("# FILE:", "").strip()
+                continue
+            if line.startswith("# END FILE:"):
+                current_file = None
+                continue
+
+            if not current_file:
+                continue
+
+            stripped = line.strip()
+
+            # Extract Pydantic field definitions with comments
+            if ":" in stripped and not stripped.startswith("#"):
+                # Look for patterns like: field_name: Type = Field(description="Description")
+                # or: field_name: Type  # Comment about meaning
+                field_match = re.match(
+                    r"(\w+)\s*:\s*([^=]+)(?:=.*)?(?:\s*#\s*(.+))?", stripped
+                )
+                if field_match:
+                    field_name, field_type, comment = field_match.groups()
+
+                    # Look for Field() descriptions
+                    description = None
+                    if "Field(" in stripped:
+                        desc_match = re.search(
+                            r'description\s*=\s*["\']([^"\']+)["\']', stripped
+                        )
+                        if desc_match:
+                            description = desc_match.group(1)
+
+                    patterns["pydantic_fields"][field_name] = {
+                        "type": field_type.strip(),
+                        "comment": comment.strip() if comment else None,
+                        "description": description,
+                        "file": current_file,
+                        "line": line_num,
+                    }
+
+            # Extract comments that might contain semantic information
+            if stripped.startswith("#") and len(stripped) > 3:
+                comment_text = stripped[1:].strip()
+                if len(comment_text) > 10:  # Meaningful comments
+                    patterns["comments"].append(
+                        {
+                            "text": comment_text,
+                            "file": current_file,
+                            "line": line_num,
+                        }
+                    )
+
+        # Extract all semantic patterns found in the code
+        found_columns = {}
+
+        # Collect all Pydantic fields with descriptions
+        for field_name, field_info in patterns["pydantic_fields"].items():
+            if field_info.get("description") or field_info.get("comment"):
+                found_columns[field_name] = {
+                    "pydantic_definition": field_info,
+                    "related_comments": [],
+                    "inferred_meaning": field_info.get("description")
+                    or field_info.get("comment"),
+                }
+
+        # Find comments that might relate to any discovered fields
+        for comment in patterns["comments"]:
+            comment_text = comment["text"].lower()
+            # Look for comments that mention any of our discovered field names
+            for field_name in found_columns:
+                if field_name.lower() in comment_text:
+                    found_columns[field_name]["related_comments"].append(comment)
+
+        if found_columns:
+            knowledge_graph = {
+                "columns": found_columns,
+                "total_fields_found": len(patterns["pydantic_fields"]),
+                "total_comments_found": len(patterns["comments"]),
+            }
+
+            return {
+                "knowledge_graph": knowledge_graph,
+                "column_summary": {
+                    "total_columns": len(found_columns),
+                    "high_confidence_columns": sum(
+                        1
+                        for col in found_columns.values()
+                        if col["pydantic_definition"].get("description")
+                    ),
+                },
+            }
+
+        return None
+
+        return None
+
         # Special filenames to prioritize
         self.important_files = {
             "readme.md",
@@ -72,7 +593,7 @@ class CodebaseScanner:
         self.doc_directories = {"docs", "doc", "documentation", "wiki", "help"}
 
     def scan_for_context(self, data_file: Path) -> dict[str, Any]:
-        """Scan codebase for context related to the data file.
+        """Scan codebase for context related to the data file using optimized aggregation.
 
         Args:
             data_file: Path to the data file being metacontextualized
@@ -81,14 +602,73 @@ class CodebaseScanner:
             Dictionary containing discovered context information
 
         """
+        scan_start = time.time()
+        timing_log = {}
+
+        # Step 1: Single directory traversal to collect all relevant files
+        inventory_start = time.time()
+        file_inventory = self._collect_file_inventory(data_file)
+        timing_log["file_inventory"] = time.time() - inventory_start
+
+        # Step 2: Aggregate content for fast searching
+        aggregation_start = time.time()
+        aggregated_content = self._aggregate_file_contents(file_inventory)
+        timing_log["content_aggregation"] = time.time() - aggregation_start
+
+        # Step 3: Fast analysis on aggregated content
+        project_start = time.time()
+        project_info = self._analyze_project_info_from_aggregate(
+            aggregated_content, file_inventory
+        )
+        timing_log["project_info"] = time.time() - project_start
+
+        code_start = time.time()
+        related_code = self._find_related_code_from_aggregate(
+            data_file, aggregated_content, file_inventory
+        )
+        timing_log["related_code"] = time.time() - code_start
+
+        docs_start = time.time()
+        documentation = self._find_documentation_from_aggregate(
+            aggregated_content, file_inventory
+        )
+        timing_log["documentation"] = time.time() - docs_start
+
+        models_start = time.time()
+        data_models = self._find_data_models_from_aggregate(
+            data_file, aggregated_content, file_inventory
+        )
+        timing_log["data_models"] = time.time() - models_start
+
+        config_start = time.time()
+        config_files = self._find_config_files_from_aggregate(
+            aggregated_content, file_inventory
+        )
+        timing_log["config_files"] = time.time() - config_start
+
+        refs_start = time.time()
+        cross_references = self._find_cross_references_from_aggregate(
+            data_file, aggregated_content, file_inventory
+        )
+        timing_log["cross_references"] = time.time() - refs_start
+
+        semantic_start = time.time()
+        semantic_knowledge = self._extract_semantic_knowledge_from_aggregate(
+            aggregated_content, file_inventory
+        )
+        timing_log["semantic_knowledge"] = time.time() - semantic_start
+
+        total_scan_time = time.time() - scan_start
+        timing_log["total_scan"] = total_scan_time
+
         context: dict[str, Any] = {
-            "project_info": self._scan_project_info(),
-            "related_code": self._find_related_code(data_file),
-            "documentation": self._scan_documentation(),
-            "data_models": self._find_data_models(data_file),
-            "config_files": self._scan_config_files(),
-            "cross_references": self._find_cross_references(data_file),
-            "semantic_knowledge": self._extract_semantic_knowledge(),
+            "project_info": project_info,
+            "related_code": related_code,
+            "documentation": documentation,
+            "data_models": data_models,
+            "config_files": config_files,
+            "cross_references": cross_references,
+            "semantic_knowledge": semantic_knowledge,
             "scan_summary": {},
         }
 
@@ -113,7 +693,15 @@ class CodebaseScanner:
             + len(context["cross_references"]["imports_from"]),
             "semantic_columns_found": semantic_count,
             "scan_depth": self._get_scan_depth(),
+            "timing": timing_log,  # Add timing info to summary
         }
+
+        # Log timing information for slow operations
+        if total_scan_time > 1.0:  # Only log if scan takes more than 1 second
+            logger.info("🔍 CODEBASE SCAN TIMING:")
+            for operation, duration in timing_log.items():
+                if duration > 0.1:  # Only show operations that take > 100ms
+                    logger.info("   %s: %.3fs", operation, duration)
 
         return context
 
@@ -783,7 +1371,8 @@ class CodebaseScanner:
                 logger.info("🔍 DEBUG: Running semantic knowledge extraction on files")
                 result = build_semantic_knowledge_graph(files_content)
                 logger.info(
-                    "🔍 DEBUG: Semantic knowledge result: %s", str(result)[:200] + "...",
+                    "🔍 DEBUG: Semantic knowledge result: %s",
+                    str(result)[:200] + "...",
                 )
                 return result
             logger.info("🔍 DEBUG: No Python files found for semantic analysis")

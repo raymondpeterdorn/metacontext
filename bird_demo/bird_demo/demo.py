@@ -12,7 +12,7 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 from dotenv import load_dotenv
-from metacontext.metacontextualize import metacontextualize, MetacontextualizeArgs
+from metacontext.metacontextualize import metacontextualize
 from PIL import Image
 from scripts.exploratory_data_analysis import eda
 from sklearn.ensemble import RandomForestClassifier
@@ -67,17 +67,15 @@ def csv_and_xlsx() -> None:
             ]
             processed_df.to_csv(output_csv_path, index=False)
 
-            args = MetacontextualizeArgs(
+            metacontextualize(
+                processed_df, 
+                output_csv_path,
                 output_format="yaml",
-                config={
-                    "scan_codebase": True,
-                    "llm_api_key": os.getenv("GEMINI_API_KEY"),
-                    "llm_provider": "gemini",
-                    
-                },
+                scan_codebase=True,
+                llm_api_key=os.getenv("GEMINI_API_KEY"),
+                llm_provider="gemini",
                 include_llm_analysis=True,
             )
-            metacontextualize(processed_df, output_csv_path, args)
         except Exception:
             logger.exception("Error processing CSV")
         # try:
@@ -165,17 +163,15 @@ def ml_models() -> None:
         with model_path.open("wb") as f:
             pickle.dump(model, f)
 
-        args = MetacontextualizeArgs(
+        metacontextualize(
+            model, 
+            model_path,
             output_format="yaml",
-            config={
-                "scan_codebase": True,
-                "llm_api_key": os.getenv("GEMINI_API_KEY"),
-                "llm_provider": "gemini",
-                
-            },
+            scan_codebase=True,
+            llm_api_key=os.getenv("GEMINI_API_KEY"),
+            llm_provider="gemini",
             include_llm_analysis=True,
         )
-        metacontextualize(model, model_path, args)
         logger.info("Machine learning model created successfully")
     except Exception:
         logger.exception("Error creating machine learning model")
@@ -205,17 +201,15 @@ def geospatial_data() -> None:
             geojson_buffered.to_file(str(geojson_output_path), driver="GeoJSON")
 
             # Generate metacontext
-            args = MetacontextualizeArgs(
+            metacontextualize(
+                geojson_buffered, 
+                geojson_output_path,
                 output_format="yaml",
-                config={
-                    "scan_codebase": True,
-                    "llm_api_key": os.getenv("GEMINI_API_KEY"),
-                    "llm_provider": "gemini",
-                    
-                },
+                scan_codebase=True,
+                llm_api_key=os.getenv("GEMINI_API_KEY"),
+                llm_provider="gemini",
                 include_llm_analysis=True,
             )
-            metacontextualize(geojson_buffered, geojson_output_path, args)
             logger.info("Created buffered GeoJSON at %s", geojson_output_path)
         except Exception:
             logger.exception("Error processing GeoJSON")
@@ -237,17 +231,15 @@ def geospatial_data() -> None:
             gpkg_filtered.to_file(str(gpkg_output_path), driver="GPKG")
 
             # Generate metacontext
-            args = MetacontextualizeArgs(
+            metacontextualize(
+                gpkg_filtered, 
+                gpkg_output_path,
                 output_format="yaml",
-                config={
-                    "scan_codebase": True,
-                    "llm_api_key": os.getenv("GEMINI_API_KEY"),
-                    "llm_provider": "gemini",
-                    
-                },
+                scan_codebase=True,
+                llm_api_key=os.getenv("GEMINI_API_KEY"),
+                llm_provider="gemini",
                 include_llm_analysis=True,
             )
-            metacontextualize(gpkg_filtered, gpkg_output_path, args)
             logger.info("Created filtered GeoPackage at %s", gpkg_output_path)
         except Exception:
             logger.exception("Error processing GeoPackage")
@@ -298,18 +290,15 @@ def media_data() -> None:
     bird_img.save(img_path)
 
     # Generate metacontext for the image
-    args = MetacontextualizeArgs(
+    metacontextualize(
+        bird_img, 
+        img_path,
         output_format="yaml",
-        config={
-            "scan_codebase": True,
-            "llm_api_key": os.getenv("GEMINI_API_KEY"),
-            "llm_provider": "gemini",
-            
-        },
+        scan_codebase=True,
+        llm_api_key=os.getenv("GEMINI_API_KEY"),
+        llm_provider="gemini",
         include_llm_analysis=True,
     )
-
-    metacontextualize(bird_img, img_path, args)
 
 def main() -> None:
     """Train and save a simple bird classification model."""

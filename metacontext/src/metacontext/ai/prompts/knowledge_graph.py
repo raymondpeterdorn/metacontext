@@ -411,7 +411,8 @@ class SemanticKnowledgeGraph:
         del self.columns[alias_name]
 
     def get_high_confidence_columns(
-        self, min_confidence: float = 0.5,
+        self,
+        min_confidence: float = 0.5,
     ) -> dict[str, ColumnKnowledge]:
         """Get columns with confidence score above threshold."""
         return {
@@ -661,7 +662,8 @@ class SemanticKnowledgeGraph:
                                 target_type="column",
                                 target_name=column_name,
                                 target_file=self.columns.get(
-                                    column_name, ColumnKnowledge(name=""),
+                                    column_name,
+                                    ColumnKnowledge(name=""),
                                 ).source_files[0]
                                 if self.columns.get(column_name)
                                 and self.columns[column_name].source_files
@@ -833,7 +835,10 @@ class SemanticKnowledgeGraph:
 
                 # Check if columns are similar enough to merge
                 if self._are_columns_similar(
-                    column, other_column, column_name, other_name,
+                    column,
+                    other_column,
+                    column_name,
+                    other_name,
                 ):
                     similar_columns.append((other_name, other_column))
 
@@ -855,7 +860,11 @@ class SemanticKnowledgeGraph:
             self._execute_column_merge(merge_group)
 
     def _are_columns_similar(
-        self, col1: ColumnKnowledge, col2: ColumnKnowledge, name1: str, name2: str,
+        self,
+        col1: ColumnKnowledge,
+        col2: ColumnKnowledge,
+        name1: str,
+        name2: str,
     ) -> bool:
         """Determine if two columns are similar enough to merge."""
         # Check name similarity (edit distance)
@@ -868,7 +877,8 @@ class SemanticKnowledgeGraph:
         definition_similarity = 0.0
         if col1.definition and col2.definition:
             definition_similarity = self._calculate_text_similarity(
-                col1.definition, col2.definition,
+                col1.definition,
+                col2.definition,
             )
 
         # Merge criteria: high name similarity OR alias relationship OR high definition similarity
@@ -888,7 +898,8 @@ class SemanticKnowledgeGraph:
         # Calculate common prefix/suffix and substring matches
         common_chars = set(name1.lower()) & set(name2.lower())
         char_similarity = len(common_chars) / max(
-            len(set(name1.lower())), len(set(name2.lower())),
+            len(set(name1.lower())),
+            len(set(name2.lower())),
         )
 
         # Check for common patterns
@@ -946,7 +957,8 @@ class SemanticKnowledgeGraph:
 
             # Boost confidence for merged columns
             primary_column.confidence_score = min(
-                1.0, primary_column.confidence_score + 0.1,
+                1.0,
+                primary_column.confidence_score + 0.1,
             )
 
             # Remove the merged column
@@ -977,7 +989,8 @@ class SemanticKnowledgeGraph:
             if source_count > 1:
                 consolidation_bonus = min(0.3, source_count * 0.05)
                 column.confidence_score = min(
-                    1.0, column.confidence_score + consolidation_bonus,
+                    1.0,
+                    column.confidence_score + consolidation_bonus,
                 )
 
     def get_conflict_resolution_summary(self) -> dict[str, Any]:
@@ -1070,7 +1083,9 @@ class SemanticKnowledgeGraph:
                     connection_counts[name] = connection_counts.get(name, 0) + 1
 
         most_connected = sorted(
-            connection_counts.items(), key=lambda x: x[1], reverse=True,
+            connection_counts.items(),
+            key=lambda x: x[1],
+            reverse=True,
         )[:5]
 
         return {
