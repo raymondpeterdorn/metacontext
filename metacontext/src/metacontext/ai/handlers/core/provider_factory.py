@@ -57,7 +57,7 @@ class ProviderFactory:
         if hasattr(provider_cls, "create_from_config"):
             return provider_cls.create_from_config(provider_config)
 
-        # Fallback for providers that don't implement create_from_config
+        return provider_cls(**provider_config)
         return provider_cls(**provider_config)
 
     @staticmethod

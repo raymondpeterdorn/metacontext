@@ -84,7 +84,9 @@ class CopilotProvider(BaseCodeCompanionProvider):
         try:
             # Use gh copilot suggest command with shell target and output to file for non-interactive mode
             with tempfile.NamedTemporaryFile(
-                mode="w+", suffix=".txt", delete=False
+                mode="w+",
+                suffix=".txt",
+                delete=False,
             ) as f:
                 temp_file = f.name
 

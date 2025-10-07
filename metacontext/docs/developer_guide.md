@@ -33,6 +33,43 @@ File handlers provide specialized processing for different file types:
 
 Handlers implement file detection, deterministic analysis, and AI enrichment generation.
 
+### Semantic Analysis System
+
+Metacontext v0.3.0 introduces a comprehensive **semantic codebase analysis system** that extracts business context from codebases to enhance AI understanding. This system processes Python codebases through six phases:
+
+#### Core Components
+
+- **SemanticExtractor**: AST-based parsing for functions, classes, and assignments
+- **PydanticSchemaExtractor**: Mining field descriptions and validation rules
+- **AdvancedSemanticExtractor**: Pattern recognition for constants, enums, and business logic
+- **SemanticKnowledgeGraph**: Relationship building with confidence scoring
+- **LLMOptimizedOutputGenerator**: Multi-format output for different AI contexts
+
+#### Usage Example
+
+```python
+from metacontext.ai.prompts.context_preprocessor import build_semantic_knowledge_graph
+
+# Analyze a project directory
+knowledge_graph = build_semantic_knowledge_graph("/path/to/project")
+
+# Access extracted information
+for column_name, knowledge in knowledge_graph.column_knowledge.items():
+    print(f"Column: {column_name}")
+    print(f"Definition: {knowledge.definition}")
+    print(f"Business Context: {knowledge.business_context}")
+    print(f"Confidence: {knowledge.confidence}")
+```
+
+#### Extending the System
+
+To add new semantic extraction patterns:
+
+1. **Enhance Pattern Recognition**: Add new regex patterns to `BUSINESS_LOGIC_PATTERNS` or `CONSTANT_DEFINITION_PATTERNS`
+2. **Extend AST Analysis**: Override visitor methods in `AdvancedSemanticExtractor`
+3. **Add Output Formats**: Create new format generators in `LLMOptimizedOutputGenerator`
+4. **Improve Confidence Scoring**: Modify the confidence calculation algorithm in `SemanticKnowledgeGraph`
+
 ## Working with Schemas
 
 ### Schema Field Descriptions

@@ -80,45 +80,45 @@ def csv_and_xlsx() -> None:
             metacontextualize(processed_df, output_csv_path, args)
         except Exception:
             logger.exception("Error processing CSV")
-        try:
-            eda_output = eda(df_csv)
-            eda_output_path = OUTPUT_DIR / "eda_csv.csv"
-            eda_output.to_csv(eda_output_path)
-            metacontextualize(eda_output, eda_output_path, args)
-        except Exception:
-            logger.exception("Error running EDA")
+        # try:
+        #     eda_output = eda(df_csv)
+        #     eda_output_path = OUTPUT_DIR / "eda_csv.csv"
+        #     eda_output.to_csv(eda_output_path)
+        #     metacontextualize(eda_output, eda_output_path, args)
+        # except Exception:
+        #     logger.exception("Error running EDA")
     else:
         logger.warning("CSV file not found: %s", csv_path)
 
     # Read Excel
-    if xlsx_path.exists():
-        try:
-            df_xlsx = pd.read_excel(xlsx_path, sheet_name=0)
+    # if xlsx_path.exists():
+    #     try:
+    #         df_xlsx = pd.read_excel(xlsx_path, sheet_name=0)
 
-            # Process Excel file if it has similar columns
-            if all(col in df_xlsx.columns for col in ["diet_types", "nocturnal_diurnal"]):
-                df_xlsx["diet_dict"] = df_xlsx["diet_types"].apply(ast.literal_eval)
-                df_xlsx["primary_diet"] = df_xlsx["diet_dict"].apply(lambda x: max(x, key=x.get))
-                df_xlsx["nocturn_alley"] = (df_xlsx["nocturnal_diurnal"] == "Nocturnal").astype(int)
-                df_xlsx.to_excel(output_xlsx_path, index=False)
+    #         # Process Excel file if it has similar columns
+    #         if all(col in df_xlsx.columns for col in ["diet_types", "nocturnal_diurnal"]):
+    #             df_xlsx["diet_dict"] = df_xlsx["diet_types"].apply(ast.literal_eval)
+    #             df_xlsx["primary_diet"] = df_xlsx["diet_dict"].apply(lambda x: max(x, key=x.get))
+    #             df_xlsx["nocturn_alley"] = (df_xlsx["nocturnal_diurnal"] == "Nocturnal").astype(int)
+    #             df_xlsx.to_excel(output_xlsx_path, index=False)
 
-                args = MetacontextualizeArgs(
-                    output_format="yaml",
-                    config={
-                        "scan_codebase": True,
-                        "llm_api_key": os.getenv("GEMINI_API_KEY"),
-                        "llm_provider": "gemini",
+    #             args = MetacontextualizeArgs(
+    #                 output_format="yaml",
+    #                 config={
+    #                     "scan_codebase": True,
+    #                     "llm_api_key": os.getenv("GEMINI_API_KEY"),
+    #                     "llm_provider": "gemini",
                         
-                    },
-                    include_llm_analysis=True,
-                )
-                metacontextualize(df_xlsx, output_xlsx_path, args)
-            else:
-                logger.warning("Excel file doesn't have expected columns")
-        except Exception:
-            logger.exception("Error processing Excel")
-    else:
-        logger.warning("Excel file not found: %s", xlsx_path)
+    #                 },
+    #                 include_llm_analysis=True,
+    #             )
+    #             metacontextualize(df_xlsx, output_xlsx_path, args)
+    #         else:
+    #             logger.warning("Excel file doesn't have expected columns")
+    #     except Exception:
+    #         logger.exception("Error processing Excel")
+    # else:
+    #     logger.warning("Excel file not found: %s", xlsx_path)
 
 def ml_models() -> None:
     """Create and train a machine learning model for bird classification."""

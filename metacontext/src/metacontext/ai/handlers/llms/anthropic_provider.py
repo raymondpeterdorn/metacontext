@@ -91,14 +91,12 @@ class AnthropicProvider(SimplifiedLLMProvider):
                 for content_block in response.content:
                     if content_block.type == "text":
                         return content_block.text
-
-            # If no text content was found
-            return ""
-
         except Exception as e:
             logger.exception("Anthropic call failed")
             msg = f"Failed to call Anthropic: {e!s}"
             raise LLMError(msg) from e
+        # If no text content was found
+        return ""
 
     @classmethod
     def get_default_model(cls) -> str:
@@ -116,7 +114,8 @@ class AnthropicProvider(SimplifiedLLMProvider):
         model = config.get("model", cls.get_default_model())
         api_key = config.get("api_key") or os.getenv(cls.get_api_key_env_var())
         temperature = config.get(
-            "temperature", cls.DEFAULT_CONFIG["default_temperature"]
+            "temperature",
+            cls.DEFAULT_CONFIG["default_temperature"],
         )
 
         return cls(model=model, api_key=api_key, temperature=temperature)

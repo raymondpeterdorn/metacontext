@@ -53,7 +53,7 @@ class BaseCodeCompanionProvider(AbstractLLMProvider):
         temperature = kwargs.pop("temperature", 0.1)
         if not isinstance(temperature, float):
             temperature = 0.1
-        super().__init__(model=model, api_key=api_key, temperature=temperature)
+        super().__init__()
 
     @property
     def provider_name(self) -> str:
@@ -86,7 +86,7 @@ class BaseCodeCompanionProvider(AbstractLLMProvider):
     def get_available_models(self) -> list[str]:
         """Get list of available models for the code companion."""
         # Code companions don't have a queryable model list
-        return [self.model]
+        return ["default"]
 
     def check_health(self) -> dict[str, Any]:
         """Check if the code companion is available."""
@@ -182,12 +182,12 @@ class BaseCodeCompanionProvider(AbstractLLMProvider):
         logger.info("Using manual interaction mode for %s", self.companion_name)
         return self._manual_interaction(prompt)
 
-    @abstractmethod
     def _cli_interaction(
         self,
         prompt: str,
     ) -> dict[str, Any]:
         """Handle CLI interaction with the companion."""
+        raise NotImplementedError("CLI interaction is not supported by this provider.")
 
     def _manual_interaction(
         self,
@@ -215,10 +215,10 @@ class BaseCodeCompanionProvider(AbstractLLMProvider):
 
             return {
                 "content": response,
-                "model": self.model,
+                "model": "default",
                 "usage": {
                     "prompt_tokens": len(prompt.split()),
-                    "completion_tokens": len(response.split()) if response else 0,
+                    "completion_tokens": len(response.split()),
                     "total_tokens": len(prompt.split())
                     + (len(response.split()) if response else 0),
                 },

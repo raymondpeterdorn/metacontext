@@ -92,7 +92,9 @@ class SchemaExtensionFactory:
 
     @classmethod
     def register_extension_mapping(
-        cls, file_extension: str, schema_names: list[str]
+        cls,
+        file_extension: str,
+        schema_names: list[str],
     ) -> None:
         """Register a new file extension to schema mapping.
 

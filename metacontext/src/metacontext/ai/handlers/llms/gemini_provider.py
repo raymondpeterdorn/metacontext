@@ -17,6 +17,9 @@ from metacontext.core.config import get_config
 
 logger = logging.getLogger(__name__)
 
+TRUNCATION_LIMIT = 200
+RESPONSE_TRUNCATION_LIMIT = 500
+
 
 class GeminiProvider(SimplifiedLLMProvider):
     """Gemini LLM provider with simplified implementation."""
@@ -85,7 +88,10 @@ class GeminiProvider(SimplifiedLLMProvider):
 
             logger.info("🔍 Calling Gemini with model: %s", self.model)
             logger.debug(
-                "Prompt: %s", prompt[:200] + "..." if len(prompt) > 200 else prompt
+                "Prompt: %s",
+                prompt[:TRUNCATION_LIMIT] + "..."
+                if len(prompt) > TRUNCATION_LIMIT
+                else prompt,
             )
 
             # Configure generation for JSON format
@@ -112,12 +118,15 @@ class GeminiProvider(SimplifiedLLMProvider):
             if hasattr(response, "usage_metadata"):
                 usage = response.usage_metadata
                 if hasattr(usage, "prompt_token_count") and hasattr(
-                    usage, "candidates_token_count"
+                    usage,
+                    "candidates_token_count",
                 ):
                     prompt_tokens = getattr(usage, "prompt_token_count", 0)
                     completion_tokens = getattr(usage, "candidates_token_count", 0)
                     total_tokens = getattr(
-                        usage, "total_token_count", prompt_tokens + completion_tokens
+                        usage,
+                        "total_token_count",
+                        prompt_tokens + completion_tokens,
                     )
 
                     self._token_tracker.track_response(
@@ -147,8 +156,8 @@ class GeminiProvider(SimplifiedLLMProvider):
                 response_text = str(response.text)
                 logger.debug(
                     "Raw response: %s",
-                    response_text[:500] + "..."
-                    if len(response_text) > 500
+                    response_text[:RESPONSE_TRUNCATION_LIMIT] + "..."
+                    if len(response_text) > RESPONSE_TRUNCATION_LIMIT
                     else response_text,
                 )
                 return response_text
@@ -158,19 +167,19 @@ class GeminiProvider(SimplifiedLLMProvider):
                 response_text = str(response.parts[0].text)
                 logger.debug(
                     "Raw response: %s",
-                    response_text[:500] + "..."
-                    if len(response_text) > 500
+                    response_text[:RESPONSE_TRUNCATION_LIMIT] + "..."
+                    if len(response_text) > RESPONSE_TRUNCATION_LIMIT
                     else response_text,
                 )
                 return response_text
-
-            logger.warning("⚠️ No text found in Gemini response")
-            return ""
 
         except Exception as e:
             logger.exception("Gemini call failed")
             msg = f"Failed to call Gemini: {e!s}"
             raise LLMError(msg) from e
+
+        logger.warning("⚠️ No text found in Gemini response")
+        return ""
 
     @classmethod
     def get_default_model(cls) -> str:

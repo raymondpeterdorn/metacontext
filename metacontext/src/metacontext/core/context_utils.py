@@ -123,7 +123,8 @@ class ContextNormalizer:
 
     @classmethod
     def _normalize_list(
-        cls, lst: list[Any]
+        cls,
+        lst: list[Any],
     ) -> list[JsonSerializable] | dict[str, JsonSerializable]:
         """Normalize a list, truncating if too long."""
         if len(lst) <= cls.MAX_LIST_ITEMS:
@@ -142,7 +143,8 @@ class ContextNormalizer:
 
     @classmethod
     def _normalize_array(
-        cls, arr: np.ndarray
+        cls,
+        arr: np.ndarray,
     ) -> list[JsonSerializable] | dict[str, JsonSerializable]:
         """Normalize NumPy arrays."""
         # For small arrays, convert to list

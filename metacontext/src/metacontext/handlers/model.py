@@ -84,7 +84,9 @@ class ModelHandler(BaseFileHandler):
         }
 
     def analyze_deterministic(
-        self, file_path: Path, data_object: object = None
+        self,
+        file_path: Path,
+        data_object: object = None,
     ) -> dict[str, object]:
         """Analyze file without AI - deterministic analysis only."""
         # Basic model file analysis - no AI needed
@@ -115,15 +117,16 @@ class ModelHandler(BaseFileHandler):
         training_analysis = {}
 
         if training_scripts:
-            training_analysis = self._analyze_training_scripts(
-                training_scripts, ai_companion
-            )
+            # TODO: Implement training script analysis
+            training_analysis = {
+                "analysis": "Training script analysis not yet implemented",
+            }
 
         deep_analysis.update(
             {
                 "training_scripts": [str(script) for script in training_scripts],
                 "training_analysis": training_analysis,
-            }
+            },
         )
 
         return deep_analysis
@@ -563,7 +566,7 @@ class ModelHandler(BaseFileHandler):
                 "training_data": training_data,
                 "evaluation_metrics": {},  # Empty dict instead of None
                 "deployment_recommendations": [],  # Empty list instead of None
-            }
+            },
         )
         return ModelAIEnrichment(**enrichment_kwargs)
 
@@ -696,7 +699,9 @@ class ModelHandler(BaseFileHandler):
     }
 
     def get_bulk_prompts(
-        self, file_path: Path, data_object: object = None
+        self,
+        file_path: Path,
+        data_object: object = None,
     ) -> dict[str, str]:
         """Get bulk prompts for this file type from config."""
         return self.PROMPT_CONFIG.copy()

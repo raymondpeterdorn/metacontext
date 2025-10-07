@@ -24,6 +24,10 @@ class HandlerProtocol(Protocol):
         """Check if handler can handle the given file."""
         ...
 
+    def create_metacontext(self, file_path: Path, args: Any) -> Any:
+        """Create metacontext for the given file."""
+        ...
+
 
 # Type variable for handler classes
 T = TypeVar("T")
@@ -182,7 +186,8 @@ class HandlerRegistry:
             try:
                 handler = handler_class()
                 if hasattr(handler, "supported_extensions") and hasattr(
-                    handler, "required_schema_extensions"
+                    handler,
+                    "required_schema_extensions",
                 ):
                     for ext in handler.supported_extensions:
                         extension_map[ext] = handler.required_schema_extensions

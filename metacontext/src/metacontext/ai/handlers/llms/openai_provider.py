@@ -65,7 +65,9 @@ class OpenAIProvider(SimplifiedLLMProvider):
         return self.client
 
     def generate_json(
-        self, prompt: str, schema_class: type[BaseModel] | None = None
+        self,
+        prompt: str,
+        schema_class: type[BaseModel] | None = None,
     ) -> dict[str, Any]:
         """Generate a JSON response from the OpenAI API.
 
@@ -117,13 +119,13 @@ class OpenAIProvider(SimplifiedLLMProvider):
                 except Exception as e:
                     msg = f"Failed to validate response against schema: {e}"
                     raise LLMError(msg) from e
-
-            return response_data
         except Exception as e:
             if not isinstance(e, LLMError):
                 msg = f"OpenAI API error: {e}"
                 raise LLMError(msg) from e
             raise
+        else:
+            return response_data
 
     def _get_system_prompt(self) -> str:
         """Get system prompt for structured generation."""

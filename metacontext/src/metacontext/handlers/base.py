@@ -75,7 +75,9 @@ class BaseFileHandler(ABC):
 
     @abstractmethod
     def analyze_deterministic(
-        self, file_path: Path, data_object: object = None
+        self,
+        file_path: Path,
+        data_object: object = None,
     ) -> dict[str, object]:
         """Analyze file without AI - deterministic analysis only.
 
@@ -178,7 +180,7 @@ class BaseFileHandler(ABC):
         deterministic_result = self.analyze_deterministic(file_path, data_object)
 
         # Combine results so far
-        combined_context = {
+        combined_context: dict[str, Any] = {
             "probe": probe_result,
             "deterministic": deterministic_result,
         }
@@ -258,7 +260,6 @@ class BaseFileHandler(ABC):
         extension_context = self.generate_context(
             file_path=file_path,
             data_object=args.data_object,
-            codebase_context=args.codebase_context,
             ai_companion=args.ai_companion,
         )
 

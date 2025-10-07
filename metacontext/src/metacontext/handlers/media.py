@@ -109,7 +109,9 @@ class MediaHandler(BaseFileHandler):
         return mime_type and mime_type.startswith(("image/", "video/", "audio/"))
 
     def get_required_extensions(
-        self, file_path: Path, data_object: object = None
+        self,
+        file_path: Path,
+        data_object: object = None,
     ) -> list[str]:
         """Return required extensions for media files."""
         return ["media_context"]
@@ -201,7 +203,9 @@ class MediaHandler(BaseFileHandler):
             ai_enrichment = None
             if ai_companion and hasattr(ai_companion, "generate_with_schema"):
                 ai_enrichment = self._generate_media_ai_enrichment(
-                    file_path, deterministic_metadata, ai_companion
+                    file_path,
+                    deterministic_metadata,
+                    ai_companion,
                 )
 
             return {
@@ -215,7 +219,8 @@ class MediaHandler(BaseFileHandler):
             return {"error": "Failed to generate media context"}
 
     def _analyze_media_deterministic(
-        self, file_path: Path
+        self,
+        file_path: Path,
     ) -> MediaDeterministicMetadata:
         """Analyze media file deterministically."""
         metadata = MediaDeterministicMetadata()
@@ -241,7 +246,9 @@ class MediaHandler(BaseFileHandler):
         return metadata
 
     def analyze_deterministic(
-        self, file_path: Path, data_object: object = None
+        self,
+        file_path: Path,
+        data_object: object = None,
     ) -> dict[str, object]:
         """Analyze file without AI - deterministic analysis only."""
         metadata = self._analyze_media_deterministic(file_path)
@@ -280,7 +287,7 @@ class MediaHandler(BaseFileHandler):
             return {
                 "media_ai_enrichment": ai_enrichment.model_dump()
                 if ai_enrichment
-                else None
+                else None,
             }
         except Exception:
             logger.exception("Error in deep analysis for %s", file_path)
@@ -306,7 +313,9 @@ class MediaHandler(BaseFileHandler):
                     media_info.duration = audio_file.info.length
                     media_info.bit_rate = getattr(audio_file.info, "bitrate", None)
                     media_info.sample_rate = getattr(
-                        audio_file.info, "sample_rate", None
+                        audio_file.info,
+                        "sample_rate",
+                        None,
                     )
                     media_info.channels = getattr(audio_file.info, "channels", None)
 
@@ -427,7 +436,9 @@ class MediaHandler(BaseFileHandler):
     }
 
     def get_bulk_prompts(
-        self, file_path: Path, data_object: object = None
-    ) -> dict[str, str]:  # noqa: ARG002
+        self,
+        file_path: Path,
+        data_object: object = None,
+    ) -> dict[str, str]:
         """Get bulk prompts for this file type from config."""
         return self.PROMPT_CONFIG.copy()

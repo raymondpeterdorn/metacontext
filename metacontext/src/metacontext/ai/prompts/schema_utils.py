@@ -104,11 +104,11 @@ def compact_schema_hint_nested(schema_class: type[BaseModel], depth: int = 0) ->
                         else nested_desc
                     )
                     nested_lines.append(
-                        f"{nested_indent}- {nested_name}: {nested_type}  # {nested_desc}"
+                        f"{nested_indent}- {nested_name}: {nested_type}  # {nested_desc}",
                     )
                 else:
                     nested_lines.append(
-                        f"{nested_indent}- {nested_name}: {nested_type}"
+                        f"{nested_indent}- {nested_name}: {nested_type}",
                     )
 
             if nested_lines:

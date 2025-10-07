@@ -81,17 +81,28 @@ class CodebaseScanner:
             Dictionary containing discovered context information
 
         """
-        context = {
+        context: dict[str, Any] = {
             "project_info": self._scan_project_info(),
             "related_code": self._find_related_code(data_file),
             "documentation": self._scan_documentation(),
             "data_models": self._find_data_models(data_file),
             "config_files": self._scan_config_files(),
             "cross_references": self._find_cross_references(data_file),
+            "semantic_knowledge": self._extract_semantic_knowledge(),
             "scan_summary": {},
         }
 
         # Add summary statistics
+        semantic_summary = context["semantic_knowledge"]
+        semantic_count = 0
+        if isinstance(semantic_summary, dict) and "summary" in semantic_summary:
+            try:
+                semantic_count = len(
+                    semantic_summary.get("summary", {}).get("column_knowledge", {}),
+                )
+            except (AttributeError, TypeError):
+                semantic_count = 0
+
         context["scan_summary"] = {
             "total_files_scanned": self._count_files_scanned(),
             "related_code_files": len(context["related_code"]),
@@ -100,6 +111,7 @@ class CodebaseScanner:
             "config_files": len(context["config_files"]),
             "cross_reference_files": len(context["cross_references"]["referenced_by"])
             + len(context["cross_references"]["imports_from"]),
+            "semantic_columns_found": semantic_count,
             "scan_depth": self._get_scan_depth(),
         }
 
@@ -307,7 +319,7 @@ class CodebaseScanner:
             Dictionary containing cross-reference information
 
         """
-        cross_refs = {
+        cross_refs: dict[str, Any] = {
             "referenced_by": [],  # Files that reference/import/load this data file
             "imports_from": [],  # Files that this data file imports/depends on
             "data_dependencies": [],  # Other data files this file might depend on
@@ -389,10 +401,14 @@ class CodebaseScanner:
         return cross_refs
 
     def _find_file_references_in_content(
-        self, content: str, filename: str, file_stem: str, relative_path: str
+        self,
+        content: str,
+        filename: str,
+        file_stem: str,
+        relative_path: str,
     ) -> list[dict[str, Any]]:
         """Find references to a specific file in the content."""
-        references = []
+        references: list[dict[str, Any]] = []
         lines = content.split("\n")
 
         # Patterns to look for file references
@@ -413,23 +429,27 @@ class CodebaseScanner:
         for line_num, line in enumerate(lines, 1):
             for pattern, ref_type in patterns:
                 matches = re.finditer(pattern, line, re.IGNORECASE)
-                for match in matches:
-                    references.append(
-                        {
-                            "line_number": line_num,
-                            "line_content": line.strip(),
-                            "match": match.group(),
-                            "reference_type": ref_type,
-                            "context": self._get_line_context(
-                                lines, line_num - 1, context_lines=2
-                            ),
-                        }
-                    )
+                references.extend(
+                    {
+                        "line_number": line_num,
+                        "line_content": line.strip(),
+                        "match": match.group(),
+                        "reference_type": ref_type,
+                        "context": self._get_line_context(
+                            lines,
+                            line_num - 1,
+                            context_lines=2,
+                        ),
+                    }
+                    for match in matches
+                )
 
         return references
 
     def _extract_imports_from_content(
-        self, content: str, file_extension: str
+        self,
+        content: str,
+        file_extension: str,
     ) -> list[dict[str, Any]]:
         """Extract import statements from code content."""
         imports = []
@@ -453,14 +473,14 @@ class CodebaseScanner:
                                 "line_number": line_num,
                                 "import_type": import_type,
                                 "full_line": stripped_line,
-                            }
+                            },
                         )
 
         return imports
 
     def _find_data_dependencies_in_content(self, content: str) -> list[dict[str, Any]]:
         """Find data file dependencies in code content."""
-        dependencies = []
+        dependencies: list[dict[str, Any]] = []
         lines = content.split("\n")
 
         # Common data file extensions
@@ -480,23 +500,28 @@ class CodebaseScanner:
                 # Look for file paths with data extensions
                 pattern = rf"""['"`]([^'"`]*\{ext})['"`]"""
                 matches = re.finditer(pattern, line, re.IGNORECASE)
-                for match in matches:
-                    dependencies.append(
-                        {
-                            "file_path": match.group(1),
-                            "file_extension": ext,
-                            "line_number": line_num,
-                            "line_content": line.strip(),
-                            "context": self._get_line_context(
-                                lines, line_num - 1, context_lines=1
-                            ),
-                        }
-                    )
+                dependencies.extend(
+                    {
+                        "file_path": match.group(1),
+                        "file_extension": ext,
+                        "line_number": line_num,
+                        "line_content": line.strip(),
+                        "context": self._get_line_context(
+                            lines,
+                            line_num - 1,
+                            context_lines=1,
+                        ),
+                    }
+                    for match in matches
+                )
 
         return dependencies
 
     def _get_line_context(
-        self, lines: list[str], line_index: int, context_lines: int = 2
+        self,
+        lines: list[str],
+        line_index: int,
+        context_lines: int = 2,
     ) -> list[str]:
         """Get surrounding lines for context."""
         start = max(0, line_index - context_lines)
@@ -662,8 +687,8 @@ class CodebaseScanner:
         except OSError:
             return "Could not read file content"
 
-    def _get_code_preview(self, file_path: Path, max_lines: int = 15) -> str:
-        """Get a preview of code file, focusing on important parts."""
+    def _get_code_preview(self, file_path: Path, max_lines: int = 25) -> str:
+        """Get a preview of code file, focusing on important parts and semantic content."""
         try:
             with file_path.open(encoding="utf-8", errors="ignore") as f:
                 content = f.read()
@@ -671,13 +696,17 @@ class CodebaseScanner:
             lines = content.split("\n")
             preview_lines = []
 
-            # Prioritize imports, class definitions, and function definitions
+            # Prioritize structural elements AND semantic content
             important_patterns = [
                 r"^import\s+",
                 r"^from\s+.+import",
                 r"^class\s+",
                 r"^def\s+",
                 r"^async\s+def\s+",
+                r".*Field\s*\([^)]*description\s*=",  # Pydantic Field descriptions
+                r"^\s*\"\"\".*\"\"\"",  # Docstrings
+                r"^\s*#.*",  # Comments
+                r".*:\s*[^=]*=.*Field\(",  # Field definitions
             ]
 
             # First, get important lines
@@ -686,7 +715,7 @@ class CodebaseScanner:
                     re.match(pattern, line.strip()) for pattern in important_patterns
                 ):
                     preview_lines.append(line.rstrip())
-                    if len(preview_lines) >= max_lines // 2:
+                    if len(preview_lines) >= max_lines * 2 // 3:
                         break
 
             # Then add some regular content
@@ -717,8 +746,72 @@ class CodebaseScanner:
                     max_depth = max(max_depth, depth)
         except (OSError, ValueError):
             return 0
-        else:
-            return max_depth
+        return max_depth
+
+    def _extract_semantic_knowledge(self) -> dict[str, Any]:
+        """Extract semantic knowledge using our comprehensive analysis system."""
+        logger.info("🔍 DEBUG: Starting semantic knowledge extraction")
+        try:
+            # Import here to avoid circular imports
+            from metacontext.ai.prompts.context_preprocessor import (
+                build_semantic_knowledge_graph,
+            )
+
+            # Collect all Python files for semantic analysis
+            files_content = {}
+            for file_path in self.cwd.rglob("*.py"):
+                if file_path.is_file() and self._is_relevant_code_file(file_path):
+                    try:
+                        with file_path.open(encoding="utf-8") as f:
+                            relative_path = str(file_path.relative_to(self.cwd))
+                            files_content[relative_path] = f.read()
+                            logger.info(
+                                "🔍 DEBUG: Added file for semantic analysis: %s",
+                                relative_path,
+                            )
+                    except (UnicodeDecodeError, OSError) as e:
+                        logger.warning("Could not read file %s: %s", file_path, e)
+                        continue
+
+            logger.info(
+                "🔍 DEBUG: Found %d Python files for semantic analysis",
+                len(files_content),
+            )
+
+            # Run semantic analysis if we have files
+            if files_content:
+                logger.info("🔍 DEBUG: Running semantic knowledge extraction on files")
+                result = build_semantic_knowledge_graph(files_content)
+                logger.info(
+                    "🔍 DEBUG: Semantic knowledge result: %s", str(result)[:200] + "...",
+                )
+                return result
+            logger.info("🔍 DEBUG: No Python files found for semantic analysis")
+            return {
+                "semantic_knowledge": None,
+                "message": "No Python files found for semantic analysis",
+            }
+
+        except (ImportError, AttributeError) as e:
+            logger.warning("Semantic knowledge extraction failed: %s", e)
+            return {"semantic_knowledge": None, "error": str(e)}
+
+    def _is_relevant_code_file(self, file_path: Path) -> bool:
+        """Check if a code file is relevant for semantic analysis."""
+        # Skip test files, cache, and other non-relevant files
+        path_str = str(file_path)
+        skip_patterns = [
+            "__pycache__",
+            ".pytest_cache",
+            ".git",
+            "node_modules",
+            ".venv",
+            ".env",
+            "test_",
+            "_test.py",
+            "/tests/",
+        ]
+        return not any(pattern in path_str for pattern in skip_patterns)
 
 
 def scan_codebase_context(

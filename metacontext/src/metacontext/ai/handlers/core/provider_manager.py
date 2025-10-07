@@ -6,7 +6,7 @@ This module implements the provider priority system that prefers code companions
 
 import logging
 import subprocess
-from typing import Any
+from typing import Any, ClassVar
 
 from metacontext.ai.handlers.core.provider_factory import ProviderFactory
 from metacontext.ai.handlers.core.provider_registry import ProviderRegistry
@@ -20,7 +20,7 @@ class ProviderManager:
     """Enhanced provider manager with intelligent selection based on priority."""
 
     # Priority order: Code companions first, then API providers
-    PROVIDER_PRIORITY = [
+    PROVIDER_PRIORITY: ClassVar[list[str]] = [
         # Code companions (free, context-aware)
         "cursor",  # Cursor AI
         "copilot",  # GitHub Copilot
@@ -139,13 +139,14 @@ class ProviderManager:
                 timeout=5,
                 check=False,  # Don't raise on non-zero exit
             )
-            # Consider available if command runs (regardless of exit code)
-            return True
         except (subprocess.TimeoutExpired, FileNotFoundError):
             return False
-        except Exception as e:
+        except OSError as e:
             logger.debug("CLI check failed for %s: %s", command[0], e)
             return False
+        else:
+            # Consider available if command runs (regardless of exit code)
+            return True
 
     @classmethod
     def list_available_providers(cls) -> list[tuple[str, bool]]:

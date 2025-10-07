@@ -260,7 +260,8 @@ class FileInspector:
                     "non_null_count": int(df_limited[col].count()),
                     "null_count": int(df_limited[col].isna().sum()),
                     "null_percentage": round(
-                        (df_limited[col].isna().sum() / len(df_limited)) * 100, 2
+                        (df_limited[col].isna().sum() / len(df_limited)) * 100,
+                        2,
                     ),
                 }
 
@@ -274,7 +275,7 @@ class FileInspector:
                 elif df_limited[col].dtype == "object":
                     # Categorical column statistics
                     categorical_stats = self._get_categorical_statistics(
-                        df_limited[col]
+                        df_limited[col],
                     )
                     col_info.update(categorical_stats)
                     statistics[col] = categorical_stats
@@ -401,7 +402,8 @@ class FileInspector:
                         "non_null_count": int(df_limited[name].count()),
                         "null_count": int(df_limited[name].isna().sum()),
                         "null_percentage": round(
-                            (df_limited[name].isna().sum() / len(df_limited)) * 100, 2
+                            (df_limited[name].isna().sum() / len(df_limited)) * 100,
+                            2,
                         ),
                     }
 
@@ -417,7 +419,7 @@ class FileInspector:
                         statistics[name] = numeric_stats
                     elif df_limited[name].dtype == "object":
                         categorical_stats = self._get_categorical_statistics(
-                            df_limited[name]
+                            df_limited[name],
                         )
                         col_info.update(categorical_stats)
                         statistics[name] = categorical_stats
@@ -449,7 +451,7 @@ class FileInspector:
                     {
                         "name": name,
                         "type": col_type,
-                    }
+                    },
                 )
 
             return {

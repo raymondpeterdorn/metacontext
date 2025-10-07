@@ -4,6 +4,8 @@ This module defines the schema for codebase context information that is used
 across the system, avoiding overlapping concepts.
 """
 
+from typing import Any
+
 from pydantic import BaseModel, Field
 
 from metacontext.schemas.extensions.base import (
@@ -66,6 +68,10 @@ class CodeAIEnrichment(ForensicAIEnrichment):
     architecture_summary: str | None = Field(
         None,
         description="Summary of the codebase architecture and design patterns",
+    )
+    semantic_knowledge: dict[str, Any] | None = Field(
+        None,
+        description="Extracted semantic knowledge including column meanings, business logic, and data relationships from code analysis",
     )
 
 

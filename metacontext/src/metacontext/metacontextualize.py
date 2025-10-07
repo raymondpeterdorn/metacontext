@@ -29,6 +29,7 @@ from metacontext.handlers.model import ModelHandler
 from metacontext.handlers.tabular import CSVHandler
 from metacontext.inspectors.file_inspector import FileInspector
 from metacontext.schemas.core.codebase import (
+    CodeAIEnrichment,
     CodebaseContext,
     CodebaseRelationships,
     FileRelationship,
@@ -211,14 +212,21 @@ def _initialize_llm_handler(config: dict) -> LLMProvider | None:
             "max_retries": config.get("llm_max_retries", 3),
         }
 
-        logger.info("🔍 Initializing LLM provider with config: %s", llm_config)
-
         # Use enhanced provider manager for intelligent provider selection
+        provider_kwargs = {}
+        model = llm_config.get("model")
+        if model:
+            provider_kwargs["model"] = model
+        api_key = llm_config.get("api_key")
+        if api_key:
+            provider_kwargs["api_key"] = api_key
+        temperature = llm_config.get("temperature")
+        if temperature:
+            provider_kwargs["temperature"] = temperature
+
         llm_handler = ProviderManager.get_best_available_provider(
             preferred_provider=llm_config.get("provider"),
-            model=llm_config.get("model"),
-            api_key=llm_config.get("api_key"),
-            temperature=llm_config.get("temperature"),
+            **provider_kwargs,
         )
         if llm_handler.is_available():
             provider_info = llm_handler.get_provider_info()
@@ -238,7 +246,8 @@ def _initialize_llm_handler(config: dict) -> LLMProvider | None:
 
 
 def _convert_codebase_context_to_schema(
-    raw_context: dict[str, Any], file_path: Path
+    raw_context: dict[str, Any],
+    file_path: Path,
 ) -> CodebaseContext:
     """Convert raw codebase context to structured CodebaseContext schema."""
     # Extract cross-references if they exist
@@ -251,22 +260,20 @@ def _convert_codebase_context_to_schema(
         # Convert "referenced_by" to FileRelationship objects
         for ref_info in cross_refs.get("referenced_by", []):
             relationship = FileRelationship(
-                file_path=ref_info["file"],
+                related_file_path=ref_info["file"],
                 relationship_type="references_target",
-                description=f"References this file {ref_info['reference_count']} time(s)",
-                confidence_score=0.9,  # High confidence for direct references
-                evidence=f"Found {ref_info['reference_count']} references in {ref_info['file_type']} file",
+                relevance_score=0.9,  # High confidence for direct references
+                relationship_evidence=f"Found {ref_info['reference_count']} references in {ref_info['file_type']} file",
             )
             related_files.append(relationship)
 
         # Convert data dependencies to FileRelationship objects
         for dep_info in cross_refs.get("data_dependencies", []):
             relationship = FileRelationship(
-                file_path=dep_info["file_path"],
+                related_file_path=dep_info["file_path"],
                 relationship_type="depends_on",
-                description=f"Data dependency ({dep_info['file_extension']} file)",
-                confidence_score=0.8,
-                evidence=f"Referenced on line {dep_info['line_number']}: {dep_info['line_content'][:50]}",
+                relevance_score=0.8,
+                relationship_evidence=f"Referenced on line {dep_info['line_number']}: {dep_info['line_content'][:50]}",
             )
             related_files.append(relationship)
 
@@ -276,8 +283,67 @@ def _convert_codebase_context_to_schema(
                 related_files=related_files,
             )
 
+    # Extract semantic knowledge if available
+    semantic_knowledge = raw_context.get("semantic_knowledge")
+    ai_enrichment = None
+
+    logger.info("🔍 DEBUG: Checking semantic knowledge: %s", type(semantic_knowledge))
+    if semantic_knowledge:
+        logger.info(
+            "🔍 DEBUG: Semantic knowledge keys: %s",
+            list(semantic_knowledge.keys())
+            if isinstance(semantic_knowledge, dict)
+            else "Not a dict",
+        )
+
+    if semantic_knowledge and semantic_knowledge.get("knowledge_graph"):
+        logger.info("🔍 DEBUG: Creating CodeAIEnrichment with semantic knowledge")
+        # Convert the SemanticKnowledgeGraph object to a dictionary
+        knowledge_graph = semantic_knowledge.get("knowledge_graph")
+
+        # Create a dictionary that preserves the structure the tabular handler expects
+        semantic_knowledge_dict = {
+            "columns": {},
+            "summary": semantic_knowledge.get("column_summary", {}),
+            "cross_references": semantic_knowledge.get("cross_reference_summary", {}),
+            "total_columns": semantic_knowledge.get("total_columns_discovered", 0),
+        }
+
+        # Extract column knowledge from the knowledge graph
+        if hasattr(knowledge_graph, "columns") and knowledge_graph.columns:
+            logger.info(
+                "🔍 DEBUG: Knowledge graph has %d columns", len(knowledge_graph.columns),
+            )
+            for col_name, col_knowledge in knowledge_graph.columns.items():
+                logger.info("🔍 DEBUG: Processing column: %s", col_name)
+                semantic_knowledge_dict["columns"][col_name] = {
+                    "pydantic_description": getattr(
+                        col_knowledge, "pydantic_description", None,
+                    ),
+                    "definition": getattr(col_knowledge, "definition", None),
+                    "aliases": getattr(col_knowledge, "aliases", []),
+                    "confidence_score": getattr(col_knowledge, "confidence_score", 0.0),
+                    "source_files": getattr(col_knowledge, "source_files", []),
+                }
+                logger.info(
+                    "🔍 DEBUG: Column %s description: %s",
+                    col_name,
+                    getattr(col_knowledge, "pydantic_description", None),
+                )
+        else:
+            logger.info(
+                "🔍 DEBUG: Knowledge graph has no columns attribute or is empty",
+            )
+
+        ai_enrichment = CodeAIEnrichment(
+            semantic_knowledge=semantic_knowledge_dict,
+        )
+    else:
+        logger.info("🔍 DEBUG: No semantic knowledge found or invalid structure")
+
     # Create the CodebaseContext with our structured data
     return CodebaseContext(
+        ai_enrichment=ai_enrichment,
         file_relationships=file_relationships,
         context_summary=cross_refs.get("summary", "No cross-references found")
         if cross_refs
@@ -291,14 +357,14 @@ def _scan_codebase(config: dict, file_path: Path) -> CodebaseContext | None:
         return None
 
     try:
-        context = scan_codebase_context(file_path)
+        raw_context = scan_codebase_context(file_path)
     except OSError as e:
         logger.warning("⚠️  Codebase scanning failed: %s", e)
         msg = f"Failed to scan codebase for context around {file_path.name}"
         raise RuntimeError(msg) from e
     else:
         logger.info("✓ Codebase context scanned")
-        return context
+        return _convert_codebase_context_to_schema(raw_context, file_path)
 
 
 def _generate_output_path(file_path: Path, output_format: str) -> Path:
@@ -342,7 +408,7 @@ def _generate_context(
         # Initialize LLM handler if needed
         llm_start = time.time()
         llm_handler = _initialize_llm_handler(config) if include_llm_analysis else None
-        if llm_handler:
+        if llm_handler and hasattr(handler, "llm_handler"):
             handler.llm_handler = llm_handler
             if verbose:
                 llm_time = time.time() - llm_start
@@ -357,16 +423,24 @@ def _generate_context(
             scan_time = time.time() - scan_start
             logger.info("✓ Codebase scan completed in %.2f seconds", scan_time)
 
+        # Provide codebase context to LLM handler if available
+        if llm_handler and codebase_context:
+            llm_handler.codebase_context = codebase_context
+
         # Generate file-specific context
         if verbose:
             logger.info("🔍 Analyzing file content...")
         context_start = time.time()
-        file_specific_context = handler.generate_context(
-            file_path=file_path,
-            data_object=data_object,
-            codebase_context=codebase_context,
-            ai_companion=None,
-        )
+        if hasattr(handler, "generate_context"):
+            file_specific_context = handler.generate_context(
+                file_path=file_path,
+                data_object=data_object,
+                ai_companion=llm_handler,
+            )
+        else:
+            file_specific_context = {
+                "error": "Handler does not support generate_context",
+            }
         if verbose:
             context_time = time.time() - context_start
             logger.info("✓ File analysis completed in %.2f seconds", context_time)

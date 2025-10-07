@@ -26,6 +26,8 @@ from metacontext.schemas.extensions.tabular import (
     DataStructure,
 )
 
+logger = logging.getLogger(__name__)
+
 try:
     import magic
 except ImportError:
@@ -70,7 +72,9 @@ class CSVHandler(BaseFileHandler):
         return False
 
     def get_required_extensions(
-        self, file_path: Path, data_object: object = None
+        self,
+        file_path: Path,
+        data_object: object = None,
     ) -> list[str]:
         """Return required extensions for tabular data."""
         return self.required_schema_extensions
@@ -103,7 +107,9 @@ class CSVHandler(BaseFileHandler):
         }
 
     def analyze_deterministic(
-        self, file_path: Path, data_object: object = None
+        self,
+        file_path: Path,
+        data_object: object = None,
     ) -> dict[str, object]:
         """Analyze file without AI - deterministic analysis only."""
         # Basic data analysis (descriptive layer) - no AI needed
@@ -141,8 +147,8 @@ class CSVHandler(BaseFileHandler):
         self,
         file_path: Path,
         data_object: object | None = None,
-        codebase_context: dict[str, object] | None = None,
         ai_companion: object | None = None,
+        analysis_depth: object = None,
     ) -> dict[str, object]:
         """Generate data_structure context using bulk AI prompts.
 
@@ -160,15 +166,140 @@ class CSVHandler(BaseFileHandler):
 
         # AI-powered interpretation (interpretive + contextual layers)
         if (
-            hasattr(self, "llm_handler")
-            and self.llm_handler
-            and self.llm_handler.is_available()
+            ai_companion
+            and hasattr(ai_companion, "is_available")
+            and ai_companion.is_available()
         ):
+            # Extract semantic column knowledge from codebase for better context
+            enhanced_context = data_analysis
+
+            # Try to access semantic knowledge from codebase context
+            semantic_knowledge_text = "No semantic knowledge extracted from codebase."
+            if (
+                hasattr(ai_companion, "codebase_context")
+                and ai_companion.codebase_context
+            ):
+                logger.info("🔍 DEBUG: Codebase context found on ai_companion")
+                try:
+                    # Check if we have semantic knowledge available
+                    if (
+                        hasattr(ai_companion.codebase_context, "ai_enrichment")
+                        and ai_companion.codebase_context.ai_enrichment
+                        and hasattr(
+                            ai_companion.codebase_context.ai_enrichment,
+                            "semantic_knowledge",
+                        )
+                    ):
+                        logger.info(
+                            "🔍 DEBUG: Found semantic knowledge in ai_enrichment",
+                        )
+                        semantic_knowledge = ai_companion.codebase_context.ai_enrichment.semantic_knowledge
+
+                        # Format semantic knowledge for AI analysis
+                        if semantic_knowledge and hasattr(
+                            semantic_knowledge, "columns",
+                        ):
+                            logger.info(
+                                "🔍 DEBUG: Semantic knowledge has %d columns",
+                                len(semantic_knowledge.columns),
+                            )
+                            column_descriptions = []
+                            for (
+                                col_name,
+                                col_info,
+                            ) in semantic_knowledge.columns.items():
+                                logger.info(
+                                    "🔍 DEBUG: Column %s: pydantic='%s', definition='%s'",
+                                    col_name,
+                                    col_info.pydantic_description,
+                                    col_info.definition,
+                                )
+                                if col_info.pydantic_description:
+                                    column_descriptions.append(
+                                        f"- {col_name}: {col_info.pydantic_description}",
+                                    )
+                                elif col_info.definition:
+                                    column_descriptions.append(
+                                        f"- {col_name}: {col_info.definition}",
+                                    )
+
+                            if column_descriptions:
+                                semantic_knowledge_text = (
+                                    "Extracted column meanings:\n"
+                                    + "\n".join(column_descriptions)
+                                )
+                                logger.info(
+                                    "🔍 DEBUG: Formatted semantic knowledge: %s",
+                                    semantic_knowledge_text,
+                                )
+                        elif (
+                            semantic_knowledge
+                            and isinstance(semantic_knowledge, dict)
+                            and "columns" in semantic_knowledge
+                        ):
+                            logger.info(
+                                "🔍 DEBUG: Semantic knowledge is dict with %d columns",
+                                len(semantic_knowledge["columns"]),
+                            )
+                            column_descriptions = []
+                            for col_name, col_info in semantic_knowledge[
+                                "columns"
+                            ].items():
+                                logger.info(
+                                    "🔍 DEBUG: Dict column %s: pydantic='%s', definition='%s'",
+                                    col_name,
+                                    col_info.get("pydantic_description"),
+                                    col_info.get("definition"),
+                                )
+                                if col_info.get("pydantic_description"):
+                                    column_descriptions.append(
+                                        f"- {col_name}: {col_info['pydantic_description']}",
+                                    )
+                                elif col_info.get("definition"):
+                                    column_descriptions.append(
+                                        f"- {col_name}: {col_info['definition']}",
+                                    )
+
+                            if column_descriptions:
+                                semantic_knowledge_text = (
+                                    "Extracted column meanings:\n"
+                                    + "\n".join(column_descriptions)
+                                )
+                                logger.info(
+                                    "🔍 DEBUG: Formatted semantic knowledge: %s",
+                                    semantic_knowledge_text,
+                                )
+                        else:
+                            logger.info(
+                                "🔍 DEBUG: Semantic knowledge exists but has no columns or wrong format: %s",
+                                type(semantic_knowledge),
+                            )
+                    else:
+                        logger.info(
+                            "🔍 DEBUG: No semantic knowledge found in ai_enrichment",
+                        )
+
+                    enhanced_context = {
+                        **data_analysis,
+                        "semantic_column_knowledge": semantic_knowledge_text,
+                    }
+                    logger.info(
+                        "🔍 DEBUG: Enhanced context includes semantic_column_knowledge: %s...",
+                        semantic_knowledge_text[:200],
+                    )
+                except AttributeError as e:
+                    # Fallback to basic analysis if semantic extraction fails
+                    logger.warning("Could not extract semantic knowledge: %s", e)
+                    enhanced_context = data_analysis
+            else:
+                logger.info("🔍 DEBUG: No codebase context found on ai_companion")
+                enhanced_context = data_analysis
+
             ai_analysis = self._generate_ai_analysis(
-                data_analysis,
+                enhanced_context,
                 file_path,
-                codebase_context,
-                self.llm_handler,
+                None,  # codebase_context not available in new structure
+                ai_companion,
             )
             data_analysis.update(ai_analysis)
 
@@ -201,14 +332,29 @@ class CSVHandler(BaseFileHandler):
             # Analyze each column
             for col_name in df.columns:
                 col_data = df[col_name]
+
+                # Handle unique count for potentially unhashable types
+                try:
+                    unique_count = int(col_data.nunique())
+                except TypeError:
+                    # For unhashable types like dicts/lists, count unique string representations
+                    unique_count = int(col_data.astype(str).nunique())
+
+                # Handle sample values for potentially unhashable types
+                try:
+                    sample_values = col_data.dropna().head(3).tolist()
+                except (TypeError, ValueError):
+                    # For unhashable types, convert to string representation
+                    sample_values = col_data.dropna().head(3).astype(str).tolist()
+
                 analysis["columns"][col_name] = {
                     "dtype": str(col_data.dtype),
                     "null_count": int(col_data.isna().sum()),
                     "null_percentage": float(
                         col_data.isna().sum() / len(col_data) * 100,
                     ),
-                    "unique_count": int(col_data.nunique()),
-                    "sample_values": col_data.dropna().head(3).tolist(),
+                    "unique_count": unique_count,
+                    "sample_values": sample_values,
                 }
         except ImportError:
             return {"error": "pandas not available for DataFrame analysis"}
@@ -217,7 +363,7 @@ class CSVHandler(BaseFileHandler):
         else:
             return analysis
 
-    def _analyze_file(self) -> dict[str, Any]:
+    def _analyze_file(self, file_path: Path) -> dict[str, Any]:
         """Analyze a file without the data object (fallback).
 
         Args:
@@ -248,10 +394,10 @@ class CSVHandler(BaseFileHandler):
         """
         ai_analysis = {}
 
-        # Bulk column analysis prompt
+        # Bulk column analysis prompt - pass full data_analysis which includes semantic knowledge
         if data_analysis.get("columns"):
             column_analysis = self._bulk_analyze_columns(
-                data_analysis["columns"],
+                data_analysis,  # Pass full context including semantic knowledge
                 file_path,
                 codebase_context,
                 llm_handler,
@@ -271,25 +417,31 @@ class CSVHandler(BaseFileHandler):
 
     def _bulk_analyze_columns(
         self,
-        columns_data: dict[str, Any],
+        data_analysis: dict[str, Any],  # Now receives full context
         file_path: Path,
         codebase_context: dict[str, Any] | None,
         llm_handler: object,
     ) -> dict[str, dict[str, Any]]:
         """Bulk analysis of all columns using constraint-aware template prompting."""
         try:
-            from metacontext.ai.prompts.prompt_loader import PromptLoader
-
             # Prepare context for template-based analysis
             context_summary = self._prepare_context_summary(codebase_context)
+
+            # Extract columns data from the full context
+            columns_data = data_analysis.get("columns", {})
 
             template_context = {
                 "file_name": file_path.name,
                 "project_summary": context_summary.get(
-                    "project_summary", "Unknown project"
+                    "project_summary",
+                    "Unknown project",
                 ),
                 "code_summary": context_summary.get("code_summary", "Limited context"),
                 "columns_data": columns_data,
+                # Include semantic knowledge from the enhanced context
+                "semantic_column_knowledge": data_analysis.get(
+                    "semantic_column_knowledge", "No semantic knowledge available.",
+                ),
             }
 
             # Use new constraint-aware template approach
@@ -299,8 +451,34 @@ class CSVHandler(BaseFileHandler):
                 template_context,
             )
 
+            # DEBUG: Print the complete prompt that gets sent to the LLM
+            logger.info("🔍 DEBUG: Complete template context being sent:")
+            logger.info(
+                "🔍 DEBUG: Template context keys: %s", list(template_context.keys()),
+            )
+            if "semantic_column_knowledge" in template_context:
+                logger.info(
+                    "🔍 DEBUG: Semantic column knowledge in template context: %s",
+                    template_context["semantic_column_knowledge"],
+                )
+            else:
+                logger.info(
+                    "🔍 DEBUG: No semantic_column_knowledge found in template context",
+                )
+
+            logger.info("🔍 DEBUG: Complete rendered prompt being sent to LLM:")
+            logger.info("=" * 80)
+            logger.info("%s", rendered_prompt)
+            logger.info("=" * 80)
+
             # Call LLM directly with the template-generated prompt
-            response = llm_handler._call_llm(rendered_prompt)
+            if hasattr(llm_handler, "generate_completion"):
+                response = llm_handler.generate_completion(rendered_prompt)
+            else:
+                response = str(llm_handler)
+
+            logger.info("🔍 DEBUG: LLM response received:")
+            logger.info("%s", response)
 
             # Parse and validate the response manually since we bypassed generate_with_schema
             response_data = parse_json_response(response)
@@ -314,7 +492,8 @@ class CSVHandler(BaseFileHandler):
             return {}
 
     def _convert_column_response_to_legacy_format(
-        self, response_data: dict
+        self,
+        response_data: dict,
     ) -> dict[str, dict[str, Any]]:
         """Convert raw LLM column response to legacy format for compatibility."""
         result = {}
@@ -339,29 +518,43 @@ class CSVHandler(BaseFileHandler):
         return result
 
     def _convert_ai_enrichment_to_legacy_format(
-        self, ai_enrichment: DataAIEnrichment
+        self,
+        ai_enrichment: DataAIEnrichment,
     ) -> dict[str, dict[str, Any]]:
         """Convert schema-first AI enrichment to legacy format for compatibility."""
         result = {}
 
         if ai_enrichment.column_interpretations:
             for col_name, col_info in ai_enrichment.column_interpretations.items():
+                ai_enrichment_data = col_info.ai_enrichment
                 result[col_name] = {
-                    "ai_interpretation": col_info.semantic_meaning or "",
+                    "ai_interpretation": ai_enrichment_data.semantic_meaning
+                    if ai_enrichment_data
+                    else "",
                     "ai_confidence": "HIGH",  # Default confidence
-                    "ai_domain_context": col_info.domain_context or "",
-                    "usage_guidance": col_info.usage_guidance or "",
-                    "semantic_meaning": col_info.semantic_meaning or "",
-                    "data_quality_assessment": col_info.data_quality_assessment or "",
-                    "domain_context": col_info.domain_context or "",
-                    "relationship_to_other_columns": col_info.relationship_to_other_columns
-                    or [],
+                    "ai_domain_context": ai_enrichment_data.domain_context
+                    if ai_enrichment_data
+                    else "",
+                    "usage_guidance": "",  # Not available in new schema
+                    "semantic_meaning": ai_enrichment_data.semantic_meaning
+                    if ai_enrichment_data
+                    else "",
+                    "data_quality_assessment": ai_enrichment_data.data_quality_assessment
+                    if ai_enrichment_data
+                    else "",
+                    "domain_context": ai_enrichment_data.domain_context
+                    if ai_enrichment_data
+                    else "",
+                    "relationship_to_other_columns": ai_enrichment_data.relationship_to_other_columns
+                    if ai_enrichment_data
+                    else [],
                 }
 
         return result
 
     def _convert_ai_schema_to_legacy_format(
-        self, ai_enrichment: DataAIEnrichment
+        self,
+        ai_enrichment: DataAIEnrichment,
     ) -> dict[str, Any]:
         """Convert schema-first AI enrichment to legacy format for backward compatibility."""
         result = {}
@@ -414,7 +607,8 @@ class CSVHandler(BaseFileHandler):
                 "rows": rows,
                 "num_columns": num_columns,
                 "project_summary": context_summary.get(
-                    "project_summary", "Dataset analysis for business insights"
+                    "project_summary",
+                    "Dataset analysis for business insights",
                 ),
                 "columns": list(data_analysis.get("columns", {}).keys()),
             }
@@ -426,7 +620,10 @@ class CSVHandler(BaseFileHandler):
             )
 
             # Call LLM with the constraint-aware prompt
-            response = llm_handler._call_llm(rendered_prompt)
+            if hasattr(llm_handler, "generate_completion"):
+                response = llm_handler.generate_completion(rendered_prompt)
+            else:
+                response = str(llm_handler)
 
             # Parse the JSON response
             response_data = parse_json_response(response)
@@ -462,7 +659,9 @@ class CSVHandler(BaseFileHandler):
         }
 
     def _query_llm_handler(
-        self, llm_handler: object, prompt: str
+        self,
+        llm_handler: object,
+        prompt: str,
     ) -> str | dict[str, Any]:
         """Query the LLM handler with appropriate error handling."""
         result: str | dict[str, Any] = {}
@@ -564,7 +763,8 @@ class CSVHandler(BaseFileHandler):
             base_fields=7,  # ForensicAIEnrichment base fields
             extended_fields=4,  # DataAIEnrichment specific fields
             complexity_factor=max(
-                0.5, min(2.0, column_count / 10.0)
+                0.5,
+                min(2.0, column_count / 10.0),
             ),  # Scale with column count
         )
 
@@ -611,7 +811,8 @@ class CSVHandler(BaseFileHandler):
                     data_quality_assessment=col_data.get("supporting_evidence", ""),
                     domain_context=col_data.get("domain_context", ""),
                     relationship_to_other_columns=col_data.get(
-                        "relationship_to_other_columns", []
+                        "relationship_to_other_columns",
+                        [],
                     ),
                 )
                 column_interpretations[col_name] = ColumnInfo(
@@ -622,7 +823,8 @@ class CSVHandler(BaseFileHandler):
         return DataAIEnrichment(
             domain_analysis=schema_interpretation.get("domain_summary", ""),
             data_quality_assessment=schema_interpretation.get(
-                "overall_clarity", "unknown"
+                "overall_clarity",
+                "unknown",
             ),
             column_interpretations=column_interpretations,
             business_value_assessment=schema_interpretation.get("business_impact", ""),
@@ -648,7 +850,9 @@ class CSVHandler(BaseFileHandler):
     }
 
     def get_bulk_prompts(
-        self, file_path: Path, data_object: object = None
+        self,
+        file_path: Path,
+        data_object: object = None,
     ) -> dict[str, str]:
         """Get bulk prompts for this file type from config."""
         return self.PROMPT_CONFIG.copy()

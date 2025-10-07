@@ -266,7 +266,8 @@ class ExtensionMapper:
 
         # Return the category or UNKNOWN
         return cls._EXTENSION_TO_CATEGORY.get(
-            extension_lower, ExtensionCategory.UNKNOWN
+            extension_lower,
+            ExtensionCategory.UNKNOWN,
         )
 
     @classmethod

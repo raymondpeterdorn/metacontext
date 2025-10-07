@@ -18,7 +18,10 @@ class PromptLoader:
     """Loads and processes prompt templates from YAML files."""
 
     def __init__(
-        self, prompts_dir: Path | None = None, enable_monitoring: bool = False
+        self,
+        prompts_dir: Path | None = None,
+        *,
+        enable_monitoring: bool = False,
     ) -> None:
         """Initialize the prompt loader.
 
@@ -196,7 +199,7 @@ class PromptLoader:
         # If schema_hint is not already in context, generate it
         enhanced_context = dict(context)
         if "schema_hint" not in enhanced_context:
-            enhanced_context["schema_hint"] = compact_schema_hint(schema_class)  # type: ignore[arg-type]
+            enhanced_context["schema_hint"] = generate_prompt_from_schema(schema_class)  # type: ignore[arg-type]
 
         # Generate the prompt from the schema using compact hints
         prompt_data = generate_prompt_from_schema(

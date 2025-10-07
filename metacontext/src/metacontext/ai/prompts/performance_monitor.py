@@ -13,6 +13,10 @@ from typing import Any
 
 logger = logging.getLogger(__name__)
 
+HIGH_TOKEN_USAGE_THRESHOLD = 1500
+POOR_LIMIT_COMPLIANCE_THRESHOLD = 0.8
+SLOW_PROCESSING_THRESHOLD_MS = 5000
+
 
 @dataclass
 class PromptMetrics:
@@ -66,31 +70,40 @@ class PerformanceMonitor:
         """Load existing metrics from file if available."""
         if self.metrics_file and self.metrics_file.exists():
             try:
-                with open(self.metrics_file) as f:
+                with self.metrics_file.open() as f:
                     data = json.load(f)
                     self.metrics = [PromptMetrics(**metric) for metric in data]
                 logger.info(
-                    f"Loaded {len(self.metrics)} metrics from {self.metrics_file}"
+                    "Loaded %d metrics from %s",
+                    len(self.metrics),
+                    self.metrics_file,
                 )
-            except Exception as e:
-                logger.warning(f"Failed to load metrics from {self.metrics_file}: {e}")
+            except (json.JSONDecodeError, TypeError) as e:
+                logger.warning(
+                    "Failed to load metrics from %s: %s",
+                    self.metrics_file,
+                    e,
+                )
 
     def _save_metrics(self) -> None:
         """Save metrics to file if configured."""
         if self.metrics_file:
             try:
                 self.metrics_file.parent.mkdir(parents=True, exist_ok=True)
-                with open(self.metrics_file, "w") as f:
+                with self.metrics_file.open("w") as f:
                     data = [metric.__dict__ for metric in self.metrics]
                     json.dump(data, f, indent=2)
                 logger.debug(
-                    f"Saved {len(self.metrics)} metrics to {self.metrics_file}"
+                    "Saved %d metrics to %s",
+                    len(self.metrics),
+                    self.metrics_file,
                 )
-            except Exception as e:
-                logger.warning(f"Failed to save metrics to {self.metrics_file}: {e}")
+            except (OSError, TypeError) as e:
+                logger.warning("Failed to save metrics to %s: %s", self.metrics_file, e)
 
     def record_prompt_execution(
         self,
+        *,
         template_name: str,
         input_content: str,
         output_content: str,
@@ -138,9 +151,12 @@ class PerformanceMonitor:
 
         # Log performance info
         logger.info(
-            f"Prompt performance - {template_name}: "
-            f"{input_token_count} tokens in → {output_char_count} chars out "
-            f"({processing_time_ms:.1f}ms, limit: {'✓' if within_limit else '✗'})",
+            "Prompt performance - %s: %s tokens in → %s chars out (%s.1fms, limit: %s)",
+            template_name,
+            input_token_count,
+            output_char_count,
+            processing_time_ms,
+            "✓" if within_limit else "✗",
         )
 
         return metrics
@@ -192,10 +208,10 @@ class PerformanceMonitor:
         total_input_tokens = sum(m.input_token_count for m in self.metrics)
         total_output_chars = sum(m.output_char_count for m in self.metrics)
         avg_processing_time = sum(m.processing_time_ms for m in self.metrics) / len(
-            self.metrics
+            self.metrics,
         )
         overall_compliance = sum(m.within_limit for m in self.metrics) / len(
-            self.metrics
+            self.metrics,
         )
 
         return {
@@ -222,36 +238,38 @@ class PerformanceMonitor:
             stats = self.get_template_statistics(template_name)
 
             # High token usage
-            if stats["avg_input_tokens"] > 1500:
+            if stats["avg_input_tokens"] > HIGH_TOKEN_USAGE_THRESHOLD:
                 recommendations.append(
                     {
                         "template": template_name,
                         "issue": "high_token_usage",
                         "current_avg": stats["avg_input_tokens"],
                         "recommendation": "Consider reducing context size or using more aggressive preprocessing",
-                    }
+                    },
                 )
 
             # Poor limit compliance
-            if stats["limit_compliance_rate"] < 0.8:
+            if stats["limit_compliance_rate"] < POOR_LIMIT_COMPLIANCE_THRESHOLD:
                 recommendations.append(
                     {
                         "template": template_name,
                         "issue": "poor_limit_compliance",
                         "compliance_rate": stats["limit_compliance_rate"],
                         "recommendation": "Review character limits or add stricter output constraints",
-                    }
+                    },
                 )
 
             # Slow processing
-            if stats["avg_processing_time_ms"] > 5000:  # 5 seconds
+            if (
+                stats["avg_processing_time_ms"] > SLOW_PROCESSING_THRESHOLD_MS
+            ):  # 5 seconds
                 recommendations.append(
                     {
                         "template": template_name,
                         "issue": "slow_processing",
                         "avg_time_ms": stats["avg_processing_time_ms"],
                         "recommendation": "Optimize prompt complexity or reduce context size",
-                    }
+                    },
                 )
 
         return recommendations
@@ -312,7 +330,7 @@ def create_performance_report(monitor: PerformanceMonitor) -> str:
             report.append(f"  Avg Input Tokens: {stats['avg_input_tokens']:.0f}")
             report.append(f"  Avg Output Chars: {stats['avg_output_chars']:.0f}")
             report.append(
-                f"  Avg Processing Time: {stats['avg_processing_time_ms']:.1f}ms"
+                f"  Avg Processing Time: {stats['avg_processing_time_ms']:.1f}ms",
             )
             report.append(f"  Compliance Rate: {stats['limit_compliance_rate']:.1%}")
             report.append("")

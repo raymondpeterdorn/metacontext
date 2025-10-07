@@ -12,15 +12,19 @@ instruction: |
   - Project Context: ${project_summary}
   - Codebase Context: ${code_summary}
 
+  🧠 SEMANTIC KNOWLEDGE FROM CODEBASE:
+  ${semantic_column_knowledge}
+
   📋 COLUMN DATA TO INVESTIGATE:
   ${columns_data}
 
   🔍 FORENSIC INVESTIGATION - For EACH column:
   
   1. **NAME ANALYSIS**: Is this column name vague, cryptic, or misleading?
-  2. **HIDDEN MEANING**: Based on codebase context, what business logic produces these values?
-  3. **CROSS-REFERENCE**: Map suspicious names to potential code locations.
-  4. **PATTERN DETECTION**: Are there magic numbers, unusual ranges, or suspicious patterns?
+  2. **SEMANTIC KNOWLEDGE**: Check if we have extracted definitions from Pydantic models or code comments
+  3. **HIDDEN MEANING**: Based on codebase context, what business logic produces these values?
+  4. **CROSS-REFERENCE**: Map suspicious names to potential code locations.
+  5. **PATTERN DETECTION**: Are there magic numbers, unusual ranges, or suspicious patterns?
 
   🎯 EFFICIENCY REQUIREMENTS:
   - Maximum response: 1200 characters total

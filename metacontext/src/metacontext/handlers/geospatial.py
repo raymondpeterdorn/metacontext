@@ -105,7 +105,9 @@ class GeospatialHandler(BaseFileHandler):
         return False
 
     def get_required_extensions(
-        self, file_path: Path, data_object: object = None
+        self,
+        file_path: Path,
+        data_object: object = None,
     ) -> list[str]:
         """Return required extensions for geospatial data."""
         if self._is_raster_file(file_path):
@@ -156,7 +158,7 @@ class GeospatialHandler(BaseFileHandler):
                             "band_count": dataset.count,
                             "crs": str(dataset.crs) if dataset.crs else None,
                             "bounds": list(dataset.bounds),
-                        }
+                        },
                     )
             except Exception as e:
                 probe_result["probe_error"] = str(e)
@@ -192,7 +194,7 @@ class GeospatialHandler(BaseFileHandler):
                         if len(gdf) > 0
                         else None,
                         "crs": str(gdf.crs) if gdf.crs else None,
-                    }
+                    },
                 )
         except Exception as e:
             probe_result["probe_error"] = str(e)
@@ -217,7 +219,9 @@ class GeospatialHandler(BaseFileHandler):
             return {"error": "Failed to generate geospatial context"}
 
     def _generate_raster_context(
-        self, file_path: Path, ai_companion: object | None
+        self,
+        file_path: Path,
+        ai_companion: object | None,
     ) -> dict[str, Any]:
         """Generate context for raster geospatial data."""
         # Deterministic analysis
@@ -227,7 +231,9 @@ class GeospatialHandler(BaseFileHandler):
         ai_enrichment = None
         if ai_companion and hasattr(ai_companion, "generate_with_schema"):
             ai_enrichment = self._generate_raster_ai_enrichment(
-                file_path, deterministic_metadata, ai_companion
+                file_path,
+                deterministic_metadata,
+                ai_companion,
             )
 
         return {
@@ -238,7 +244,9 @@ class GeospatialHandler(BaseFileHandler):
         }
 
     def _generate_vector_context(
-        self, file_path: Path, ai_companion: object | None
+        self,
+        file_path: Path,
+        ai_companion: object | None,
     ) -> dict[str, Any]:
         """Generate context for vector geospatial data."""
         # Deterministic analysis
@@ -248,7 +256,9 @@ class GeospatialHandler(BaseFileHandler):
         ai_enrichment = None
         if ai_companion and hasattr(ai_companion, "generate_with_schema"):
             ai_enrichment = self._generate_vector_ai_enrichment(
-                file_path, deterministic_metadata, ai_companion
+                file_path,
+                deterministic_metadata,
+                ai_companion,
             )
 
         return {
@@ -259,7 +269,8 @@ class GeospatialHandler(BaseFileHandler):
         }
 
     def _analyze_raster_deterministic(
-        self, file_path: Path
+        self,
+        file_path: Path,
     ) -> RasterDeterministicMetadata:
         """Analyze raster file deterministically."""
         metadata = RasterDeterministicMetadata()
@@ -291,7 +302,8 @@ class GeospatialHandler(BaseFileHandler):
         return metadata
 
     def _analyze_vector_deterministic(
-        self, file_path: Path
+        self,
+        file_path: Path,
     ) -> VectorDeterministicMetadata:
         """Analyze vector file deterministically."""
         metadata = VectorDeterministicMetadata()
@@ -330,7 +342,9 @@ class GeospatialHandler(BaseFileHandler):
         return metadata
 
     def analyze_deterministic(
-        self, file_path: Path, data_object: object = None
+        self,
+        file_path: Path,
+        data_object: object = None,
     ) -> dict[str, object]:
         """Analyze file without AI - deterministic analysis only."""
         if self._is_raster_file(file_path):
@@ -363,7 +377,7 @@ class GeospatialHandler(BaseFileHandler):
                 )
                 if not metadata:
                     metadata = self._analyze_raster_deterministic(
-                        file_path
+                        file_path,
                     ).model_dump()
 
                 ai_enrichment = self._generate_raster_ai_enrichment(
@@ -374,7 +388,7 @@ class GeospatialHandler(BaseFileHandler):
                 return {
                     "raster_ai_enrichment": ai_enrichment.model_dump()
                     if ai_enrichment
-                    else None
+                    else None,
                 }
             metadata = (
                 deterministic_context.get("vector_metadata")
@@ -392,14 +406,16 @@ class GeospatialHandler(BaseFileHandler):
             return {
                 "vector_ai_enrichment": ai_enrichment.model_dump()
                 if ai_enrichment
-                else None
+                else None,
             }
         except Exception:
             logger.exception("Error in deep analysis for %s", file_path)
             return {"error": "Deep analysis failed"}
 
     def _build_raster_constraints(
-        self, file_path: Path, metadata: RasterDeterministicMetadata
+        self,
+        file_path: Path,
+        metadata: RasterDeterministicMetadata,
     ) -> str:
         """Build constraints for raster AI enrichment."""
         # Calculate complexity based on bands and dimensions
@@ -438,7 +454,9 @@ class GeospatialHandler(BaseFileHandler):
         return f"{base_instruction} and provide insights that fit within these STRICT LIMITS:\\n\\n{constraints}"
 
     def _build_vector_constraints(
-        self, file_path: Path, metadata: VectorDeterministicMetadata
+        self,
+        file_path: Path,
+        metadata: VectorDeterministicMetadata,
     ) -> str:
         """Build constraints for vector AI enrichment."""
         # Calculate complexity based on features and properties
@@ -539,7 +557,9 @@ class GeospatialHandler(BaseFileHandler):
     }
 
     def get_bulk_prompts(
-        self, file_path: Path, data_object: object = None
-    ) -> dict[str, str]:  # noqa: ARG002
+        self,
+        file_path: Path,
+        data_object: object = None,
+    ) -> dict[str, str]:
         """Get bulk prompts for this file type from config."""
         return self.PROMPT_CONFIG.copy()

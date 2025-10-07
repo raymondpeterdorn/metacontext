@@ -25,10 +25,11 @@ Metacontext automatically generates rich, contextual metadata for any data file 
 
 ### For Data Scientists
 
-- **Fast Onboarding**: Quickly understand unfamiliar datasets
-- **Better Documentation**: Automatically document your work
-- **Context Preservation**: Capture your knowledge for future users
-- **Time Savings**: Reduce manual documentation effort
+- **Fast Onboarding**: Quickly understand unfamiliar datasets with rich business context
+- **Better Documentation**: Automatically document your work with extracted semantic information
+- **Context Preservation**: Capture your knowledge for future users through intelligent code analysis
+- **Hidden Knowledge Discovery**: Uncover business logic embedded in comments and docstrings
+- **Time Savings**: Reduce manual documentation effort by 66% through automated extraction
 
 ### For Data Engineers
 
@@ -48,7 +49,7 @@ Metacontext automatically generates rich, contextual metadata for any data file 
 
 - **Two-Tier Architecture**: Clear separation between facts and AI insights
 - **Universal File Support**: Works with tabular data, ML models, geospatial data, and more
-- **Codebase Context**: Analyzes how data is used in your code
+- **Semantic Codebase Analysis**: Revolutionary system that extracts business context from code comments, docstrings, and Pydantic schemas
 - **Confidence Indicators**: Know how reliable each AI-generated insight is
 - **Open Standards**: Uses open YAML format for interoperability
 
@@ -90,9 +91,10 @@ Metacontext automatically generates rich, contextual metadata for any data file 
    - Improve performance for processing multiple files
    - Add parallelization and caching mechanisms
 
-3. **Advanced Codebase Scanning**
-   - Deeper analysis of code patterns
-   - Better understanding of data transformations
+3. **Enhanced Codebase Analysis** ✅ **IMPLEMENTED**
+   - Deep semantic extraction from code patterns, comments, and schemas
+   - 6-phase analysis system with knowledge graph construction
+   - Multi-format output optimization for different AI contexts
 
 4. **Customizable Schemas**
    - Allow users to define custom metadata schemas

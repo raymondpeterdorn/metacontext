@@ -175,7 +175,7 @@ def create_provider_config(
     }[provider_type]
 
     # Create the config with provided parameters
-    config_params = {"api_key": api_key, **kwargs}
+    config_params: dict[str, Any] = {"api_key": api_key, **kwargs}
     if model:
         config_params["model"] = model
 
