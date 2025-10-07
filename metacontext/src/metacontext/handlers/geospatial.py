@@ -210,10 +210,60 @@ class GeospatialHandler(BaseFileHandler):
     ) -> dict[str, Any]:
         """Generate geospatial context with deterministic metadata and AI enrichment."""
         try:
+            # Extract semantic knowledge for enhanced context
+            semantic_knowledge_text = "No semantic knowledge extracted from codebase."
+            if (
+                ai_companion
+                and hasattr(ai_companion, "codebase_context")
+                and ai_companion.codebase_context
+            ):
+                try:
+                    # Check if we have semantic knowledge available
+                    if (
+                        hasattr(ai_companion.codebase_context, "ai_enrichment")
+                        and ai_companion.codebase_context.ai_enrichment
+                        and hasattr(
+                            ai_companion.codebase_context.ai_enrichment,
+                            "semantic_knowledge",
+                        )
+                    ):
+                        semantic_knowledge = ai_companion.codebase_context.ai_enrichment.semantic_knowledge
+
+                        # Format semantic knowledge for AI analysis
+                        if semantic_knowledge and hasattr(
+                            semantic_knowledge,
+                            "geospatial_fields",
+                        ):
+                            field_descriptions = []
+                            for (
+                                field_name,
+                                field_info,
+                            ) in semantic_knowledge.geospatial_fields.items():
+                                if field_info.pydantic_description:
+                                    field_descriptions.append(
+                                        f"- {field_name}: {field_info.pydantic_description}",
+                                    )
+                                elif field_info.definition:
+                                    field_descriptions.append(
+                                        f"- {field_name}: {field_info.definition}",
+                                    )
+
+                            if field_descriptions:
+                                semantic_knowledge_text = (
+                                    "Semantic knowledge from codebase:\n"
+                                    + "\n".join(field_descriptions)
+                                )
+                except (AttributeError, KeyError, TypeError):
+                    pass  # Use default semantic knowledge text
+
             # Determine if raster or vector
             if self._is_raster_file(file_path):
-                return self._generate_raster_context(file_path, ai_companion)
-            return self._generate_vector_context(file_path, ai_companion)
+                return self._generate_raster_context(
+                    file_path, ai_companion, semantic_knowledge_text
+                )
+            return self._generate_vector_context(
+                file_path, ai_companion, semantic_knowledge_text
+            )
         except Exception:
             logger.exception("Error generating geospatial context for %s", file_path)
             return {"error": "Failed to generate geospatial context"}
@@ -222,6 +272,7 @@ class GeospatialHandler(BaseFileHandler):
         self,
         file_path: Path,
         ai_companion: object | None,
+        semantic_knowledge: str | None = None,
     ) -> dict[str, Any]:
         """Generate context for raster geospatial data."""
         # Deterministic analysis
@@ -234,6 +285,7 @@ class GeospatialHandler(BaseFileHandler):
                 file_path,
                 deterministic_metadata,
                 ai_companion,
+                semantic_knowledge,
             )
 
         return {
@@ -247,6 +299,7 @@ class GeospatialHandler(BaseFileHandler):
         self,
         file_path: Path,
         ai_companion: object | None,
+        semantic_knowledge: str | None = None,
     ) -> dict[str, Any]:
         """Generate context for vector geospatial data."""
         # Deterministic analysis
@@ -259,6 +312,7 @@ class GeospatialHandler(BaseFileHandler):
                 file_path,
                 deterministic_metadata,
                 ai_companion,
+                semantic_knowledge,
             )
 
         return {
@@ -501,6 +555,7 @@ class GeospatialHandler(BaseFileHandler):
         file_path: Path,
         metadata: RasterDeterministicMetadata,
         ai_companion: object,
+        semantic_knowledge: str | None = None,
     ) -> RasterAIEnrichment | None:
         """Generate AI enrichment for raster data."""
         try:
@@ -509,6 +564,8 @@ class GeospatialHandler(BaseFileHandler):
                 "file_path": str(file_path),
                 "raster_metadata": metadata.model_dump(),
                 "file_size_mb": file_path.stat().st_size / (1024 * 1024),
+                "semantic_knowledge": semantic_knowledge
+                or "No semantic knowledge available from codebase",
             }
 
             instruction = self._build_raster_constraints(file_path, metadata)
@@ -528,6 +585,7 @@ class GeospatialHandler(BaseFileHandler):
         file_path: Path,
         metadata: VectorDeterministicMetadata,
         ai_companion: object,
+        semantic_knowledge: str | None = None,
     ) -> VectorAIEnrichment | None:
         """Generate AI enrichment for vector data."""
         try:
@@ -536,6 +594,8 @@ class GeospatialHandler(BaseFileHandler):
                 "file_path": str(file_path),
                 "vector_metadata": metadata.model_dump(),
                 "file_size_mb": file_path.stat().st_size / (1024 * 1024),
+                "semantic_knowledge": semantic_knowledge
+                or "No semantic knowledge available from codebase",
             }
 
             instruction = self._build_vector_constraints(file_path, metadata)

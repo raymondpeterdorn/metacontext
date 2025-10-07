@@ -1,18 +1,102 @@
 metacontext_version: 0.3.0
 generation_info:
-  generated_at: '2025-09-13T23:51:28.375188+00:00'
-  generation_method: fallback
+  generated_at: '2025-10-07T19:18:50.021931Z'
+  generation_method: explicit_function
   function_call: metacontext.metacontextualize()
+  token_usage:
+    total_tokens: 11157
+    prompt_tokens: 5278
+    completion_tokens: 659
+    total_api_calls: 2
+    provider: gemini
+    model: gemini-2.5-flash
 file_info:
   filename: bird_classification_model.pkl
   extension: .pkl
-  absolute_path: /Users/bigdawg/Documents/metacontext/example/output/bird_classification_model.pkl
-  directory: example/output
+  file_purpose: Generated file with two-tier architecture
+  project_context_summary: Analysis with ModelHandler
+  creation_timestamp: '2025-10-07T19:18:50.022027Z'
 system_info:
-  working_directory: /Users/bigdawg/Documents/metacontext
-data_analysis:
-  type: generic_object
-  python_type: RandomForestClassifier
-  note: Fallback analysis - specialized handler not available
+  working_directory: /Users/bigdawg/Documents/repos/metacontext/bird_demo
 confidence_assessment:
-  overall: LOW
+  overall: HIGH
+model_context:
+  deterministic_metadata:
+    framework: scikit-learn
+    model_type: RandomForestClassifier
+    hyperparameters:
+      bootstrap: true
+      ccp_alpha: 0.0
+      criterion: gini
+      max_features: sqrt
+      min_impurity_decrease: 0.0
+      min_samples_leaf: 1
+      min_samples_split: 2
+      min_weight_fraction_leaf: 0.0
+      n_estimators: 10
+      oob_score: false
+      random_state: 42
+      verbose: 0
+      warm_start: false
+    input_shape:
+    - 3
+    output_shape:
+    - 5
+    model_size_bytes: 10824
+  ai_enrichment:
+    ai_interpretation: This model classifies bird species using observation month
+      and simplified location type, trained with a RandomForestClassifier.
+    ai_confidence: HIGH
+    ai_domain_context: 'Ecology/Ornithology: Bird species identification from observational
+      data.'
+    usage_guidance: Automate bird ID for ecological surveys; support biodiversity
+      monitoring.
+    hidden_meaning: Location type simplifies diverse habitats to 'urban'/'natural',
+      potentially losing detail but simplifying the model.
+    suspicious_patterns:
+    - 'N_estimators: Metadata (10) vs script default (50). Saved model used 10.'
+    - Input shape [3] implies `location_type` was OHE without `drop_first=True`, contradicting
+      script.
+    cross_references:
+      observation_month: From 'observation_date' in train_model.py
+      location_type: From 'location_description' in train_model.py
+    model_type_analysis: Scikit-learn RandomForestClassifier, an ensemble of decision
+      trees for multi-class classification.
+    purpose: Predict bird species based on observation month and generalized location
+      type.
+    training_approach: Supervised learning with RandomForest. Features engineered,
+      categorical features one-hot encoded, target label encoded.
+    expected_inputs: 'Numerical array (3 features): observation month (int), and two
+      one-hot encoded binary features for location type.'
+    expected_outputs: Integer (0-4) representing encoded bird species class (5 distinct
+      classes).
+    limitations: Limited features may cause low accuracy. Small `n_estimators` (10)
+      could reduce robustness.
+    ideal_use_cases: ''
+    data_requirements: ''
+    training_data:
+      source_file: bird_demo/data/birdos.csv
+      features_used:
+      - observation_month
+      - location_type_natural
+      - location_type_urban
+      target_variable: species_name
+      train_test_split:
+        test_size: 0.2
+        random_state: 42.0
+      potential_columns:
+      - observation_date
+      - observation_month
+      - species_name
+      - location_description
+      - location_type
+      target_variables:
+      - species_name
+      preprocessing_steps:
+      - Feature Engineering
+      - One-hot encoding
+      - Label encoding
+      - Train-test split
+      feature_descriptions:
+        observation_month: Month of bird observation (1-12).
+        location_type: 'Categorical: ''urban'' or ''natural'', derived from description.'

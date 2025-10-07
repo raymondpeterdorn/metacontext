@@ -9,7 +9,6 @@ from typing import Any, ClassVar
 
 import pandas as pd
 
-from metacontext.ai.code_evidence_extractor import CodeEvidenceExtractor
 from metacontext.ai.handlers.core.exceptions import LLMError, ValidationRetryError
 from metacontext.ai.handlers.llms.prompt_constraints import (
     COMMON_FIELD_CONSTRAINTS,
@@ -297,43 +296,6 @@ class CSVHandler(BaseFileHandler):
             else:
                 logger.info("🔍 DEBUG: No codebase context found on ai_companion")
                 enhanced_context = data_analysis
-
-            # Phase 3: Extract code evidence for enhanced analysis
-            logger.info("🔍 DEBUG: Starting Phase 3 - Code evidence extraction")
-            try:
-                start_time = time.time()
-                code_evidence_extractor = CodeEvidenceExtractor()
-
-                # Extract dataset-level code evidence
-                dataset_evidence = code_evidence_extractor.extract_for_dataset(
-                    data_reference=file_path.name,
-                )
-
-                # Extract column-level code evidence
-                column_evidence = {}
-                if "columns" in enhanced_context:
-                    for column_name in enhanced_context["columns"].keys():
-                        column_evidence[column_name] = (
-                            code_evidence_extractor.extract_for_column(
-                                column_name,
-                            )
-                        )
-
-                # Add evidence to enhanced context
-                enhanced_context["code_evidence"] = {
-                    "dataset_level": dataset_evidence,
-                    "column_level": column_evidence,
-                }
-
-                extraction_time = time.time() - start_time
-                logger.info(
-                    "🔍 DEBUG: Code evidence extraction completed in %.2fs",
-                    extraction_time,
-                )
-
-            except Exception as e:
-                logger.warning("Code evidence extraction failed: %s", e)
-                # Continue without code evidence
 
             ai_analysis = self._generate_ai_analysis(
                 enhanced_context,
@@ -811,19 +773,10 @@ class CSVHandler(BaseFileHandler):
         # AI enrichment
         ai_enrichment = self._create_ai_enrichment(data_analysis)
 
-        # Extract code evidence if available
-        code_evidence = None
-        if (
-            "code_evidence" in data_analysis
-            and "dataset_level" in data_analysis["code_evidence"]
-        ):
-            code_evidence = data_analysis["code_evidence"]["dataset_level"]
-
         # Return DataStructure object
         return DataStructure(
             deterministic_metadata=deterministic_info,
             ai_enrichment=ai_enrichment,
-            code_evidence=code_evidence,
         )
 
     def _build_constrained_instruction(self, schema_context: dict[str, Any]) -> str:
@@ -888,21 +841,9 @@ class CSVHandler(BaseFileHandler):
                     ),
                 )
 
-                # Extract column-level code evidence if available
-                column_code_evidence = None
-                if (
-                    "code_evidence" in data_analysis
-                    and "column_level" in data_analysis["code_evidence"]
-                    and col_name in data_analysis["code_evidence"]["column_level"]
-                ):
-                    column_code_evidence = data_analysis["code_evidence"][
-                        "column_level"
-                    ][col_name]
-
                 column_interpretations[col_name] = ColumnInfo(
                     deterministic=det_info,
                     ai_enrichment=ai_info,
-                    code_evidence=column_code_evidence,
                 )
 
         return DataAIEnrichment(

@@ -199,13 +199,61 @@ class MediaHandler(BaseFileHandler):
             # Deterministic analysis
             deterministic_metadata = self._analyze_media_deterministic(file_path)
 
-            # AI enrichment
+            # AI enrichment with semantic knowledge integration
             ai_enrichment = None
             if ai_companion and hasattr(ai_companion, "generate_with_schema"):
+                # Extract semantic knowledge for enhanced context
+                semantic_knowledge_text = (
+                    "No semantic knowledge extracted from codebase."
+                )
+                if (
+                    hasattr(ai_companion, "codebase_context")
+                    and ai_companion.codebase_context
+                ):
+                    try:
+                        # Check if we have semantic knowledge available
+                        if (
+                            hasattr(ai_companion.codebase_context, "ai_enrichment")
+                            and ai_companion.codebase_context.ai_enrichment
+                            and hasattr(
+                                ai_companion.codebase_context.ai_enrichment,
+                                "semantic_knowledge",
+                            )
+                        ):
+                            semantic_knowledge = ai_companion.codebase_context.ai_enrichment.semantic_knowledge
+
+                            # Format semantic knowledge for AI analysis
+                            if semantic_knowledge and hasattr(
+                                semantic_knowledge,
+                                "media_fields",
+                            ):
+                                field_descriptions = []
+                                for (
+                                    field_name,
+                                    field_info,
+                                ) in semantic_knowledge.media_fields.items():
+                                    if field_info.pydantic_description:
+                                        field_descriptions.append(
+                                            f"- {field_name}: {field_info.pydantic_description}",
+                                        )
+                                    elif field_info.definition:
+                                        field_descriptions.append(
+                                            f"- {field_name}: {field_info.definition}",
+                                        )
+
+                                if field_descriptions:
+                                    semantic_knowledge_text = (
+                                        "Semantic knowledge from codebase:\n"
+                                        + "\n".join(field_descriptions)
+                                    )
+                    except (AttributeError, KeyError, TypeError):
+                        pass  # Use default semantic knowledge text
+
                 ai_enrichment = self._generate_media_ai_enrichment(
                     file_path,
                     deterministic_metadata,
                     ai_companion,
+                    semantic_knowledge_text,
                 )
 
             return {
@@ -408,6 +456,7 @@ class MediaHandler(BaseFileHandler):
         file_path: Path,
         metadata: MediaDeterministicMetadata,
         ai_companion: object,
+        semantic_knowledge: str | None = None,
     ) -> MediaAIEnrichment | None:
         """Generate AI enrichment for media files."""
         try:
@@ -416,6 +465,8 @@ class MediaHandler(BaseFileHandler):
                 "file_path": str(file_path),
                 "media_metadata": metadata.model_dump(),
                 "file_size_mb": (metadata.file_size_bytes or 0) / (1024 * 1024),
+                "semantic_knowledge": semantic_knowledge
+                or "No semantic knowledge available from codebase",
             }
 
             instruction = self._build_media_constraints(metadata)

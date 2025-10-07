@@ -53,7 +53,7 @@ class CodeEvidenceExtractor:
                 self.python_files.append(file_path)
 
         logger.debug(
-            f"Found {len(self.python_files)} Python files for code evidence extraction"
+            f"Found {len(self.python_files)} Python files for code evidence extraction",
         )
 
     def extract_for_column(self, column_name: str) -> CodeEvidence:
@@ -92,7 +92,8 @@ class CodeEvidenceExtractor:
         for file_path in self.python_files:
             try:
                 file_evidence = self._extract_dataset_evidence(
-                    file_path, data_reference
+                    file_path,
+                    data_reference,
                 )
                 self._merge_evidence(evidence, file_evidence)
             except Exception as e:
@@ -119,7 +120,10 @@ class CodeEvidenceExtractor:
             # Extract Pydantic field descriptions
             evidence.field_descriptions.extend(
                 self._extract_pydantic_field_descriptions(
-                    tree, content, file_path, column_name
+                    tree,
+                    content,
+                    file_path,
+                    column_name,
                 ),
             )
 
@@ -139,7 +143,9 @@ class CodeEvidenceExtractor:
         return evidence
 
     def _extract_dataset_evidence(
-        self, file_path: Path, data_reference: str | None
+        self,
+        file_path: Path,
+        data_reference: str | None,
     ) -> CodeEvidence:
         """Extract code evidence for a dataset from a single file."""
         evidence = CodeEvidence()
@@ -166,7 +172,10 @@ class CodeEvidenceExtractor:
         return evidence
 
     def _find_column_references(
-        self, content: str, file_path: Path, column_name: str
+        self,
+        content: str,
+        file_path: Path,
+        column_name: str,
     ) -> list[CodeSnippet]:
         """Find specific defining code snippets for a column (creation, assignment, definition)."""
         snippets = []
@@ -216,12 +225,15 @@ class CodeEvidenceExtractor:
                 """Visit annotated assignments (Pydantic fields)."""
                 if isinstance(node.target, ast.Name) and node.target.id == column_name:
                     if isinstance(node.value, ast.Call) and isinstance(
-                        node.value.func, ast.Name
+                        node.value.func,
+                        ast.Name,
                     ):
                         if node.value.func.id == "Field":
                             # Extract Field arguments
                             field_desc = self._extract_field_description(
-                                node, lines, file_path
+                                node,
+                                lines,
+                                file_path,
                             )
                             if field_desc:
                                 descriptions.append(field_desc)
@@ -242,7 +254,8 @@ class CodeEvidenceExtractor:
                 # Extract description from Field kwargs
                 for keyword in node.value.keywords:
                     if keyword.arg == "description" and isinstance(
-                        keyword.value, ast.Constant
+                        keyword.value,
+                        ast.Constant,
                     ):
                         description_text = keyword.value.value
 

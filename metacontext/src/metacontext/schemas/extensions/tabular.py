@@ -4,7 +4,6 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from metacontext.schemas.core.code_evidence import CodeEvidence
 from metacontext.schemas.extensions.base import (
     DeterministicMetadata,
     ExtensionContext,
@@ -54,10 +53,6 @@ class ColumnInfo(BaseModel):
 
     deterministic: ColumnDeterministicInfo | None = None
     ai_enrichment: ColumnAIEnrichment | None = None
-    code_evidence: CodeEvidence | None = Field(
-        default=None,
-        description="Source code evidence and context for this column",
-    )
 
 
 class DataDeterministicMetadata(DeterministicMetadata):
@@ -102,7 +97,3 @@ class DataStructure(ExtensionContext):
 
     deterministic_metadata: DataDeterministicMetadata | None = None
     ai_enrichment: DataAIEnrichment | None = None
-    code_evidence: CodeEvidence | None = Field(
-        default=None,
-        description="Source code evidence and context for this dataset",
-    )

@@ -209,3 +209,5 @@ __marimo__/
 # Others
 *.yml
 .DS_Store
+*.code-workspace
+settings.json

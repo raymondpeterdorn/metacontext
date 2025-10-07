@@ -364,6 +364,7 @@ class ModelHandler(BaseFileHandler):
         deterministic_metadata: ModelDeterministicMetadata,
         model_path: Path,
         codebase_context: dict | None = None,
+        semantic_knowledge: str | None = None,
     ) -> ModelAIEnrichment | None:
         """Generate AI enrichment through schema-first LLM analysis.
 
@@ -388,6 +389,8 @@ class ModelHandler(BaseFileHandler):
             "model_file_path": str(model_path),
             "training_scripts_found": [],
             "codebase_context": codebase_context or {},
+            "semantic_knowledge": semantic_knowledge
+            or "No semantic knowledge available from codebase",
         }
 
         # Add training script content and extract features
@@ -590,13 +593,79 @@ class ModelHandler(BaseFileHandler):
         # Tier 1: Always succeeds - deterministic metadata
         deterministic_metadata = self._extract_deterministic_metadata(file_path)
 
-        # Tier 2: Best effort - AI enrichment
+        # Tier 2: Best effort - AI enrichment with semantic knowledge integration
         ai_enrichment = None
-        if self.llm_handler:
+        llm_handler = ai_companion or self.llm_handler
+
+        if llm_handler:
+            # Extract semantic knowledge for enhanced context
+            semantic_knowledge_text = "No semantic knowledge extracted from codebase."
+            if (
+                hasattr(ai_companion, "codebase_context")
+                and ai_companion.codebase_context
+            ):
+                logger.info("🔍 DEBUG: Codebase context found on ai_companion")
+                try:
+                    # Check if we have semantic knowledge available
+                    if (
+                        hasattr(ai_companion.codebase_context, "ai_enrichment")
+                        and ai_companion.codebase_context.ai_enrichment
+                        and hasattr(
+                            ai_companion.codebase_context.ai_enrichment,
+                            "semantic_knowledge",
+                        )
+                    ):
+                        logger.info(
+                            "🔍 DEBUG: Found semantic knowledge in ai_enrichment",
+                        )
+                        semantic_knowledge = ai_companion.codebase_context.ai_enrichment.semantic_knowledge
+
+                        # Format semantic knowledge for AI analysis
+                        if semantic_knowledge and hasattr(
+                            semantic_knowledge,
+                            "model_fields",
+                        ):
+                            logger.info(
+                                "🔍 DEBUG: Semantic knowledge has %d model fields",
+                                len(semantic_knowledge.model_fields),
+                            )
+                            field_descriptions = []
+                            for (
+                                field_name,
+                                field_info,
+                            ) in semantic_knowledge.model_fields.items():
+                                logger.info(
+                                    "🔍 DEBUG: Field %s: pydantic='%s', definition='%s'",
+                                    field_name,
+                                    field_info.pydantic_description,
+                                    field_info.definition,
+                                )
+                                if field_info.pydantic_description:
+                                    field_descriptions.append(
+                                        f"- {field_name}: {field_info.pydantic_description}",
+                                    )
+                                elif field_info.definition:
+                                    field_descriptions.append(
+                                        f"- {field_name}: {field_info.definition}",
+                                    )
+
+                            if field_descriptions:
+                                semantic_knowledge_text = (
+                                    "Semantic knowledge from codebase:\n"
+                                    + "\n".join(field_descriptions)
+                                )
+                                logger.info(
+                                    "🔍 DEBUG: Using semantic knowledge: %s",
+                                    semantic_knowledge_text[:200] + "...",
+                                )
+                except (AttributeError, KeyError, TypeError) as e:
+                    logger.warning("Error extracting semantic knowledge: %s", e)
+
             ai_enrichment = self._generate_ai_enrichment(
                 deterministic_metadata,
                 file_path,
                 codebase_context,
+                semantic_knowledge_text,
             )
         else:
             logger.info("i  No LLM handler provided - creating basic AI enrichment")

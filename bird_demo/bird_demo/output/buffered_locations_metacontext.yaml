@@ -1,18 +1,93 @@
 metacontext_version: 0.3.0
 generation_info:
-  generated_at: '2025-09-13T23:51:44.926149+00:00'
-  generation_method: fallback
+  generated_at: '2025-10-07T19:19:48.494498Z'
+  generation_method: explicit_function
   function_call: metacontext.metacontextualize()
+  token_usage:
+    total_tokens: 4495
+    prompt_tokens: 8076
+    completion_tokens: 2446
+    total_api_calls: 4
+    provider: gemini
+    model: gemini-2.5-flash
 file_info:
   filename: buffered_locations.geojson
   extension: .geojson
-  absolute_path: /Users/bigdawg/Documents/metacontext/example/output/buffered_locations.geojson
-  directory: example/output
+  file_purpose: Generated file with two-tier architecture
+  project_context_summary: Analysis with CSVHandler
+  creation_timestamp: '2025-10-07T19:19:48.494572Z'
 system_info:
-  working_directory: /Users/bigdawg/Documents/metacontext
-data_analysis:
-  type: generic_object
-  python_type: GeoDataFrame
-  note: Fallback analysis - specialized handler not available
+  working_directory: /Users/bigdawg/Documents/repos/metacontext/bird_demo
 confidence_assessment:
-  overall: LOW
+  overall: MEDIUM
+data_structure:
+  deterministic_metadata:
+    type: pandas_dataframe
+    shape:
+    - 200
+    - 16
+    memory_usage_bytes: 105043
+  ai_enrichment:
+    domain_analysis: ''
+    data_quality_assessment: unknown
+    column_interpretations:
+      species_name:
+        deterministic: {}
+        ai_enrichment:
+          semantic_meaning: Scientific name of the observed bird species.
+          data_quality_assessment: ''
+          domain_context: Primary biological identifier for avian observations, crucial
+            for taxonomic and ecological studies.
+          relationship_to_other_columns:
+          - taxonomic_family
+          - taxonomic_order
+          - asdawas
+          - beak_length
+          - weight_g
+          - diet_types
+      asdawas:
+        deterministic: {}
+        ai_enrichment:
+          semantic_meaning: Bird Wing Length (units likely millimeters or centimeters).
+          data_quality_assessment: ''
+          domain_context: Avian morphology measurement, vital for species identification,
+            age determination, and flight capability studies.
+          relationship_to_other_columns:
+          - species_name
+          - beak_length
+          - weight_g
+      brrrrkk:
+        deterministic: {}
+        ai_enrichment:
+          semantic_meaning: Timestamp of the observation or data collection event.
+          data_quality_assessment: ''
+          domain_context: Temporal context for each bird observation, essential for
+            tracking seasonal patterns, migration, or data freshness.
+          relationship_to_other_columns:
+          - latitude
+          - longitude
+          - habitat_type
+          - weather_condition
+          - temperature_c
+      diet_types:
+        deterministic: {}
+        ai_enrichment:
+          semantic_meaning: Proportional composition of the bird's diet, represented
+            as a JSON string.
+          data_quality_assessment: ''
+          domain_context: Ecological data detailing feeding habits, crucial for understanding
+            trophic levels and ecosystem roles.
+          relationship_to_other_columns:
+          - species_name
+      geometry:
+        deterministic: {}
+        ai_enrichment:
+          semantic_meaning: Geographic polygon representing the buffered location
+            or area associated with an observation.
+          data_quality_assessment: ''
+          domain_context: Spatial data for geographic analysis, mapping, and understanding
+            habitat use, range, or territory.
+          relationship_to_other_columns:
+          - latitude
+          - longitude
+    business_value_assessment: ''

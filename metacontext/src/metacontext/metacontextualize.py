@@ -362,42 +362,55 @@ def _convert_codebase_context_to_schema(
             else "Not a dict",
         )
 
-    if semantic_knowledge and semantic_knowledge.get("knowledge_graph"):
+    # Extract the nested semantic knowledge if it exists
+    nested_semantic_knowledge = (
+        semantic_knowledge.get("semantic_knowledge") if semantic_knowledge else None
+    )
+
+    if nested_semantic_knowledge and nested_semantic_knowledge.get("knowledge_graph"):
         logger.info("🔍 DEBUG: Creating CodeAIEnrichment with semantic knowledge")
         # Convert the SemanticKnowledgeGraph object to a dictionary
-        knowledge_graph = semantic_knowledge.get("knowledge_graph")
+        knowledge_graph = nested_semantic_knowledge.get("knowledge_graph")
 
         # Create a dictionary that preserves the structure the tabular handler expects
         semantic_knowledge_dict = {
             "columns": {},
-            "summary": semantic_knowledge.get("column_summary", {}),
-            "cross_references": semantic_knowledge.get("cross_reference_summary", {}),
-            "total_columns": semantic_knowledge.get("total_columns_discovered", 0),
+            "summary": nested_semantic_knowledge.get("column_summary", {}),
+            "cross_references": nested_semantic_knowledge.get(
+                "cross_reference_summary", {}
+            ),
+            "total_columns": nested_semantic_knowledge.get(
+                "total_columns_discovered", 0
+            ),
         }
 
         # Extract column knowledge from the knowledge graph
-        if hasattr(knowledge_graph, "columns") and knowledge_graph.columns:
+        if isinstance(knowledge_graph, dict) and "columns" in knowledge_graph:
             logger.info(
                 "🔍 DEBUG: Knowledge graph has %d columns",
-                len(knowledge_graph.columns),
+                len(knowledge_graph["columns"]),
             )
-            for col_name, col_knowledge in knowledge_graph.columns.items():
+            for col_name, col_knowledge in knowledge_graph["columns"].items():
                 logger.info("🔍 DEBUG: Processing column: %s", col_name)
+                # Extract the description from the pydantic_definition
+                pydantic_def = col_knowledge.get("pydantic_definition", {})
+                description = pydantic_def.get("description") or col_knowledge.get(
+                    "inferred_meaning"
+                )
+
                 semantic_knowledge_dict["columns"][col_name] = {
-                    "pydantic_description": getattr(
-                        col_knowledge,
-                        "pydantic_description",
-                        None,
-                    ),
-                    "definition": getattr(col_knowledge, "definition", None),
-                    "aliases": getattr(col_knowledge, "aliases", []),
-                    "confidence_score": getattr(col_knowledge, "confidence_score", 0.0),
-                    "source_files": getattr(col_knowledge, "source_files", []),
+                    "pydantic_description": description,
+                    "definition": col_knowledge.get("inferred_meaning"),
+                    "aliases": col_knowledge.get("aliases", []),
+                    "confidence_score": 1.0 if description else 0.5,
+                    "source_files": [pydantic_def.get("file")]
+                    if pydantic_def.get("file")
+                    else [],
                 }
                 logger.info(
                     "🔍 DEBUG: Column %s description: %s",
                     col_name,
-                    getattr(col_knowledge, "pydantic_description", None),
+                    description,
                 )
         else:
             logger.info(

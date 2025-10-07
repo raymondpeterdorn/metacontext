@@ -304,9 +304,9 @@ def main() -> None:
     """Train and save a simple bird classification model."""
     # Use default config if none provided
     csv_and_xlsx()
-    # ml_models()
-    # geospatial_data()
-    # media_data()
+    ml_models()
+    geospatial_data()
+    media_data()
 
 if __name__ == "__main__":
     main()
