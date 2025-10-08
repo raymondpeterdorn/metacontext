@@ -11,9 +11,13 @@ See:
 
 import json
 import logging
+import tempfile
 from pathlib import Path
 from typing import Any, ClassVar
 
+from metacontext.ai.handlers.companions.template_adapter import (
+    CompanionTemplateAdapter,
+)
 from metacontext.ai.handlers.llms.prompt_constraints import (
     COMMON_FIELD_CONSTRAINTS,
     build_schema_constraints,
@@ -210,7 +214,26 @@ class GeospatialHandler(BaseFileHandler):
     ) -> dict[str, Any]:
         """Generate geospatial context with deterministic metadata and AI enrichment."""
         try:
-            # Extract semantic knowledge for enhanced context
+            # Check for companion mode vs API mode
+            if ai_companion and hasattr(ai_companion, "companion_type"):
+                # Companion mode - analyze deterministic data and use simplified integration
+                if self._is_raster_file(file_path):
+                    deterministic_metadata = self._analyze_raster_deterministic(
+                        file_path,
+                    )
+                    return self._generate_raster_companion_context(
+                        file_path,
+                        deterministic_metadata,
+                        ai_companion,
+                    )
+                deterministic_metadata = self._analyze_vector_deterministic(file_path)
+                return self._generate_vector_companion_context(
+                    file_path,
+                    deterministic_metadata,
+                    ai_companion,
+                )
+
+            # Extract semantic knowledge for enhanced context (API mode)
             semantic_knowledge_text = "No semantic knowledge extracted from codebase."
             if (
                 ai_companion
@@ -259,10 +282,14 @@ class GeospatialHandler(BaseFileHandler):
             # Determine if raster or vector
             if self._is_raster_file(file_path):
                 return self._generate_raster_context(
-                    file_path, ai_companion, semantic_knowledge_text
+                    file_path,
+                    ai_companion,
+                    semantic_knowledge_text,
                 )
             return self._generate_vector_context(
-                file_path, ai_companion, semantic_knowledge_text
+                file_path,
+                ai_companion,
+                semantic_knowledge_text,
             )
         except Exception:
             logger.exception("Error generating geospatial context for %s", file_path)
@@ -623,3 +650,230 @@ class GeospatialHandler(BaseFileHandler):
     ) -> dict[str, str]:
         """Get bulk prompts for this file type from config."""
         return self.PROMPT_CONFIG.copy()
+
+    def _generate_companion_context(
+        self,
+        file_path: Path,
+        deterministic_metadata: object,  # This will be either Raster or Vector metadata
+        ai_companion: object,
+    ) -> dict[str, Any]:
+        """Generate context using companion mode with simplified integration."""
+        try:
+            # Determine if this is raster or vector data
+            if self._is_raster_file(file_path):
+                return self._generate_raster_companion_context(
+                    file_path,
+                    deterministic_metadata,
+                    ai_companion,
+                )
+            return self._generate_vector_companion_context(
+                file_path,
+                deterministic_metadata,
+                ai_companion,
+            )
+
+        except Exception as e:
+            logger.warning(
+                "Companion mode failed, falling back to deterministic: %s",
+                str(e),
+            )
+            # Fallback to deterministic only
+            if self._is_raster_file(file_path):
+                return GeospatialRasterContext(
+                    deterministic_metadata=deterministic_metadata,
+                    ai_enrichment=None,
+                ).model_dump()
+            return GeospatialVectorContext(
+                deterministic_metadata=deterministic_metadata,
+                ai_enrichment=None,
+            ).model_dump()
+
+    def _generate_raster_companion_context(
+        self,
+        file_path: Path,
+        deterministic_metadata: RasterDeterministicMetadata,
+        ai_companion: object,
+    ) -> dict[str, Any]:
+        """Generate raster context using companion mode with template adaptation."""
+        try:
+            adapter = CompanionTemplateAdapter()
+            
+            # Create context variables for template substitution
+            context_variables = {
+                "file_name": file_path.name,
+                "file_path": str(file_path),
+                "data_type": "raster",
+                "bands": deterministic_metadata.bands or 0,
+                "width": deterministic_metadata.width or 0,
+                "height": deterministic_metadata.height or 0,
+                "crs": deterministic_metadata.crs or "unknown",
+            }
+            
+            # Load and adapt the geospatial analysis template
+            template_path = "geospatial/raster_analysis.yaml"
+            template_data = adapter.load_api_template(template_path)
+            
+            # Generate companion prompt
+            companion_prompt = adapter.generate_companion_prompt(
+                template_data, context_variables,
+            )
+            
+            # Create a temporary response file path
+            with tempfile.NamedTemporaryFile(suffix=".yaml", delete=False) as tmp_file:
+                response_file_path = Path(tmp_file.name)
+            
+            # Display prompt and wait for companion response
+            parsed_data = ai_companion.display_prompt_and_wait(companion_prompt, response_file_path)
+            
+            if parsed_data:
+                # Validate response structure
+                schema_path = "metacontext.schemas.extensions.geospatial.RasterAIEnrichment"
+                is_valid, validation_errors = adapter.validate_response_structure(
+                    parsed_data, schema_path,
+                )
+                if not is_valid:
+                    logger.error("Response validation failed: %s", validation_errors)
+                    return self._generate_fallback_raster_context(file_path, deterministic_metadata, ai_companion)
+                
+                # Convert to Pydantic instance
+                ai_enrichment, conversion_errors = adapter.convert_yaml_to_pydantic(
+                    parsed_data, schema_path,
+                )
+                if conversion_errors:
+                    logger.error("Response conversion failed: %s", conversion_errors)
+                    return self._generate_fallback_raster_context(file_path, deterministic_metadata, ai_companion)
+                
+                return GeospatialRasterContext(
+                    deterministic_metadata=deterministic_metadata,
+                    ai_enrichment=ai_enrichment,
+                ).model_dump()
+            
+            return self._generate_fallback_raster_context(file_path, deterministic_metadata, ai_companion)
+            
+        except Exception as e:
+            logger.exception("Companion analysis failed: %s", e)
+            return self._generate_fallback_raster_context(file_path, deterministic_metadata, ai_companion)
+    
+    def _generate_fallback_raster_context(
+        self,
+        file_path: Path,
+        deterministic_metadata: RasterDeterministicMetadata,
+        ai_companion: object,
+    ) -> dict[str, Any]:
+        """Generate fallback raster context when companion fails."""
+        logger.info(
+            "Using %s companion for raster analysis of %s",
+            ai_companion.companion_type,
+            file_path.name,
+        )
+
+        # Return deterministic data with companion marker
+        return GeospatialRasterContext(
+            deterministic_metadata=deterministic_metadata,
+            ai_enrichment=RasterAIEnrichment(
+                spatial_analysis={
+                    "companion_mode": True,
+                    "companion_type": ai_companion.companion_type,
+                    "analysis_note": f"Raster analyzed using {ai_companion.companion_type} companion",
+                },
+                semantic_tags=[f"{ai_companion.companion_type}_analyzed"],
+                contextual_insights=[
+                    f"Raster file processed via {ai_companion.companion_type} integration",
+                ],
+            ),
+        ).model_dump()
+
+    def _generate_vector_companion_context(
+        self,
+        file_path: Path,
+        deterministic_metadata: VectorDeterministicMetadata,
+        ai_companion: object,
+    ) -> dict[str, Any]:
+        """Generate vector context using companion mode with template adaptation."""
+        try:
+            adapter = CompanionTemplateAdapter()
+            
+            # Create context variables for template substitution
+            context_variables = {
+                "file_name": file_path.name,
+                "file_path": str(file_path),
+                "data_type": "vector",
+                "feature_count": deterministic_metadata.feature_count or 0,
+                "geometry_type": deterministic_metadata.geometry_type or "unknown",
+                "crs": deterministic_metadata.crs or "unknown",
+                "attribute_fields": deterministic_metadata.attribute_fields or [],
+            }
+            
+            # Load and adapt the geospatial analysis template
+            template_path = "geospatial/vector_analysis.yaml"
+            template_data = adapter.load_api_template(template_path)
+            
+            # Generate companion prompt
+            companion_prompt = adapter.generate_companion_prompt(
+                template_data, context_variables,
+            )
+            
+            # Create a temporary response file path
+            with tempfile.NamedTemporaryFile(suffix=".yaml", delete=False) as tmp_file:
+                response_file_path = Path(tmp_file.name)
+            
+            # Display prompt and wait for companion response
+            parsed_data = ai_companion.display_prompt_and_wait(companion_prompt, response_file_path)
+            
+            if parsed_data:
+                # Validate response structure
+                schema_path = "metacontext.schemas.extensions.geospatial.VectorAIEnrichment"
+                is_valid, validation_errors = adapter.validate_response_structure(
+                    parsed_data, schema_path,
+                )
+                if not is_valid:
+                    logger.error("Response validation failed: %s", validation_errors)
+                    return self._generate_fallback_vector_context(file_path, deterministic_metadata, ai_companion)
+                
+                # Convert to Pydantic instance
+                ai_enrichment, conversion_errors = adapter.convert_yaml_to_pydantic(
+                    parsed_data, schema_path,
+                )
+                if conversion_errors:
+                    logger.error("Response conversion failed: %s", conversion_errors)
+                    return self._generate_fallback_vector_context(file_path, deterministic_metadata, ai_companion)
+                
+                return GeospatialVectorContext(
+                    deterministic_metadata=deterministic_metadata,
+                    ai_enrichment=ai_enrichment,
+                ).model_dump()
+            
+            return self._generate_fallback_vector_context(file_path, deterministic_metadata, ai_companion)
+            
+        except Exception:
+            logger.exception("Companion analysis failed")
+            return self._generate_fallback_vector_context(file_path, deterministic_metadata, ai_companion)
+    
+    def _generate_fallback_vector_context(
+        self,
+        file_path: Path,
+        deterministic_metadata: VectorDeterministicMetadata,
+        ai_companion: object,
+    ) -> dict[str, Any]:
+        """Generate fallback vector context when companion fails."""
+        logger.info(
+            "Using %s companion for vector analysis of %s",
+            ai_companion.companion_type,
+            file_path.name,
+        )
+
+        # Return deterministic data with companion marker
+        return GeospatialVectorContext(
+            deterministic_metadata=deterministic_metadata,
+            ai_enrichment=VectorAIEnrichment(
+                spatial_analysis={
+                    "companion_mode": True,
+                    "companion_type": ai_companion.companion_type,
+                    "analysis_note": f"Vector analyzed using {ai_companion.companion_type} companion",
+                },
+                semantic_tags=[f"{ai_companion.companion_type}_analyzed"],
+                contextual_insights=[
+                    f"Vector file processed via {ai_companion.companion_type} integration",
+                ],
+            ),
+        ).model_dump()

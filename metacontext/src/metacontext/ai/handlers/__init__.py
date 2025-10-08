@@ -3,12 +3,9 @@
 # Core imports
 # Code companion providers
 from metacontext.ai.handlers.companions import (
-    BaseCodeCompanionProvider,
-    CodeiumProvider,
-    CopilotProvider,
-    CursorProvider,
-    GenericProvider,
-    TabnineProvider,
+    BaseCompanionProvider,
+    CompanionProviderFactory,
+    GitHubCopilotProvider,
 )
 from metacontext.ai.handlers.core.provider_factory import ProviderFactory
 from metacontext.ai.handlers.core.provider_registry import ProviderRegistry
@@ -23,18 +20,15 @@ from metacontext.ai.handlers.llms.provider_interface import (
 
 __all__ = [
     "AbstractLLMProvider",
-    "BaseCodeCompanionProvider",
+    "BaseCompanionProvider",
     "BaseLLMProviderConfig",
-    "CodeiumProvider",
-    "CopilotProvider",
-    "CursorProvider",
-    "GenericProvider",
+    "CompanionProviderFactory",
+    "GitHubCopilotProvider",
     "LLMError",
     "LLMProvider",
     "OpenAIProvider",
     "ProviderFactory",
     "ProviderRegistry",
     "SimplifiedLLMProvider",
-    "TabnineProvider",
     "ValidationRetryError",
 ]

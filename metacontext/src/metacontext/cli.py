@@ -15,6 +15,9 @@ import sys
 import traceback
 from pathlib import Path
 
+from metacontext.ai.handlers.companions.companion_factory import (
+    CompanionProviderFactory,
+)
 from metacontext.metacontextualize import metacontextualize
 
 # Constants for file size calculations
@@ -52,6 +55,20 @@ def create_parser() -> argparse.ArgumentParser:
         "--deep",
         action="store_true",
         help="Enable deep analysis with AI enrichment (requires API key)",
+    )
+
+    # Companion mode option
+    parser.add_argument(
+        "--companion",
+        action="store_true",
+        help="Use IDE-integrated companions like GitHub Copilot instead of API",
+    )
+
+    # Force API mode option
+    parser.add_argument(
+        "--force-api",
+        action="store_true",
+        help="Force API mode even if companions are available",
     )
 
     # Output file option
@@ -105,12 +122,40 @@ def main() -> None:
         sys.exit(1)
 
     try:
+        # Determine AI companion/provider strategy
+        ai_companion = None
+        use_deep_analysis = args.deep
+
+        if args.companion or (not args.force_api and not args.deep):
+            # Try to detect and use companion providers
+            try:
+                factory = CompanionProviderFactory()
+                companion_provider = factory.detect_available_companion()
+                if companion_provider:
+                    print(f"🤖 Using {companion_provider.companion_type} for analysis")
+                    ai_companion = companion_provider
+                    use_deep_analysis = True  # Enable deep analysis for companions
+                elif args.companion:
+                    # User explicitly requested companion mode but none available
+                    print(
+                        "❌ No companion providers available. Install GitHub Copilot or use --force-api",
+                    )
+                    sys.exit(1)
+                else:
+                    print("🔗 No companions detected, using API mode")
+            except Exception as e:
+                if args.companion:
+                    print(f"❌ Companion detection failed: {e}")
+                    sys.exit(1)
+                print(f"⚠️ Companion detection failed, falling back to API mode: {e}")
+
         # Generate metacontext using simplified interface
         output_path = metacontextualize(
             data_object=None,  # We're analyzing a file directly
             file_path=file_path,
             output_format=args.output,
-            include_llm_analysis=args.deep,
+            include_llm_analysis=use_deep_analysis,
+            ai_companion=ai_companion,  # Pass companion provider
             output_path=args.output_file,
             verbose=args.verbose,
         )

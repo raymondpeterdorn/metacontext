@@ -7,8 +7,10 @@ functionality for intelligent metadata generation.
 from metacontext.ai.codebase_scanner import CodebaseScanner, scan_codebase_context
 from metacontext.ai.handlers import (
     AbstractLLMProvider,
-    BaseCodeCompanionProvider,
+    BaseCompanionProvider,
     BaseLLMProviderConfig,
+    CompanionProviderFactory,
+    GitHubCopilotProvider,
     LLMError,
     LLMProvider,
     OpenAIProvider,
@@ -20,9 +22,11 @@ from metacontext.ai.handlers import (
 
 __all__ = [
     "AbstractLLMProvider",
-    "BaseCodeCompanionProvider",
+    "BaseCompanionProvider",
     "BaseLLMProviderConfig",
     "CodebaseScanner",
+    "CompanionProviderFactory",
+    "GitHubCopilotProvider",
     "LLMError",
     "LLMProvider",
     "OpenAIProvider",

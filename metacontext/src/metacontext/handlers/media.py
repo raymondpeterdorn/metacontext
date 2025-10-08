@@ -11,9 +11,13 @@ See:
 
 import logging
 import mimetypes
+import tempfile
 from pathlib import Path
 from typing import Any, ClassVar
 
+from metacontext.ai.handlers.companions.template_adapter import (
+    CompanionTemplateAdapter,
+)
 from metacontext.ai.handlers.llms.prompt_constraints import (
     COMMON_FIELD_CONSTRAINTS,
     build_schema_constraints,
@@ -199,7 +203,14 @@ class MediaHandler(BaseFileHandler):
             # Deterministic analysis
             deterministic_metadata = self._analyze_media_deterministic(file_path)
 
-            # AI enrichment with semantic knowledge integration
+            # Check for companion mode vs API mode
+            if ai_companion and hasattr(ai_companion, "companion_type"):
+                # Companion mode - use template adaptation
+                return self._generate_companion_context(
+                    file_path, deterministic_metadata, ai_companion,
+                )
+
+            # AI enrichment with semantic knowledge integration (API mode)
             ai_enrichment = None
             if ai_companion and hasattr(ai_companion, "generate_with_schema"):
                 # Extract semantic knowledge for enhanced context
@@ -493,3 +504,113 @@ class MediaHandler(BaseFileHandler):
     ) -> dict[str, str]:
         """Get bulk prompts for this file type from config."""
         return self.PROMPT_CONFIG.copy()
+
+    def _generate_companion_context(
+        self,
+        file_path: Path,
+        deterministic_metadata: MediaDeterministicMetadata,
+        ai_companion: object,
+    ) -> dict[str, Any]:
+        """Generate context using companion mode with template adaptation."""
+        try:
+
+            adapter = CompanionTemplateAdapter()
+
+            # Prepare context for companion analysis
+            context_variables = {
+                "file_path": str(file_path),
+                "file_name": file_path.name,
+                "media_type": deterministic_metadata.media_type,
+                "format": file_path.suffix.lower(),
+                "file_size": deterministic_metadata.file_size_bytes,
+            }
+
+            # Add specific media metadata
+            if deterministic_metadata.media_info.dimensions:
+                context_variables["dimensions"] = deterministic_metadata.media_info.dimensions
+            if deterministic_metadata.media_info.duration:
+                context_variables["duration"] = f"{deterministic_metadata.media_info.duration}s"
+            if deterministic_metadata.media_info.bit_rate:
+                context_variables["bit_rate"] = f"{deterministic_metadata.media_info.bit_rate} kbps"
+
+            # Load and adapt the media analysis template
+            template_path = "media/media_analysis.yaml"
+            template_data = adapter.load_api_template(template_path)
+
+            # Generate companion prompt
+            companion_prompt = adapter.generate_companion_prompt(
+                template_data, context_variables,
+            )
+
+            # Create a temporary response file path
+            with tempfile.NamedTemporaryFile(suffix=".yaml", delete=False) as tmp_file:
+                response_file_path = Path(tmp_file.name)
+
+            # Display prompt and wait for companion response
+            parsed_data = ai_companion.display_prompt_and_wait(companion_prompt, response_file_path)
+
+            if parsed_data:
+                # Validate response structure
+                schema_path = "metacontext.schemas.extensions.media.MediaAIEnrichment"
+                is_valid, validation_errors = adapter.validate_response_structure(
+                    parsed_data, schema_path,
+                )
+                if not is_valid:
+                    logger.error("Response validation failed: %s", validation_errors)
+                    # Fall back to basic companion metadata
+                    return self._generate_basic_companion_metadata(file_path, deterministic_metadata, ai_companion)
+
+                # Convert to Pydantic instance
+                ai_enrichment, conversion_errors = adapter.convert_yaml_to_pydantic(
+                    parsed_data, schema_path,
+                )
+                if conversion_errors:
+                    logger.error("Failed to convert response to Pydantic model: %s", conversion_errors)
+                    # Fall back to basic companion metadata
+                    return self._generate_basic_companion_metadata(file_path, deterministic_metadata, ai_companion)
+
+                return MediaContext(
+                    deterministic_metadata=deterministic_metadata,
+                    ai_enrichment=ai_enrichment,
+                )
+
+            # Fall back to basic companion metadata if no response
+            return self._generate_basic_companion_metadata(file_path, deterministic_metadata, ai_companion)
+
+        except Exception as e:
+            logger.exception("Companion analysis failed: %s", e)
+            # Fall back to deterministic only
+            return {"deterministic_metadata": deterministic_metadata.model_dump()}
+
+    def _generate_basic_companion_metadata(
+        self,
+        file_path: Path,
+        deterministic_metadata: MediaDeterministicMetadata,
+        ai_companion: object,
+    ) -> dict[str, Any]:
+        """Generate basic companion metadata when full integration fails."""
+        try:
+            return MediaContext(
+                deterministic_metadata=deterministic_metadata,
+                ai_enrichment=MediaAIEnrichment(
+                    content_analysis={
+                        "companion_mode": True,
+                        "companion_type": ai_companion.companion_type,
+                        "analysis_note": f"Analyzed using {ai_companion.companion_type} companion",
+                    },
+                    semantic_tags=[f"{ai_companion.companion_type}_analyzed"],
+                    contextual_insights=[
+                        f"Media file processed via {ai_companion.companion_type} integration",
+                    ],
+                ),
+            ).model_dump()
+
+        except Exception as e:
+            logger.warning(
+                "Companion mode failed, falling back to deterministic: %s", str(e),
+            )
+            # Fallback to deterministic only
+            return MediaContext(
+                deterministic_metadata=deterministic_metadata,
+                ai_enrichment=None,
+            ).model_dump()

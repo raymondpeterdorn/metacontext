@@ -12,9 +12,9 @@ import geopandas as gpd
 import numpy as np
 import pandas as pd
 from dotenv import load_dotenv
+from metacontext.ai.handlers.companions.companion_factory import CompanionProviderFactory
 from metacontext.metacontextualize import metacontextualize
 from PIL import Image
-from scripts.exploratory_data_analysis import eda
 from sklearn.ensemble import RandomForestClassifier
 
 # Configure logging
@@ -34,6 +34,20 @@ DEFAULT_MODEL_CONFIG: dict[str, Any] = {
     "n_estimators": 10,
     "random_state": 42,
 }
+
+def get_ai_companion():
+    """Create an AI companion for interactive analysis."""
+    try:
+        factory = CompanionProviderFactory()
+        ai_companion = factory.detect_available_companion()
+        if ai_companion:
+            return ai_companion
+        else:
+            logger.warning("No AI companion detected, falling back to API mode")
+            return None
+    except Exception:
+        logger.exception("Error creating AI companion, falling back to API mode")
+        return None
 
 def csv_and_xlsx() -> None:
     """Process birdos.csv and birdos_expanded.xlsx to create CSV and Excel files."""
@@ -67,15 +81,30 @@ def csv_and_xlsx() -> None:
             ]
             processed_df.to_csv(output_csv_path, index=False)
 
-            metacontextualize(
-                processed_df, 
-                output_csv_path,
-                output_format="yaml",
-                scan_codebase=True,
-                llm_api_key=os.getenv("GEMINI_API_KEY"),
-                llm_provider="gemini",
-                include_llm_analysis=True,
-            )
+            # Get AI companion for interactive analysis
+            ai_companion = get_ai_companion()
+            
+            if ai_companion:
+                # Use companion mode for interactive analysis
+                metacontextualize(
+                    processed_df, 
+                    output_csv_path,
+                    output_format="yaml",
+                    scan_codebase=True,
+                    ai_companion=ai_companion,
+                    verbose=True,
+                )
+            else:
+                # Fallback to API mode if companion not available
+                metacontextualize(
+                    processed_df, 
+                    output_csv_path,
+                    output_format="yaml",
+                    scan_codebase=True,
+                    llm_api_key=os.getenv("GEMINI_API_KEY"),
+                    llm_provider="gemini",
+                    include_llm_analysis=True,
+                )
         except Exception:
             logger.exception("Error processing CSV")
         # try:
@@ -163,15 +192,30 @@ def ml_models() -> None:
         with model_path.open("wb") as f:
             pickle.dump(model, f)
 
-        metacontextualize(
-            model, 
-            model_path,
-            output_format="yaml",
-            scan_codebase=True,
-            llm_api_key=os.getenv("GEMINI_API_KEY"),
-            llm_provider="gemini",
-            include_llm_analysis=True,
-        )
+        # Get AI companion for interactive analysis
+        ai_companion = get_ai_companion()
+        
+        if ai_companion:
+            # Use companion mode for interactive analysis
+            metacontextualize(
+                model, 
+                model_path,
+                output_format="yaml",
+                scan_codebase=True,
+                ai_companion=ai_companion,
+                verbose=True,
+            )
+        else:
+            # Fallback to API mode if companion not available
+            metacontextualize(
+                model, 
+                model_path,
+                output_format="yaml",
+                scan_codebase=True,
+                llm_api_key=os.getenv("GEMINI_API_KEY"),
+                llm_provider="gemini",
+                include_llm_analysis=True,
+            )
         logger.info("Machine learning model created successfully")
     except Exception:
         logger.exception("Error creating machine learning model")
@@ -200,16 +244,30 @@ def geospatial_data() -> None:
             # Save the buffered GeoJSON
             geojson_buffered.to_file(str(geojson_output_path), driver="GeoJSON")
 
-            # Generate metacontext
-            metacontextualize(
-                geojson_buffered, 
-                geojson_output_path,
-                output_format="yaml",
-                scan_codebase=True,
-                llm_api_key=os.getenv("GEMINI_API_KEY"),
-                llm_provider="gemini",
-                include_llm_analysis=True,
-            )
+            # Get AI companion for interactive analysis
+            ai_companion = get_ai_companion()
+            
+            if ai_companion:
+                # Use companion mode for interactive analysis
+                metacontextualize(
+                    geojson_buffered, 
+                    geojson_output_path,
+                    output_format="yaml",
+                    scan_codebase=True,
+                    ai_companion=ai_companion,
+                    verbose=True,
+                )
+            else:
+                # Fallback to API mode if companion not available
+                metacontextualize(
+                    geojson_buffered, 
+                    geojson_output_path,
+                    output_format="yaml",
+                    scan_codebase=True,
+                    llm_api_key=os.getenv("GEMINI_API_KEY"),
+                    llm_provider="gemini",
+                    include_llm_analysis=True,
+                )
             logger.info("Created buffered GeoJSON at %s", geojson_output_path)
         except Exception:
             logger.exception("Error processing GeoJSON")
@@ -230,16 +288,30 @@ def geospatial_data() -> None:
             # Save the filtered GeoPackage
             gpkg_filtered.to_file(str(gpkg_output_path), driver="GPKG")
 
-            # Generate metacontext
-            metacontextualize(
-                gpkg_filtered, 
-                gpkg_output_path,
-                output_format="yaml",
-                scan_codebase=True,
-                llm_api_key=os.getenv("GEMINI_API_KEY"),
-                llm_provider="gemini",
-                include_llm_analysis=True,
-            )
+            # Get AI companion for interactive analysis
+            ai_companion = get_ai_companion()
+            
+            if ai_companion:
+                # Use companion mode for interactive analysis
+                metacontextualize(
+                    gpkg_filtered, 
+                    gpkg_output_path,
+                    output_format="yaml",
+                    scan_codebase=True,
+                    ai_companion=ai_companion,
+                    verbose=True,
+                )
+            else:
+                # Fallback to API mode if companion not available
+                metacontextualize(
+                    gpkg_filtered, 
+                    gpkg_output_path,
+                    output_format="yaml",
+                    scan_codebase=True,
+                    llm_api_key=os.getenv("GEMINI_API_KEY"),
+                    llm_provider="gemini",
+                    include_llm_analysis=True,
+                )
             logger.info("Created filtered GeoPackage at %s", gpkg_output_path)
         except Exception:
             logger.exception("Error processing GeoPackage")
@@ -290,15 +362,29 @@ def media_data() -> None:
     bird_img.save(img_path)
 
     # Generate metacontext for the image
-    metacontextualize(
-        bird_img, 
-        img_path,
-        output_format="yaml",
-        scan_codebase=True,
-        llm_api_key=os.getenv("GEMINI_API_KEY"),
-        llm_provider="gemini",
-        include_llm_analysis=True,
-    )
+    ai_companion = get_ai_companion()
+    
+    if ai_companion:
+        # Use companion mode for interactive analysis
+        metacontextualize(
+            bird_img, 
+            img_path,
+            output_format="yaml",
+            scan_codebase=True,
+            ai_companion=ai_companion,
+            verbose=True,
+        )
+    else:
+        # Fallback to API mode if companion not available
+        metacontextualize(
+            bird_img, 
+            img_path,
+            output_format="yaml",
+            scan_codebase=True,
+            llm_api_key=os.getenv("GEMINI_API_KEY"),
+            llm_provider="gemini",
+            include_llm_analysis=True,
+        )
 
 def main() -> None:
     """Train and save a simple bird classification model."""

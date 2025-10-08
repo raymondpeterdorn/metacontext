@@ -3,12 +3,14 @@
 import json
 import logging
 import re
+import tempfile
 import time
 from pathlib import Path
 from typing import Any, ClassVar
 
 import pandas as pd
 
+from metacontext.ai.handlers.companions.template_adapter import CompanionTemplateAdapter
 from metacontext.ai.handlers.core.exceptions import LLMError, ValidationRetryError
 from metacontext.ai.handlers.llms.prompt_constraints import (
     COMMON_FIELD_CONSTRAINTS,
@@ -171,6 +173,19 @@ class CSVHandler(BaseFileHandler):
             and hasattr(ai_companion, "is_available")
             and ai_companion.is_available()
         ):
+            # Check if this is a companion provider (IDE-integrated) vs regular LLM
+            is_companion_mode = hasattr(ai_companion, "companion_type")
+
+            if is_companion_mode:
+                logger.info("🤖 Using companion mode for tabular analysis")
+                return self._generate_companion_context(
+                    file_path,
+                    data_analysis,
+                    ai_companion,
+                )
+
+            # Continue with regular LLM provider logic
+            logger.info("🔗 Using API LLM provider for tabular analysis")
             # Extract semantic column knowledge from codebase for better context
             enhanced_context = data_analysis
 
@@ -855,6 +870,111 @@ class CSVHandler(BaseFileHandler):
             column_interpretations=column_interpretations,
             business_value_assessment=schema_interpretation.get("business_impact", ""),
         )
+
+    def _generate_companion_context(
+        self,
+        file_path: Path,
+        data_analysis: dict[str, Any],
+        ai_companion: object,
+    ) -> dict[str, object]:
+        """Generate context using companion provider (IDE-integrated mode).
+
+        This method uses the CompanionTemplateAdapter to create companion-friendly
+        prompts and handles the companion workflow for tabular analysis.
+
+        Args:
+            file_path: Path to the tabular file
+            data_analysis: Deterministic analysis results
+            ai_companion: Companion provider instance
+
+        Returns:
+            Dictionary containing analysis results or companion prompt
+
+        """
+        try:
+            # Initialize companion template adapter
+            adapter = CompanionTemplateAdapter()
+
+            # Create context variables for template substitution
+            context_variables = {
+                "file_name": file_path.name,
+                "file_path": str(file_path),
+                "columns_summary": self._create_columns_summary(data_analysis),
+                "data_shape": f"{data_analysis.get('shape', [0, 0])}",
+            }
+
+            # Load and adapt the tabular analysis template
+            template_path = "tabular/column_analysis.yaml"
+            template_data = adapter.load_api_template(template_path)
+
+            # Generate companion prompt
+            companion_prompt = adapter.generate_companion_prompt(
+                template_data,
+                context_variables,
+            )
+
+            # Send to companion and wait for response
+            # Create a temporary response file path
+            with tempfile.NamedTemporaryFile(suffix=".yaml", delete=False) as tmp_file:
+                response_file_path = Path(tmp_file.name)
+
+            # Display prompt and wait for companion response
+            parsed_data = ai_companion.display_prompt_and_wait(
+                companion_prompt, response_file_path,
+            )
+
+            if parsed_data:
+                # Validate response structure
+                schema_path = "metacontext.schemas.extensions.tabular.DataAIEnrichment"
+                is_valid, validation_errors = adapter.validate_response_structure(
+                    parsed_data,
+                    schema_path,
+                )
+                if not is_valid:
+                    logger.error("Response validation failed: %s", validation_errors)
+                    return {"error": f"Response validation failed: {validation_errors}"}
+
+                # Convert to Pydantic instance
+                ai_enrichment, conversion_errors = adapter.convert_yaml_to_pydantic(
+                    parsed_data,
+                    schema_path,
+                )
+                if conversion_errors:
+                    logger.error("Response conversion failed: %s", conversion_errors)
+                    return {"error": f"Response conversion failed: {conversion_errors}"}
+
+                # Create DataStructure with companion results
+                return {
+                    "extension_context": DataStructure(
+                        deterministic_metadata=DataDeterministicMetadata(
+                            **data_analysis.get("metadata", {}),
+                        ),
+                        ai_enrichment=ai_enrichment,
+                    ),
+                }
+            logger.warning("No response received from companion")
+            return {"error": "No response received from companion"}
+
+        except Exception as e:
+            logger.error("Companion analysis failed: %s", e)
+            return {"error": f"Companion analysis failed: {e}"}
+
+    def _create_columns_summary(self, data_analysis: dict[str, Any]) -> str:
+        """Create a summary of columns for companion context."""
+        columns = data_analysis.get("columns", {})
+        if not columns:
+            return "No column information available"
+
+        summary_lines = []
+        for col_name, col_data in columns.items():
+            dtype = col_data.get("dtype", "unknown")
+            null_count = col_data.get("null_count", 0)
+            unique_count = col_data.get("unique_count", 0)
+            summary_lines.append(
+                f"- {col_name}: {dtype} (nulls: {null_count}, unique: {unique_count})",
+            )
+
+        return "\n".join(summary_lines[:10])  # Limit to first 10 columns
 
     def _simple_extract_json(self, response: str) -> dict[str, Any] | None:
         """Extract JSON from a string that might contain other text."""

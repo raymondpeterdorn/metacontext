@@ -116,6 +116,7 @@ def metacontextualize(
     output_path: str | Path | None = None,
     output_format: str = "yaml",
     include_llm_analysis: bool = True,
+    ai_companion: object | None = None,
     verbose: bool = False,
     scan_codebase: bool = True,
     llm_provider: str | None = None,
@@ -149,6 +150,7 @@ def metacontextualize(
         output_path: Path for output file (if None, auto-generated)
         output_format: Output format ("yaml", "json", etc.)
         include_llm_analysis: Enable AI-powered analysis
+        ai_companion: GitHub Copilot or other AI companion instance for enhanced analysis
         verbose: Enable verbose logging
         scan_codebase: Enable codebase context scanning
         llm_provider: LLM provider ("gemini", "openai", etc.)
@@ -229,6 +231,7 @@ def metacontextualize(
         include_llm_analysis=effective_args.include_llm_analysis,
         verbose=effective_args.verbose,
         universal_metadata=universal_metadata,
+        ai_companion=ai_companion,
     )
 
     analysis_time = time.time() - analysis_start
@@ -377,10 +380,12 @@ def _convert_codebase_context_to_schema(
             "columns": {},
             "summary": nested_semantic_knowledge.get("column_summary", {}),
             "cross_references": nested_semantic_knowledge.get(
-                "cross_reference_summary", {}
+                "cross_reference_summary",
+                {},
             ),
             "total_columns": nested_semantic_knowledge.get(
-                "total_columns_discovered", 0
+                "total_columns_discovered",
+                0,
             ),
         }
 
@@ -395,7 +400,7 @@ def _convert_codebase_context_to_schema(
                 # Extract the description from the pydantic_definition
                 pydantic_def = col_knowledge.get("pydantic_definition", {})
                 description = pydantic_def.get("description") or col_knowledge.get(
-                    "inferred_meaning"
+                    "inferred_meaning",
                 )
 
                 semantic_knowledge_dict["columns"][col_name] = {
@@ -465,6 +470,50 @@ def _generate_output_path(file_path: Path, output_format: str) -> Path:
     return file_path.parent / filename
 
 
+def _generate_companion_context(
+    file_path: Path,
+    data_object: object,
+    handler: object,
+    ai_companion: object,
+    *,
+    verbose: bool = False,
+) -> dict:
+    """Generate context using companion workflow by delegating to handler.
+
+    Strategy 2: Delegate to Handler Companion Modes
+    This leverages the existing, well-tested companion implementations in
+    individual handlers rather than duplicating template logic.
+    """
+    try:
+        if verbose:
+            logger.info("🤖 Delegating to handler companion mode...")
+
+        if hasattr(handler, "generate_context"):
+            # Delegate to handler's existing companion implementation
+            # The handler will detect ai_companion and switch to companion mode
+            companion_response = handler.generate_context(
+                file_path=file_path,
+                data_object=data_object,
+                ai_companion=ai_companion,
+            )
+
+            if verbose:
+                logger.info("✅ Handler companion analysis complete")
+
+            return companion_response
+
+        # Fallback if handler doesn't support generate_context
+        return {
+            "error": "Handler does not support generate_context",
+            "handler_type": handler.__class__.__name__,
+        }
+
+    except Exception:
+        logger.exception("❌ Handler companion workflow failed")
+        logger.info("   Falling back to basic analysis")
+        return _generate_fallback_context(data_object, file_path)
+
+
 def _generate_context(
     data_object: object,
     file_path: Path,
@@ -473,6 +522,7 @@ def _generate_context(
     include_llm_analysis: bool,
     verbose: bool = False,
     universal_metadata: dict[str, Any] | None = None,
+    ai_companion: object | None = None,
 ) -> dict:
     """Generate complete metacontext using two-tier architecture."""
     try:
@@ -510,79 +560,98 @@ def _generate_context(
             llm_handler.codebase_context = codebase_context
 
         # Generate file-specific context
-        if verbose:
-            logger.info("🔍 Analyzing file content...")
-        context_start = time.time()
-        if hasattr(handler, "generate_context"):
-            file_specific_context = handler.generate_context(
-                file_path=file_path,
-                data_object=data_object,
-                ai_companion=llm_handler,
-            )
-        else:
-            file_specific_context = {
-                "error": "Handler does not support generate_context",
-            }
-        if verbose:
-            context_time = time.time() - context_start
-            logger.info("✓ File analysis completed in %.2f seconds", context_time)
-
-        # Add universal file metadata if available
-        if universal_metadata and "statistics" in universal_metadata:
-            if verbose:
-                logger.info("📊 Adding enhanced statistics to context")
-            # Add statistics to the existing data structure if it exists
-            if "data_structure" in file_specific_context:
-                data_struct = file_specific_context["data_structure"]
-                if (
-                    hasattr(data_struct, "deterministic_metadata")
-                    and data_struct.deterministic_metadata
-                ):
-                    # Add as dict to deterministic metadata (it's flexible)
-                    metadata_dict = data_struct.deterministic_metadata
-                    if isinstance(metadata_dict, dict):
-                        metadata_dict["file_statistics"] = universal_metadata[
-                            "statistics"
-                        ]
-                        if "schema" in universal_metadata:
-                            metadata_dict["enhanced_schema"] = universal_metadata[
-                                "schema"
-                            ]
-
-        base_context = create_base_metacontext(
-            filename=file_path.name,
-            file_purpose="Generated file with two-tier architecture",
-            project_context_summary=f"Analysis with {handler.__class__.__name__}",
-        )
-
-        if llm_handler:
-            token_usage = llm_handler.get_token_usage()
-            base_context.generation_info.token_usage = TokenUsage(**token_usage)
-            if token_usage["total_api_calls"] > 0:
-                logger.info(
-                    "🔢 Token Usage: %s total (%s API calls)",
-                    token_usage["total_tokens"],
-                    token_usage["total_api_calls"],
+        try:
+            # Check if we're in companion mode
+            if ai_companion is not None:
+                if verbose:
+                    logger.info("🤖 Routing to companion workflow...")
+                # Route to companion workflow instead of traditional LLM analysis
+                return _generate_companion_context(
+                    file_path=file_path,
+                    data_object=data_object,
+                    handler=handler,
+                    ai_companion=ai_companion,
+                    verbose=verbose,
                 )
+            
+            if verbose:
+                logger.info("🔍 Analyzing file content...")
+            context_start = time.time()
+            if hasattr(handler, "generate_context"):
+                # Use LLM handler for traditional API workflow
+                file_specific_context = handler.generate_context(
+                    file_path=file_path,
+                    data_object=data_object,
+                    ai_companion=llm_handler,
+                )
+            else:
+                file_specific_context = {
+                    "error": "Handler does not support generate_context",
+                }
+            if verbose:
+                context_time = time.time() - context_start
+                logger.info("✓ File analysis completed in %.2f seconds", context_time)
 
-        for key, value in file_specific_context.items():
-            if hasattr(base_context, key):
-                setattr(base_context, key, value)
+            # Add universal file metadata if available
+            if universal_metadata and "statistics" in universal_metadata:
+                if verbose:
+                    logger.info("📊 Adding enhanced statistics to context")
+                # Add statistics to the existing data structure if it exists
+                if "data_structure" in file_specific_context:
+                    data_struct = file_specific_context["data_structure"]
+                    if (
+                        hasattr(data_struct, "deterministic_metadata")
+                        and data_struct.deterministic_metadata
+                    ):
+                        # Add as dict to deterministic metadata (it's flexible)
+                        metadata_dict = data_struct.deterministic_metadata
+                        if isinstance(metadata_dict, dict):
+                            metadata_dict["file_statistics"] = universal_metadata[
+                                "statistics"
+                            ]
+                            if "schema" in universal_metadata:
+                                metadata_dict["enhanced_schema"] = universal_metadata[
+                                    "schema"
+                                ]
 
-        # NOTE: codebase_context removed from output as it provides no valuable information
-        # and wastes space in the metacontext YAML files. The context is still available
-        # internally for LLM processing but not included in the final output.
+            base_context = create_base_metacontext(
+                filename=file_path.name,
+                file_purpose="Generated file with two-tier architecture",
+                project_context_summary=f"Analysis with {handler.__class__.__name__}",
+            )
 
-        overall_conf = _assess_overall_confidence(
-            file_specific_context,
-            has_llm=llm_handler is not None,
-        )
-        base_context.confidence_assessment = ConfidenceAssessment(
-            overall=ConfidenceLevel(overall_conf),
-        )
+            if llm_handler:
+                token_usage = llm_handler.get_token_usage()
+                base_context.generation_info.token_usage = TokenUsage(**token_usage)
+                if token_usage["total_api_calls"] > 0:
+                    logger.info(
+                        "🔢 Token Usage: %s total (%s API calls)",
+                        token_usage["total_tokens"],
+                        token_usage["total_api_calls"],
+                    )
 
-        logger.info("✅ Two-tier context generation complete")
-        return base_context.model_dump(mode="json", by_alias=True, exclude_none=True)
+            for key, value in file_specific_context.items():
+                if hasattr(base_context, key):
+                    setattr(base_context, key, value)
+
+            # NOTE: codebase_context removed from output as it provides no valuable information
+            # and wastes space in the metacontext YAML files. The context is still available
+            # internally for LLM processing but not included in the final output.
+
+            overall_conf = _assess_overall_confidence(
+                file_specific_context,
+                has_llm=llm_handler is not None,
+            )
+            base_context.confidence_assessment = ConfidenceAssessment(
+                overall=ConfidenceLevel(overall_conf),
+            )
+
+            logger.info("✅ Two-tier context generation complete")
+            return base_context.model_dump(mode="json", by_alias=True, exclude_none=True)
+
+        except Exception:
+            logger.exception("❌ API analysis failed")
+            raise  # Re-raise to be caught by outer try-except
 
     except Exception:
         logger.exception("❌ Handler system failed")

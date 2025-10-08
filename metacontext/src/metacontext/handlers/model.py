@@ -13,9 +13,11 @@ See:
 import logging
 import pickle
 import re
+import tempfile
 from pathlib import Path
 from typing import Any, ClassVar
 
+from metacontext.ai.handlers.companions.template_adapter import CompanionTemplateAdapter
 from metacontext.ai.handlers.exceptions import LLMError, ValidationRetryError
 from metacontext.ai.handlers.llms.prompt_constraints import (
     COMMON_FIELD_CONSTRAINTS,
@@ -598,6 +600,29 @@ class ModelHandler(BaseFileHandler):
         llm_handler = ai_companion or self.llm_handler
 
         if llm_handler:
+            # Check if this is a companion provider (IDE-integrated) vs regular LLM
+            is_companion_mode = hasattr(llm_handler, "companion_type")
+
+            if is_companion_mode:
+                logger.info("🤖 Using companion mode for model analysis")
+                ai_enrichment = self._generate_companion_enrichment(
+                    file_path,
+                    deterministic_metadata,
+                    llm_handler,
+                )
+                if ai_enrichment and not isinstance(ai_enrichment, dict):
+                    # Successfully got ModelAIEnrichment instance
+                    return {
+                        "model_context": ModelContext(
+                            deterministic_metadata=deterministic_metadata,
+                            ai_enrichment=ai_enrichment,
+                        ),
+                    }
+                # Companion mode failed, fall back to regular enrichment
+                logger.warning("Companion mode failed, falling back to API mode")
+
+            # Continue with regular LLM provider logic
+            logger.info("🔗 Using API LLM provider for model analysis")
             # Extract semantic knowledge for enhanced context
             semantic_knowledge_text = "No semantic knowledge extracted from codebase."
             if (
@@ -753,13 +778,160 @@ class ModelHandler(BaseFileHandler):
         if "pca" in content_lower:
             features_info["preprocessing_steps"].append("dimensionality_reduction")
 
-        # Clean up duplicates
-        features_info["potential_columns"] = list(
-            set(features_info["potential_columns"]),
-        )[:10]  # Limit to avoid noise
-        features_info["target_variables"] = list(set(features_info["target_variables"]))
+    def _generate_companion_enrichment(
+        self,
+        file_path: Path,
+        deterministic_metadata: ModelDeterministicMetadata,
+        ai_companion: object,
+    ) -> ModelAIEnrichment | None:
+        """Generate AI enrichment using companion provider (IDE-integrated mode).
 
-        return features_info
+        Args:
+            file_path: Path to the model file
+            deterministic_metadata: Deterministic analysis results
+            ai_companion: Companion provider instance
+
+        Returns:
+            ModelAIEnrichment instance or None if failed
+
+        """
+        try:
+            # Initialize companion template adapter
+            adapter = CompanionTemplateAdapter()
+
+            # Create context variables for template substitution
+            context_variables = {
+                "file_name": file_path.name,
+                "file_path": str(file_path),
+                "model_size": f"{deterministic_metadata.model_size_bytes or 0} bytes",
+                "model_type": deterministic_metadata.model_type or "unknown",
+            }
+
+            # Load and adapt the model analysis template
+            template_path = "model/model_analysis.yaml"
+            template_data = adapter.load_api_template(template_path)
+
+            # Generate companion prompt
+            companion_prompt = adapter.generate_companion_prompt(
+                template_data,
+                context_variables,
+            )
+
+            # Send to companion and wait for response
+            # Create a temporary response file path
+            with tempfile.NamedTemporaryFile(suffix=".yaml", delete=False) as tmp_file:
+                response_file_path = Path(tmp_file.name)
+
+            # Display prompt and wait for companion response
+            parsed_data = ai_companion.display_prompt_and_wait(
+                companion_prompt, response_file_path,
+            )
+
+            if parsed_data:
+                # Validate response structure
+                schema_path = "metacontext.schemas.extensions.models.ModelAIEnrichment"
+                is_valid, validation_errors = adapter.validate_response_structure(
+                    parsed_data,
+                    schema_path,
+                )
+                if not is_valid:
+                    logger.error("Response validation failed: %s", validation_errors)
+                    return None
+
+                # Convert to Pydantic instance
+                ai_enrichment, conversion_errors = adapter.convert_yaml_to_pydantic(
+                    parsed_data,
+                    schema_path,
+                )
+                if conversion_errors:
+                    logger.error("Response conversion failed: %s", conversion_errors)
+                    return None
+
+                return ai_enrichment
+            logger.warning("No response received from companion")
+            return None
+
+        except Exception as e:
+            logger.exception("Companion analysis failed: %s", e)
+            return None
+
+    def _generate_companion_enrichment(
+        self,
+        file_path: Path,
+        deterministic_metadata: ModelDeterministicMetadata,
+        ai_companion: object,
+    ) -> ModelAIEnrichment | None:
+        """Generate AI enrichment using companion provider (IDE-integrated mode).
+
+        Args:
+            file_path: Path to the model file
+            deterministic_metadata: Deterministic analysis results
+            ai_companion: Companion provider instance
+
+        Returns:
+            ModelAIEnrichment instance or None if failed
+
+        """
+        try:
+            # Initialize companion template adapter
+            adapter = CompanionTemplateAdapter()
+
+            # Create context variables for template substitution
+            context_variables = {
+                "file_name": file_path.name,
+                "file_path": str(file_path),
+                "model_size": f"{deterministic_metadata.model_size_bytes or 0} bytes",
+                "model_type": deterministic_metadata.model_type or "unknown",
+            }
+
+            # Load and adapt the model analysis template
+            template_path = "model/model_analysis.yaml"
+            template_data = adapter.load_api_template(template_path)
+
+            # Generate companion prompt
+            companion_prompt = adapter.generate_companion_prompt(
+                template_data,
+                context_variables,
+            )
+
+            # Send to companion and wait for response
+            # Create a temporary response file path
+            with tempfile.NamedTemporaryFile(suffix=".yaml", delete=False) as tmp_file:
+                response_file_path = Path(tmp_file.name)
+
+            # Display prompt and wait for companion response
+            parsed_data = ai_companion.display_prompt_and_wait(
+                companion_prompt, response_file_path,
+            )
+
+            if parsed_data:
+                # Validate response structure
+                schema_path = "metacontext.schemas.extensions.models.ModelAIEnrichment"
+                is_valid, validation_errors = adapter.validate_response_structure(
+                    parsed_data,
+                    schema_path,
+                )
+                if not is_valid:
+                    logger.error("Response validation failed: %s", validation_errors)
+                    return None
+
+                # Convert to Pydantic instance
+                ai_enrichment, conversion_errors = adapter.convert_yaml_to_pydantic(
+                    parsed_data,
+                    schema_path,
+                )
+                if conversion_errors:
+                    logger.error("Response conversion failed: %s", conversion_errors)
+                    return None
+
+                return ai_enrichment
+
+            logger.warning("No response received from companion")
+            return None
+
+        except Exception:
+            logger.exception("Companion analysis failed")
+            return None
 
     # Prompt configuration for bulk analysis
     PROMPT_CONFIG: ClassVar[dict[str, str]] = {
