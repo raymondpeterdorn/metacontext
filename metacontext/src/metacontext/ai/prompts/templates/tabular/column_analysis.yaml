@@ -40,7 +40,7 @@ instruction: |
   ⚠️ CRITICAL Output Format Rules:
   - Output must be **valid JSON only** matching DataAIEnrichment schema
   - column_interpretations must contain nested ai_enrichment objects
-  - relationship_to_other_columns: Must be a list ["relation1", "relation2"] or null
+  - derived_from: Must be a list ["relation1", "relation2"] or null
   - Never include markdown or prose
   - Focus on business logic and data relationships
 
@@ -55,7 +55,7 @@ instruction: |
           "domain_context": "Business domain context", 
           "usage_guidance": "How to use this column",
           "data_quality_assessment": "Quality notes",
-          "relationship_to_other_columns": ["related_col1", "related_col2"]
+          "derived_from": ["related_col1", "related_col2"]
         }
       }
     },

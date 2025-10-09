@@ -1,0 +1,70 @@
+metacontext_version: 0.3.0
+generation_info:
+  generated_at: '2025-10-09T21:22:23.314638Z'
+  generation_method: explicit_function
+  function_call: metacontext.metacontextualize()
+file_info:
+  filename: geospatial_raster_bird.tif
+  extension: .tif
+  file_purpose: Generated file with two-tier architecture
+  project_context_summary: Analysis with MediaHandler
+  creation_timestamp: '2025-10-09T21:22:23.314764Z'
+file_context:
+  file_summary: A .tif file containing data analysis and metadata context
+  creation_method: automatic_generation
+  intended_use: data_analysis_and_context
+system_info:
+  working_directory: /Users/bigdawg/Documents/repos/metacontext/bird_demo
+confidence_assessment:
+  overall: HIGH
+spatial_extension:
+  crs_detected_method: could_not_determine_crs
+  geometry_type: Raster
+  bounds_estimate:
+    min_lon: -76.483
+    max_lon: -76.475
+    min_lat: 42.44
+    max_lat: 42.448
+  requires_ai_enrichment: true
+  pixel_size:
+  - 0.00040000000000048883
+  - 0.0004000000000001336
+  pixel_dimensions:
+  - 20
+  - 20
+media_context:
+  deterministic_metadata:
+    media_type: image
+    file_size_bytes: 1340
+    media_info:
+      dimensions:
+      - 20
+      - 20
+      color_space: RGB
+  ai_enrichment:
+    ai_interpretation: Low-resolution geospatial raster image for bird-related data.
+    ai_confidence: HIGH
+    ai_domain_context: Geospatial analysis; RGB raster for ecological or environmental
+      studies.
+    usage_guidance: Use for basic geospatial visualization or testing pipelines.
+    hidden_meaning: Represents geospatial data encoded in RGB format, likely tied
+      to bird observations.
+    suspicious_patterns:
+    - Low resolution (20x20)
+    - Unusually small file size for geospatial data
+    detective_insights: Likely used for simplified geospatial visualization or testing
+      purposes.
+    content_description: RGB raster image with geospatial data.
+    quality_assessment: Low resolution; suitable for basic visualization but lacks
+      detail for advanced analysis.
+    technical_analysis: TIFF format, RGB color space, 20x20 dimensions, minimal compression
+      artifacts.
+    use_case_recommendations:
+    - Basic geospatial visualization
+    - Testing geospatial pipelines
+    applications:
+    - Ecological mapping
+    - Environmental monitoring
+    - Geospatial data visualization
+    processing_recommendations: Upscale resolution or combine with higher-quality
+      data for detailed analysis.

@@ -73,11 +73,6 @@ class PerformanceMonitor:
                 with self.metrics_file.open() as f:
                     data = json.load(f)
                     self.metrics = [PromptMetrics(**metric) for metric in data]
-                logger.info(
-                    "Loaded %d metrics from %s",
-                    len(self.metrics),
-                    self.metrics_file,
-                )
             except (json.JSONDecodeError, TypeError) as e:
                 logger.warning(
                     "Failed to load metrics from %s: %s",
@@ -148,16 +143,6 @@ class PerformanceMonitor:
 
         self.metrics.append(metrics)
         self._save_metrics()
-
-        # Log performance info
-        logger.info(
-            "Prompt performance - %s: %s tokens in → %s chars out (%s.1fms, limit: %s)",
-            template_name,
-            input_token_count,
-            output_char_count,
-            processing_time_ms,
-            "✓" if within_limit else "✗",
-        )
 
         return metrics
 

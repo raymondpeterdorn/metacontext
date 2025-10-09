@@ -1,0 +1,252 @@
+metacontext_version: 0.3.0
+generation_info:
+  generated_at: '2025-10-09T21:19:57.339357Z'
+  generation_method: explicit_function
+  function_call: metacontext.metacontextualize()
+  token_usage:
+    total_tokens: 9772
+    prompt_tokens: 8907
+    completion_tokens: 6372
+    total_api_calls: 4
+    provider: gemini
+    model: gemini-2.5-flash
+file_info:
+  filename: geospatial_gpkg.gpkg
+  extension: .gpkg
+  file_purpose: Generated file with two-tier architecture
+  project_context_summary: Analysis with CSVHandler
+  creation_timestamp: '2025-10-09T21:19:57.339432Z'
+file_context:
+  file_summary: A .gpkg file containing data analysis and metadata context
+  creation_method: automatic_generation
+  intended_use: data_analysis_and_context
+system_info:
+  working_directory: /Users/bigdawg/Documents/repos/metacontext/bird_demo
+confidence_assessment:
+  overall: MEDIUM
+data_structure:
+  deterministic_metadata:
+    type: pandas_dataframe
+    shape:
+    - 200
+    - 18
+    memory_usage_bytes: 136475
+    column_dtypes:
+      species_name: object
+      taxonomic_family: object
+      taxonomic_order: object
+      asdawas: float64
+      beak_length: float64
+      weight_g: float64
+      nocturnal_diurnal: object
+      brrrrkk: object
+      diet_types: object
+      closest_relatives: object
+      latitude: float64
+      longitude: float64
+      altitude_m: float64
+      habitat_type: object
+      weather_condition: object
+      temperature_c: float64
+      observation_time: object
+      geometry: geometry
+  ai_enrichment:
+    domain_analysis: ''
+    data_quality_assessment: unknown
+    column_interpretations:
+      species_name:
+        deterministic:
+          null_count: 0
+          unique_count: 5
+        ai_enrichment:
+          semantic_meaning: Common or scientific name of the observed species.
+          data_quality_assessment: ''
+          domain_context: Core identifier for biological observations.
+          derived_from: []
+      taxonomic_family:
+        deterministic:
+          null_count: 0
+          unique_count: 5
+        ai_enrichment:
+          semantic_meaning: Taxonomic family to which the species belongs.
+          data_quality_assessment: ''
+          domain_context: Biological classification, higher-level grouping.
+          derived_from:
+          - species_name
+      taxonomic_order:
+        deterministic:
+          null_count: 0
+          unique_count: 4
+        ai_enrichment:
+          semantic_meaning: Taxonomic order to which the species belongs.
+          data_quality_assessment: ''
+          domain_context: Higher biological classification.
+          derived_from:
+          - taxonomic_family
+      asdawas:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: Wing length of the observed individual (unit likely mm
+            or cm).
+          data_quality_assessment: ''
+          domain_context: Morphometric data for species identification, health assessment.
+          derived_from: []
+      beak_length:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: Beak length of the observed individual (unit likely mm
+            or cm).
+          data_quality_assessment: ''
+          domain_context: Morphometric data for feeding ecology and adaptation.
+          derived_from: []
+      weight_g:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: Weight of the observed individual in grams.
+          data_quality_assessment: ''
+          domain_context: Morphometric data, indicator of health and fitness.
+          derived_from: []
+      nocturnal_diurnal:
+        deterministic:
+          null_count: 0
+          unique_count: 2
+        ai_enrichment:
+          semantic_meaning: Activity pattern of the species (nocturnal or diurnal).
+          data_quality_assessment: ''
+          domain_context: Behavioral ecology, understanding daily cycles.
+          derived_from:
+          - species_name
+      brrrrkk:
+        deterministic:
+          null_count: 0
+          unique_count: 158
+        ai_enrichment:
+          semantic_meaning: Cryptic column, likely a unique identifier for an observation
+            or a specific vocalization type.
+          data_quality_assessment: ''
+          domain_context: Individual observation detail or behavioral attribute.
+          derived_from: []
+      diet_types:
+        deterministic:
+          null_count: 0
+          unique_count: 5
+        ai_enrichment:
+          semantic_meaning: Primary diet type(s) of the species.
+          data_quality_assessment: ''
+          domain_context: Ecological role, food web analysis.
+          derived_from:
+          - species_name
+      closest_relatives:
+        deterministic:
+          null_count: 0
+          unique_count: 5
+        ai_enrichment:
+          semantic_meaning: Names of species considered closest relatives.
+          data_quality_assessment: ''
+          domain_context: Evolutionary biology, phylogenetic studies.
+          derived_from:
+          - species_name
+      latitude:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: Geographic latitude of the observation point in decimal
+            degrees.
+          data_quality_assessment: ''
+          domain_context: Geospatial location, critical for mapping.
+          derived_from: []
+      longitude:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: Geographic longitude of the observation point in decimal
+            degrees.
+          data_quality_assessment: ''
+          domain_context: Geospatial location, critical for mapping.
+          derived_from: []
+      altitude_m:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: Altitude of the observation point above sea level in meters.
+          data_quality_assessment: ''
+          domain_context: Environmental context, habitat characterization.
+          derived_from: []
+      habitat_type:
+        deterministic:
+          null_count: 0
+          unique_count: 4
+        ai_enrichment:
+          semantic_meaning: The type of habitat where the observation occurred.
+          data_quality_assessment: ''
+          domain_context: Ecological context, environmental factors.
+          derived_from:
+          - latitude
+          - longitude
+      weather_condition:
+        deterministic:
+          null_count: 0
+          unique_count: 5
+        ai_enrichment:
+          semantic_meaning: Prevailing weather conditions at the time of observation.
+          data_quality_assessment: ''
+          domain_context: Environmental context, influence on animal behavior.
+          derived_from:
+          - observation_time
+          - latitude
+          - longitude
+      temperature_c:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: Ambient temperature in degrees Celsius at the time of
+            observation.
+          data_quality_assessment: ''
+          domain_context: Environmental context, physiological constraints.
+          derived_from:
+          - observation_time
+          - latitude
+          - longitude
+      observation_time:
+        deterministic:
+          null_count: 0
+          unique_count: 184
+        ai_enrichment:
+          semantic_meaning: Timestamp of when the observation was recorded.
+          data_quality_assessment: ''
+          domain_context: Temporal context for time-series analysis.
+          derived_from: []
+      geometry:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: Geospatial geometry object representing the observation
+            location (likely a point).
+          data_quality_assessment: ''
+          domain_context: Primary spatial data for mapping and GIS integration.
+          derived_from:
+          - latitude
+          - longitude
+    business_value_assessment: ''
+spatial_extension:
+  crs: EPSG:4326
+  crs_detected_method: direct_spatial_file_reading
+  geometry_type: Point
+  feature_count: 200
+  bounds_estimate:
+    min_lon: -124.45485227432856
+    min_lat: 24.048655851569247
+    max_lon: -67.14881820935769
+    max_lat: 48.70646835316931
+  requires_ai_enrichment: false

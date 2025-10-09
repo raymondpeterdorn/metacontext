@@ -1,0 +1,51 @@
+metacontext_version: 0.3.0
+generation_info:
+  generated_at: '2025-10-09T21:22:59.487516Z'
+  generation_method: explicit_function
+  function_call: metacontext.metacontextualize()
+file_info:
+  filename: media_png.png
+  extension: .png
+  file_purpose: Generated file with two-tier architecture
+  project_context_summary: Analysis with MediaHandler
+  creation_timestamp: '2025-10-09T21:22:59.487605Z'
+file_context:
+  file_summary: A .png file containing data analysis and metadata context
+  creation_method: automatic_generation
+  intended_use: data_analysis_and_context
+system_info:
+  working_directory: /Users/bigdawg/Documents/repos/metacontext/bird_demo
+confidence_assessment:
+  overall: HIGH
+media_context:
+  deterministic_metadata:
+    media_type: image
+    file_size_bytes: 146
+    media_info:
+      dimensions:
+      - 20
+      - 20
+      color_space: RGB
+  ai_enrichment:
+    ai_interpretation: Low-resolution PNG image for bird-related data.
+    ai_confidence: HIGH
+    ai_domain_context: Image processing; RGB raster for basic visualization.
+    usage_guidance: Use for simple visualizations or testing image pipelines.
+    hidden_meaning: Represents minimal visual data, likely for testing or placeholder
+      purposes.
+    suspicious_patterns:
+    - Extremely small file size
+    - Low resolution (20x20)
+    detective_insights: Likely a placeholder or test image for minimal data scenarios.
+    content_description: RGB image, likely abstract or placeholder.
+    quality_assessment: Very low resolution; unsuitable for detailed analysis.
+    technical_analysis: PNG format, RGB color space, 20x20 dimensions, no visible
+      compression artifacts.
+    use_case_recommendations:
+    - Testing image processing pipelines
+    - Placeholder for visual data
+    applications:
+    - Basic visualization
+    - Testing environments
+    processing_recommendations: Upscale resolution or replace with higher-quality
+      data for production use.

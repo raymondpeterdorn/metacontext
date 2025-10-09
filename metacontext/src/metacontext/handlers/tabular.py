@@ -50,6 +50,10 @@ class CSVHandler(BaseFileHandler):
         ".xls",
         ".parquet",
         ".feather",
+        # Vector geospatial files with attribute tables (require tabular + spatial composition)
+        ".geojson",
+        ".gpkg", 
+        ".shp",
     ]
     required_schema_extensions: ClassVar[list[str]] = ["data_structure"]
 
@@ -59,8 +63,22 @@ class CSVHandler(BaseFileHandler):
 
     def can_handle(self, file_path: Path, data_object: object | None = None) -> bool:
         """Check if this is a tabular data file."""
-        if file_path.suffix.lower() in self.supported_extensions:
+        file_ext = file_path.suffix.lower()
+        
+        # First check if file extension is supported
+        if file_ext in self.supported_extensions:
             return True
+
+        # Check for vector geospatial files that should be handled with tabular + spatial composition
+        # These files have attribute tables and should be processed as tabular data with geospatial extensions
+        vector_geospatial_extensions = [".gpkg", ".geojson", ".shp"]
+        if file_ext in vector_geospatial_extensions:
+            return True
+
+        # Exclude pure geospatial files (no attributes) and raster files (handled by MediaHandler)
+        excluded_extensions = [".kml", ".kmz", ".tif", ".tiff", ".nc"]
+        if file_ext in excluded_extensions:
+            return False
 
         # Check if data_object is a pandas DataFrame
         if data_object is not None:
@@ -159,15 +177,31 @@ class CSVHandler(BaseFileHandler):
         column analysis using efficient bulk prompting instead of individual
         field-by-field prompts.
         """
+        start_time = time.time()
+        file_ext = file_path.suffix.lower()
+        
         context: dict[str, object] = {}
 
         # Basic data analysis (descriptive layer) - Step B: Deterministic
+        deterministic_start = time.time()
         if data_object is not None:
             data_analysis = self._analyze_dataframe(data_object)
         else:
-            data_analysis = self._analyze_file(file_path)
+            # Try to load the file as a DataFrame for analysis
+            try:
+                loaded_df = self._load_file_as_dataframe(file_path)
+                if loaded_df is not None:
+                    data_analysis = self._analyze_dataframe(loaded_df)
+                else:
+                    data_analysis = self._analyze_file(file_path)
+            except Exception as e:
+                logger.debug("Failed to load file as DataFrame: %s", e)
+                data_analysis = self._analyze_file(file_path)
+        
+        deterministic_time = time.time() - deterministic_start
 
         # AI-powered interpretation using unified pipeline (Steps C→I)
+        ai_start = time.time()
         if (
             ai_companion
             and hasattr(ai_companion, "is_available")
@@ -182,7 +216,6 @@ class CSVHandler(BaseFileHandler):
                 hasattr(ai_companion, "codebase_context")
                 and ai_companion.codebase_context
             ):
-                logger.info("🔍 DEBUG: Codebase context found on ai_companion")
                 try:
                     # Check if we have semantic knowledge available
                     if (
@@ -193,9 +226,6 @@ class CSVHandler(BaseFileHandler):
                             "semantic_knowledge",
                         )
                     ):
-                        logger.info(
-                            "🔍 DEBUG: Found semantic knowledge in ai_enrichment",
-                        )
                         semantic_knowledge = ai_companion.codebase_context.ai_enrichment.semantic_knowledge
 
                         # Format semantic knowledge for AI analysis
@@ -203,21 +233,11 @@ class CSVHandler(BaseFileHandler):
                             semantic_knowledge,
                             "columns",
                         ):
-                            logger.info(
-                                "🔍 DEBUG: Semantic knowledge has %d columns",
-                                len(semantic_knowledge.columns),
-                            )
                             column_descriptions = []
                             for (
                                 col_name,
                                 col_info,
                             ) in semantic_knowledge.columns.items():
-                                logger.info(
-                                    "🔍 DEBUG: Column %s: pydantic='%s', definition='%s'",
-                                    col_name,
-                                    col_info.pydantic_description,
-                                    col_info.definition,
-                                )
                                 if col_info.pydantic_description:
                                     column_descriptions.append(
                                         f"- {col_name}: {col_info.pydantic_description}",
@@ -232,29 +252,15 @@ class CSVHandler(BaseFileHandler):
                                     "Extracted column meanings:\n"
                                     + "\n".join(column_descriptions)
                                 )
-                                logger.info(
-                                    "🔍 DEBUG: Formatted semantic knowledge: %s",
-                                    semantic_knowledge_text,
-                                )
                         elif (
                             semantic_knowledge
                             and isinstance(semantic_knowledge, dict)
                             and "columns" in semantic_knowledge
                         ):
-                            logger.info(
-                                "🔍 DEBUG: Semantic knowledge is dict with %d columns",
-                                len(semantic_knowledge["columns"]),
-                            )
                             column_descriptions = []
                             for col_name, col_info in semantic_knowledge[
                                 "columns"
                             ].items():
-                                logger.info(
-                                    "🔍 DEBUG: Dict column %s: pydantic='%s', definition='%s'",
-                                    col_name,
-                                    col_info.get("pydantic_description"),
-                                    col_info.get("definition"),
-                                )
                                 if col_info.get("pydantic_description"):
                                     column_descriptions.append(
                                         f"- {col_name}: {col_info['pydantic_description']}",
@@ -269,28 +275,11 @@ class CSVHandler(BaseFileHandler):
                                     "Extracted column meanings:\n"
                                     + "\n".join(column_descriptions)
                                 )
-                                logger.info(
-                                    "🔍 DEBUG: Formatted semantic knowledge: %s",
-                                    semantic_knowledge_text,
-                                )
-                        else:
-                            logger.info(
-                                "🔍 DEBUG: Semantic knowledge exists but has no columns or wrong format: %s",
-                                type(semantic_knowledge),
-                            )
-                    else:
-                        logger.info(
-                            "🔍 DEBUG: No semantic knowledge found in ai_enrichment",
-                        )
 
                     enhanced_context = {
                         **data_analysis,
                         "semantic_column_knowledge": semantic_knowledge_text,
                     }
-                    logger.info(
-                        "🔍 DEBUG: Enhanced context includes semantic_column_knowledge: %s...",
-                        semantic_knowledge_text[:200],
-                    )
                 except AttributeError as e:
                     # Fallback to basic analysis if semantic extraction fails
                     logger.warning("Could not extract semantic knowledge: %s", e)
@@ -323,8 +312,50 @@ class CSVHandler(BaseFileHandler):
             enhanced_context if "enhanced_context" in locals() else data_analysis
         )
         context["data_structure"] = self._create_data_structure(final_analysis)
-
+        
         return context
+
+    def _load_file_as_dataframe(self, file_path: Path) -> pd.DataFrame | None:
+        """Load a file as a pandas DataFrame.
+        
+        Handles various tabular formats including geospatial files.
+        
+        Args:
+            file_path: Path to the file to load
+            
+        Returns:
+            DataFrame if successful, None if failed
+        """
+        file_ext = file_path.suffix.lower()
+        
+        try:
+            # Handle geospatial files with geopandas
+            if file_ext in {".gpkg", ".geojson", ".shp"}:
+                try:
+                    import geopandas as gpd  # noqa: PLC0415
+                    gdf = gpd.read_file(file_path)
+                    # Convert to regular DataFrame for tabular analysis
+                    return pd.DataFrame(gdf)
+                except ImportError:
+                    logger.debug("GeoPandas not available for loading %s", file_ext)
+                    return None
+                    
+            # Handle regular tabular files
+            elif file_ext == ".csv":
+                return pd.read_csv(file_path)
+            elif file_ext in {".xlsx", ".xls"}:
+                return pd.read_excel(file_path)
+            elif file_ext == ".parquet":
+                return pd.read_parquet(file_path)
+            elif file_ext == ".feather":
+                return pd.read_feather(file_path)
+            else:
+                logger.debug("Unsupported file extension for DataFrame loading: %s", file_ext)
+                return None
+                
+        except Exception as e:
+            logger.debug("Failed to load %s as DataFrame: %s", file_path.name, e)
+            return None
 
     def _analyze_dataframe(self, df: pd.DataFrame) -> dict[str, Any]:
         """Analyze a pandas DataFrame (descriptive layer).
@@ -358,21 +389,10 @@ class CSVHandler(BaseFileHandler):
                     # For unhashable types like dicts/lists, count unique string representations
                     unique_count = int(col_data.astype(str).nunique())
 
-                # Handle sample values for potentially unhashable types
-                try:
-                    sample_values = col_data.dropna().head(3).tolist()
-                except (TypeError, ValueError):
-                    # For unhashable types, convert to string representation
-                    sample_values = col_data.dropna().head(3).astype(str).tolist()
-
                 analysis["columns"][col_name] = {
-                    "dtype": str(col_data.dtype),
+                    "dtype": str(col_data.dtype),  # Keep for overall column_dtypes
                     "null_count": int(col_data.isna().sum()),
-                    "null_percentage": float(
-                        col_data.isna().sum() / len(col_data) * 100,
-                    ),
                     "unique_count": unique_count,
-                    "sample_values": sample_values,
                 }
         except ImportError:
             return {"error": "pandas not available for DataFrame analysis"}
@@ -412,10 +432,10 @@ class CSVHandler(BaseFileHandler):
         """
         ai_analysis = {}
         start_time = time.time()
+        column_time = 0.0  # Initialize to handle cases with no columns
 
         # Bulk column analysis prompt - pass full data_analysis which includes semantic knowledge
         if data_analysis.get("columns"):
-            logger.info("🔍 Starting column analysis...")
             column_start = time.time()
             column_analysis = self._bulk_analyze_columns(
                 data_analysis,  # Pass full context including semantic knowledge
@@ -423,30 +443,16 @@ class CSVHandler(BaseFileHandler):
                 codebase_context,
                 llm_handler,
             )
-            column_time = time.time() - column_start
-            logger.info("🔍 Column analysis completed in %.2f seconds", column_time)
             ai_analysis["column_analysis"] = column_analysis
 
         # Schema interpretation prompt
-        logger.info("🔍 Starting schema analysis...")
-        schema_start = time.time()
         schema_interpretation = self._bulk_analyze_schema(
             data_analysis,
             file_path,
             codebase_context,
             llm_handler,
         )
-        schema_time = time.time() - schema_start
-        logger.info("🔍 Schema analysis completed in %.2f seconds", schema_time)
         ai_analysis["domain_summary"] = schema_interpretation
-
-        total_time = time.time() - start_time
-        logger.info(
-            "🔍 Total AI analysis time: %.2f seconds (column: %.2f, schema: %.2f)",
-            total_time,
-            column_time,
-            schema_time,
-        )
 
         return ai_analysis
 
@@ -487,35 +493,11 @@ class CSVHandler(BaseFileHandler):
                 template_context,
             )
 
-            # DEBUG: Print the complete prompt that gets sent to the LLM
-            logger.info("🔍 DEBUG: Complete template context being sent:")
-            logger.info(
-                "🔍 DEBUG: Template context keys: %s",
-                list(template_context.keys()),
-            )
-            if "semantic_column_knowledge" in template_context:
-                logger.info(
-                    "🔍 DEBUG: Semantic column knowledge in template context: %s",
-                    template_context["semantic_column_knowledge"],
-                )
-            else:
-                logger.info(
-                    "🔍 DEBUG: No semantic_column_knowledge found in template context",
-                )
-
-            logger.info("🔍 DEBUG: Complete rendered prompt being sent to LLM:")
-            logger.info("=" * 80)
-            logger.info("%s", rendered_prompt)
-            logger.info("=" * 80)
-
             # Call LLM using unified pipeline with proper schema
             ai_enrichment = llm_handler.generate_with_schema(
                 schema_class=DataAIEnrichment,
                 context_data={"rendered_prompt": rendered_prompt},
             )
-
-            logger.info("🔍 DEBUG: LLM response received and validated:")
-            logger.info("%s", ai_enrichment)
 
             # Extract column interpretations from the properly structured DataAIEnrichment
             result = {}
@@ -542,9 +524,6 @@ class CSVHandler(BaseFileHandler):
 
             # If we got column interpretations, that's our result
             if result:
-                logger.info(
-                    f"🔍 DEBUG: Extracted {len(result)} column analyses from DataAIEnrichment.column_interpretations"
-                )
                 return result
 
             # Fallback: check for legacy flat format
@@ -565,9 +544,6 @@ class CSVHandler(BaseFileHandler):
 
             # If we got direct column mappings in the response, that's our result
             if result:
-                logger.info(
-                    f"🔍 DEBUG: Extracted {len(result)} column analyses from flat response"
-                )
                 return result
 
             # Fallback to empty result
@@ -602,7 +578,7 @@ class CSVHandler(BaseFileHandler):
                     "semantic_meaning": str(col_data),
                     "data_quality_assessment": "",
                     "domain_context": "",
-                    "relationship_to_other_columns": [],
+                    "derived_from": [],
                 }
 
         return result
@@ -635,7 +611,7 @@ class CSVHandler(BaseFileHandler):
                     "domain_context": ai_enrichment_data.domain_context
                     if ai_enrichment_data
                     else "",
-                    "relationship_to_other_columns": ai_enrichment_data.relationship_to_other_columns
+                    "derived_from": ai_enrichment_data.derived_from
                     if ai_enrichment_data
                     else [],
                 }
@@ -815,7 +791,7 @@ class CSVHandler(BaseFileHandler):
                 "semantic_meaning": f"Column analysis unavailable for {col_name}",
                 "data_quality_assessment": "No AI companion available for analysis",
                 "domain_context": "Unknown domain context",
-                "relationship_to_other_columns": [],
+                "derived_from": [],
             }
             for col_name in columns_data
         }
@@ -902,20 +878,14 @@ class CSVHandler(BaseFileHandler):
                 # Get deterministic data for this column from data_analysis
                 deterministic_col_data = columns_data.get(col_name, {})
                 det_info = ColumnDeterministicInfo(
-                    dtype=deterministic_col_data.get("dtype"),
                     null_count=deterministic_col_data.get("null_count"),
-                    null_percentage=deterministic_col_data.get("null_percentage"),
                     unique_count=deterministic_col_data.get("unique_count"),
-                    sample_values=deterministic_col_data.get("sample_values"),
                 )
                 ai_info = ColumnAIEnrichment(
                     semantic_meaning=col_data.get("semantic_meaning", ""),
                     data_quality_assessment=col_data.get("supporting_evidence", ""),
                     domain_context=col_data.get("domain_context", ""),
-                    relationship_to_other_columns=col_data.get(
-                        "relationship_to_other_columns",
-                        [],
-                    ),
+                    derived_from=col_data.get("derived_from", []),
                 )
 
                 column_interpretations[col_name] = ColumnInfo(

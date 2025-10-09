@@ -59,8 +59,6 @@ class UnifiedLLMIntegration:
             logger.info("🔍 DEBUG: No codebase context found on ai_companion")
             return semantic_knowledge_text
 
-        logger.info("🔍 DEBUG: Codebase context found on ai_companion")
-
         try:
             # Check if we have semantic knowledge available
             if not (
@@ -70,10 +68,8 @@ class UnifiedLLMIntegration:
                     ai_companion.codebase_context.ai_enrichment, "semantic_knowledge"
                 )
             ):
-                logger.info("🔍 DEBUG: No semantic knowledge found in ai_enrichment")
                 return semantic_knowledge_text
 
-            logger.info("🔍 DEBUG: Found semantic knowledge in ai_enrichment")
             semantic_knowledge = (
                 ai_companion.codebase_context.ai_enrichment.semantic_knowledge
             )
@@ -94,10 +90,6 @@ class UnifiedLLMIntegration:
                 return UnifiedLLMIntegration._format_dict_column_knowledge(
                     semantic_knowledge
                 )
-            logger.info(
-                "🔍 DEBUG: Semantic knowledge exists but has unknown format: %s",
-                type(semantic_knowledge),
-            )
             return semantic_knowledge_text
 
         except (AttributeError, KeyError, TypeError) as e:
@@ -107,19 +99,9 @@ class UnifiedLLMIntegration:
     @staticmethod
     def _format_column_knowledge(semantic_knowledge: Any) -> str:
         """Format column-based semantic knowledge."""
-        logger.info(
-            "🔍 DEBUG: Semantic knowledge has %d columns",
-            len(semantic_knowledge.columns),
-        )
 
         column_descriptions = []
         for col_name, col_info in semantic_knowledge.columns.items():
-            logger.info(
-                "🔍 DEBUG: Column %s: pydantic='%s', definition='%s'",
-                col_name,
-                col_info.pydantic_description,
-                col_info.definition,
-            )
 
             if col_info.pydantic_description:
                 column_descriptions.append(
@@ -132,9 +114,6 @@ class UnifiedLLMIntegration:
             formatted_knowledge = "Extracted column meanings:\n" + "\n".join(
                 column_descriptions
             )
-            logger.info(
-                "🔍 DEBUG: Formatted semantic knowledge: %s", formatted_knowledge
-            )
             return formatted_knowledge
 
         return "No semantic knowledge extracted from codebase."
@@ -142,19 +121,9 @@ class UnifiedLLMIntegration:
     @staticmethod
     def _format_model_field_knowledge(semantic_knowledge: Any) -> str:
         """Format model field-based semantic knowledge."""
-        logger.info(
-            "🔍 DEBUG: Semantic knowledge has %d model fields",
-            len(semantic_knowledge.model_fields),
-        )
 
         field_descriptions = []
         for field_name, field_info in semantic_knowledge.model_fields.items():
-            logger.info(
-                "🔍 DEBUG: Field %s: pydantic='%s', definition='%s'",
-                field_name,
-                field_info.pydantic_description,
-                field_info.definition,
-            )
 
             if field_info.pydantic_description:
                 field_descriptions.append(
@@ -167,10 +136,6 @@ class UnifiedLLMIntegration:
             formatted_knowledge = "Semantic knowledge from codebase:\n" + "\n".join(
                 field_descriptions
             )
-            logger.info(
-                "🔍 DEBUG: Using semantic knowledge: %s",
-                formatted_knowledge[:200] + "...",
-            )
             return formatted_knowledge
 
         return "No semantic knowledge extracted from codebase."
@@ -179,19 +144,9 @@ class UnifiedLLMIntegration:
     def _format_dict_column_knowledge(semantic_knowledge: dict[str, Any]) -> str:
         """Format dictionary-based column knowledge."""
         columns = semantic_knowledge["columns"]
-        logger.info(
-            "🔍 DEBUG: Semantic knowledge is dict with %d columns",
-            len(columns),
-        )
 
         column_descriptions = []
         for col_name, col_info in columns.items():
-            logger.info(
-                "🔍 DEBUG: Dict column %s: pydantic='%s', definition='%s'",
-                col_name,
-                col_info.get("pydantic_description"),
-                col_info.get("definition"),
-            )
 
             if col_info.get("pydantic_description"):
                 column_descriptions.append(
@@ -203,9 +158,6 @@ class UnifiedLLMIntegration:
         if column_descriptions:
             formatted_knowledge = "Extracted column meanings:\n" + "\n".join(
                 column_descriptions
-            )
-            logger.info(
-                "🔍 DEBUG: Formatted semantic knowledge: %s", formatted_knowledge
             )
             return formatted_knowledge
 

@@ -18,41 +18,43 @@
 
 ## Introduction & Philosophy
 
-MetaContext is an AI-powered code analysis tool that generates rich, contextual metadata about your codebase. But what makes it unique is our **prompt optimization methodology** that achieves 40-60% token reduction while maintaining analytical depth.
+MetaContext is an AI-powered code analysis tool that generates rich, contextual metadata about your codebase. What makes it unique is our **two-tier architecture** with **AI companion integration** and **semantic codebase analysis** that achieves deep understanding while maintaining reliability.
 
 Our core philosophy: **"Make it work → Make it right → Make it better"**
 
-We prioritize shipping a correct Minimum Viable Product (MVP), then refactor for clarity, and finally optimize for performance. This document explains how we achieved dramatic efficiency gains while preserving the investigative power of our AI analysis.
+We prioritize shipping a correct Minimum Viable Product (MVP), then refactor for clarity, and finally optimize for performance. This document explains the current architecture with its advanced features including GitHub Copilot integration and semantic knowledge extraction.
 
 ---
 
-## Two-Tier Architecture
+## Two-Tier Architecture with AI Companion Support
 
-We developed a **two-tier architecture** that separates concerns and optimizes each layer:
+We developed a **two-tier architecture** that separates concerns and supports both API and companion modes:
 
 ### Tier 1: Deterministic Analysis
 - **Fast, rule-based extraction** of structural information
 - **Schema validation** and type safety
 - **Consistent, reliable** baseline metadata
 
-### Tier 2: AI Enrichment
-- **Forensic investigation** using optimized prompts
-- **Business context discovery** and intent reverse-engineering
-- **Smart token usage** with dynamic optimization
+### Tier 2: AI Enrichment (Dual Mode)
+- **API Mode**: Direct LLM API calls with JSON responses
+- **Companion Mode**: IDE-integrated analysis with GitHub Copilot
+- **Unified workflow**: Both modes follow identical processing steps
+- **Template adaptation**: Automatic conversion for companion consumption
 
 ```mermaid
 graph TD
-    A[Input File] --> B[Deterministic Analysis]
-    B --> C[Structural Metadata]
-    B --> D[Context Preprocessing]
-    C --> E[Schema Validation]
-    D --> F[Smart Content Filtering]
-    E --> G[AI Enrichment Layer]
-    F --> G
-    G --> H[Optimized Prompts]
-    H --> I[LLM Analysis]
-    I --> J[Validated Output]
-    J --> K[Final Metacontext]
+    A[Input File] --> B[Handler Selection]
+    B --> C[Deterministic Analysis]
+    C --> D[Semantic Analysis]
+    D --> E[Context Preprocessing]
+    E --> F{AI Mode?}
+    F -->|API| G[LLM API Calls]
+    F -->|Companion| H[Clipboard Workflow]
+    G --> I[JSON Response]
+    H --> J[YAML Response]
+    I --> K[Schema Validation]
+    J --> K
+    K --> L[Final Metacontext]
 ```
 
 ---
@@ -217,13 +219,13 @@ This semantic analysis system transforms how LLMs understand codebases by provid
 
 ## Workflow Overview
 
-Our optimized workflow follows six core steps:
+Our unified workflow supports both API and companion modes through six core steps:
 
 ```mermaid
 flowchart LR
     A[File Detection] --> B[Handler Selection]
     B --> C[Deterministic Analysis]
-    C --> D[Context Preprocessing]
+    C --> D[Semantic Analysis]
     D --> E[AI Enrichment]
     E --> F[Output Generation]
     
@@ -238,7 +240,8 @@ flowchart LR
 **Why this workflow?**
 - **Separation of concerns**: Deterministic and AI layers have different strengths
 - **Progressive enhancement**: Start reliable, add intelligence
-- **Optimization opportunities**: Each step can be independently optimized
+- **Mode flexibility**: Same workflow works for API and companion modes
+- **Semantic integration**: Codebase understanding enhances AI analysis
 - **Maintainability**: Clear boundaries make debugging and testing easier
 
 ---

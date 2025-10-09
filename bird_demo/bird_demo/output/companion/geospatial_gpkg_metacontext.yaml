@@ -1,0 +1,135 @@
+metacontext_version: 0.3.0
+generation_info:
+  generated_at: '2025-10-09T21:21:08.564849Z'
+  generation_method: explicit_function
+  function_call: metacontext.metacontextualize()
+file_info:
+  filename: geospatial_gpkg.gpkg
+  extension: .gpkg
+  file_purpose: Generated file with two-tier architecture
+  project_context_summary: Analysis with CSVHandler
+  creation_timestamp: '2025-10-09T21:21:08.564920Z'
+file_context:
+  file_summary: A .gpkg file containing data analysis and metadata context
+  creation_method: automatic_generation
+  intended_use: data_analysis_and_context
+system_info:
+  working_directory: /Users/bigdawg/Documents/repos/metacontext/bird_demo
+confidence_assessment:
+  overall: MEDIUM
+data_structure:
+  deterministic_metadata:
+    type: pandas_dataframe
+    shape:
+    - 200
+    - 18
+    memory_usage_bytes: 136475
+    column_dtypes:
+      species_name: object
+      taxonomic_family: object
+      taxonomic_order: object
+      asdawas: float64
+      beak_length: float64
+      weight_g: float64
+      nocturnal_diurnal: object
+      brrrrkk: object
+      diet_types: object
+      closest_relatives: object
+      latitude: float64
+      longitude: float64
+      altitude_m: float64
+      habitat_type: object
+      weather_condition: object
+      temperature_c: float64
+      observation_time: object
+      geometry: geometry
+  ai_enrichment:
+    domain_analysis: ''
+    data_quality_assessment: unknown
+    column_interpretations:
+      species_name:
+        deterministic:
+          null_count: 0
+          unique_count: 5
+        ai_enrichment:
+          semantic_meaning: Scientific or common name of observed bird species
+          data_quality_assessment: ''
+          domain_context: Primary taxonomic identifier
+          derived_from: []
+      taxonomic_family:
+        deterministic:
+          null_count: 0
+          unique_count: 5
+        ai_enrichment:
+          semantic_meaning: Family classification in taxonomic hierarchy
+          data_quality_assessment: ''
+          domain_context: Taxonomic classification
+          derived_from: []
+      asdawas:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: Wing Length measurement
+          data_quality_assessment: ''
+          domain_context: Morphological characteristic
+          derived_from: []
+      geometry:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: Spatial geometry of observation location
+          data_quality_assessment: ''
+          domain_context: Geospatial data representation
+          derived_from:
+          - latitude
+          - longitude
+      brrrrkk:
+        deterministic:
+          null_count: 0
+          unique_count: 158
+        ai_enrichment:
+          semantic_meaning: Observation date
+          data_quality_assessment: ''
+          domain_context: Temporal data
+          derived_from: []
+      habitat_type:
+        deterministic:
+          null_count: 0
+          unique_count: 4
+        ai_enrichment:
+          semantic_meaning: Ecosystem classification of observation site
+          data_quality_assessment: ''
+          domain_context: Environmental context
+          derived_from: []
+      weather_condition:
+        deterministic:
+          null_count: 0
+          unique_count: 5
+        ai_enrichment:
+          semantic_meaning: Atmospheric conditions during observation
+          data_quality_assessment: ''
+          domain_context: Environmental context
+          derived_from: []
+      altitude_m:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: Elevation above sea level in meters
+          data_quality_assessment: ''
+          domain_context: Spatial attribute
+          derived_from: []
+    business_value_assessment: ''
+spatial_extension:
+  crs: EPSG:4326
+  crs_detected_method: direct_spatial_file_reading
+  geometry_type: Point
+  feature_count: 200
+  bounds_estimate:
+    min_lon: -124.45485227432856
+    min_lat: 24.048655851569247
+    max_lon: -67.14881820935769
+    max_lat: 48.70646835316931
+  requires_ai_enrichment: false

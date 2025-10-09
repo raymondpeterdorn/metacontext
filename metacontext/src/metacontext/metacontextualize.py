@@ -19,6 +19,8 @@ from typing import Any
 
 from metacontext.ai.codebase_scanner import scan_codebase_context
 from metacontext.ai.handlers.core.provider_manager import ProviderManager
+from metacontext.ai.handlers.core.provider_registry import ProviderRegistry
+from metacontext.ai.handlers.llms.companion_provider import CompanionLLMProvider
 from metacontext.ai.handlers.llms.provider_interface import LLMProvider
 from metacontext.core.config import get_config
 from metacontext.core.output_utils import write_output
@@ -46,8 +48,8 @@ logger = logging.getLogger(__name__)
 
 # Register available handlers
 HandlerRegistry.register(ModelHandler)
-HandlerRegistry.register(CSVHandler)
-HandlerRegistry.register(GeospatialHandler)
+HandlerRegistry.register(GeospatialHandler)  # Check geospatial first
+HandlerRegistry.register(CSVHandler)  # CSV handler is more generic
 HandlerRegistry.register(MediaHandler)
 
 
@@ -116,7 +118,7 @@ def metacontextualize(
     output_path: str | Path | None = None,
     output_format: str = "yaml",
     include_llm_analysis: bool = True,
-    ai_companion: object | None = None,
+    ai_companion: bool = True,
     verbose: bool = False,
     scan_codebase: bool = True,
     llm_provider: str | None = None,
@@ -150,12 +152,15 @@ def metacontextualize(
         output_path: Path for output file (if None, auto-generated)
         output_format: Output format ("yaml", "json", etc.)
         include_llm_analysis: Enable AI-powered analysis
-        ai_companion: GitHub Copilot or other AI companion instance for enhanced analysis
+        ai_companion: Enable AI companion mode (default: True). When True, uses
+                      clipboard-based companion workflow. When False, uses API mode.
+                      If llm_api_key is provided, API mode takes precedence.
         verbose: Enable verbose logging
         scan_codebase: Enable codebase context scanning
         llm_provider: LLM provider ("gemini", "openai", etc.)
         llm_model: Specific model to use
-        llm_api_key: API key for LLM provider
+        llm_api_key: API key for LLM provider. When provided, forces API mode even
+                     if ai_companion=True.
         llm_temperature: Temperature for LLM generation (0.0-1.0)
         llm_max_retries: Max retry attempts for LLM calls
 
@@ -211,18 +216,44 @@ def metacontextualize(
     else:
         output_path = Path(effective_args.output_path)
 
-    logger.info("\n🚀 METACONTEXT v0.3.0 - Two-Tier Architecture")
+    logger.info("\n🚀 METACONTEXT v0.3.0")
     logger.info("📁 File: %s", file_path.name)
     logger.info("💾 Output: %s", output_path.name)
     logger.info("=" * 60)
 
-    # Generate context using two-tier architecture
-    logger.info("🔍 Starting file analysis...")
-    analysis_start = time.time()
 
     # Always perform universal file inspection for baseline metadata
     file_inspector = FileInspector()
     universal_metadata = file_inspector.inspect(file_path)
+
+    # Initialize AI companion if requested
+    actual_ai_companion = None
+    if include_llm_analysis:
+        # Simple logic: if llm_api_key is provided (as parameter), always use API mode
+        # Otherwise, use companion mode unless explicitly ai_companion=False
+        if llm_api_key is not None:
+            if effective_args.verbose:
+                logger.info("🔑 LLM API key provided - using API mode")
+            actual_ai_companion = None  # Use API mode
+        elif ai_companion is False:
+            if effective_args.verbose:
+                logger.info("� AI companion explicitly disabled - using API mode")
+            actual_ai_companion = None  # Use API mode
+        else:
+            try:
+                # Check if companion provider is available and create unified provider
+                if ProviderRegistry.is_registered("companion"):
+                    companion_provider = CompanionLLMProvider()
+                    if companion_provider.is_available():
+                        actual_ai_companion = companion_provider
+                    else:
+                        actual_ai_companion = None
+                else:
+                    actual_ai_companion = None
+            except (ImportError, ValueError, AttributeError) as e:
+                if effective_args.verbose:
+                    logger.warning("⚠️  Error initializing AI companion: %s, falling back to API mode", e)
+                actual_ai_companion = None
 
     context = _generate_context(
         data_object=data_object,
@@ -231,37 +262,18 @@ def metacontextualize(
         include_llm_analysis=effective_args.include_llm_analysis,
         verbose=effective_args.verbose,
         universal_metadata=universal_metadata,
-        ai_companion=ai_companion,
+        ai_companion=actual_ai_companion,
     )
-
-    analysis_time = time.time() - analysis_start
-    if effective_args.verbose:
-        logger.info("✓ Analysis completed in %.2f seconds", analysis_time)
 
     # Ensure output directory exists
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
     # Write output in specified format
-    logger.info("💾 Writing output file...")
     write_start = time.time()
 
     write_output(context, output_path, effective_args.output_format)
 
-    write_time = time.time() - write_start
-    total_time = time.time() - start_time
-
-    if effective_args.verbose:
-        logger.info("✓ Output written in %.2f seconds", write_time)
-
     logger.info("\n✅ Metacontext generated: %s", output_path)
-    logger.info("   🏗️  Architecture: Two-tier (deterministic + AI enrichment)")
-    logger.info("   📊 Schema: Core + Extensions pattern")
-    logger.info(
-        "   🤖 AI Analysis: %s",
-        "Enabled" if effective_args.include_llm_analysis else "Disabled",
-    )
-    if effective_args.verbose:
-        logger.info("   ⏱️  Total time: %.2f seconds", total_time)
 
     return output_path
 
@@ -299,11 +311,6 @@ def _initialize_llm_handler(config: dict) -> LLMProvider | None:
         )
         if llm_handler.is_available():
             provider_info = llm_handler.get_provider_info()
-            logger.info(
-                "✓ LLM enabled: %s (%s)",
-                provider_info["provider"],
-                provider_info["model"],
-            )
             return llm_handler
         logger.warning(
             "⚠️  LLM configuration invalid - continuing with deterministic analysis only",
@@ -356,22 +363,12 @@ def _convert_codebase_context_to_schema(
     semantic_knowledge = raw_context.get("semantic_knowledge")
     ai_enrichment = None
 
-    logger.info("🔍 DEBUG: Checking semantic knowledge: %s", type(semantic_knowledge))
-    if semantic_knowledge:
-        logger.info(
-            "🔍 DEBUG: Semantic knowledge keys: %s",
-            list(semantic_knowledge.keys())
-            if isinstance(semantic_knowledge, dict)
-            else "Not a dict",
-        )
-
     # Extract the nested semantic knowledge if it exists
     nested_semantic_knowledge = (
         semantic_knowledge.get("semantic_knowledge") if semantic_knowledge else None
     )
 
     if nested_semantic_knowledge and nested_semantic_knowledge.get("knowledge_graph"):
-        logger.info("🔍 DEBUG: Creating CodeAIEnrichment with semantic knowledge")
         # Convert the SemanticKnowledgeGraph object to a dictionary
         knowledge_graph = nested_semantic_knowledge.get("knowledge_graph")
 
@@ -391,12 +388,7 @@ def _convert_codebase_context_to_schema(
 
         # Extract column knowledge from the knowledge graph
         if isinstance(knowledge_graph, dict) and "columns" in knowledge_graph:
-            logger.info(
-                "🔍 DEBUG: Knowledge graph has %d columns",
-                len(knowledge_graph["columns"]),
-            )
             for col_name, col_knowledge in knowledge_graph["columns"].items():
-                logger.info("🔍 DEBUG: Processing column: %s", col_name)
                 # Extract the description from the pydantic_definition
                 pydantic_def = col_knowledge.get("pydantic_definition", {})
                 description = pydantic_def.get("description") or col_knowledge.get(
@@ -412,21 +404,10 @@ def _convert_codebase_context_to_schema(
                     if pydantic_def.get("file")
                     else [],
                 }
-                logger.info(
-                    "🔍 DEBUG: Column %s description: %s",
-                    col_name,
-                    description,
-                )
-        else:
-            logger.info(
-                "🔍 DEBUG: Knowledge graph has no columns attribute or is empty",
-            )
 
         ai_enrichment = CodeAIEnrichment(
             semantic_knowledge=semantic_knowledge_dict,
         )
-    else:
-        logger.info("🔍 DEBUG: No semantic knowledge found or invalid structure")
 
     # Create the CodebaseContext with our structured data
     return CodebaseContext(
@@ -450,7 +431,6 @@ def _scan_codebase(config: dict, file_path: Path) -> CodebaseContext | None:
         msg = f"Failed to scan codebase for context around {file_path.name}"
         raise RuntimeError(msg) from e
     else:
-        logger.info("✓ Codebase context scanned")
         return _convert_codebase_context_to_schema(raw_context, file_path)
 
 
@@ -484,8 +464,6 @@ def _generate_companion_context(
     as API mode, wrapping handler responses in complete Metacontext schema.
     """
     try:
-        if verbose:
-            logger.info("🤖 Delegating to handler companion mode...")
 
         if not hasattr(handler, "generate_context"):
             # Fallback if handler doesn't support generate_context
@@ -494,16 +472,13 @@ def _generate_companion_context(
                 "handler_type": handler.__class__.__name__,
             }
 
-        # Delegate to handler's existing companion implementation
-        # The handler will detect ai_companion and switch to companion mode
-        file_specific_context = handler.generate_context(
+        # Use composition workflow to combine base handler + extensions
+        file_specific_context = HandlerRegistry.execute_composition_workflow(
             file_path=file_path,
+            base_handler=handler,
             data_object=data_object,
             ai_companion=ai_companion,
         )
-
-        if verbose:
-            logger.info("✅ Handler companion analysis complete")
 
         # TASK 1 FIX: Use same schema builder as API mode
         # Create the base metacontext schema with core fields
@@ -530,9 +505,6 @@ def _generate_companion_context(
         base_context.confidence_assessment = ConfidenceAssessment(
             overall=ConfidenceLevel(overall_conf),
         )
-
-        if verbose:
-            logger.info("✅ Companion context wrapped in complete schema")
 
         # Return in same format as API mode with custom serialization for geometry objects
         try:
@@ -579,30 +551,14 @@ def _generate_context(
             logger.warning("⚠️  No specific handler found - using fallback analysis")
             return _generate_fallback_context(data_object, file_path)
 
-        logger.info(
-            "✓ Using %s for %s files",
-            handler.__class__.__name__,
-            file_path.suffix,
-        )
-
         # Initialize LLM handler if needed
         llm_start = time.time()
         llm_handler = _initialize_llm_handler(config) if include_llm_analysis else None
         if llm_handler and hasattr(handler, "llm_handler"):
             handler.llm_handler = llm_handler
-            if verbose:
-                llm_time = time.time() - llm_start
-                logger.info("✓ LLM initialized in %.2f seconds", llm_time)
 
-        # Scan codebase context
-        if verbose:
-            logger.info("🔍 Scanning codebase context...")
         scan_start = time.time()
         codebase_context = _scan_codebase(config, file_path)
-        if verbose:
-            scan_time = time.time() - scan_start
-            logger.info("✓ Codebase scan completed in %.2f seconds", scan_time)
-
         # Provide codebase context to LLM handler if available
         if llm_handler and codebase_context:
             llm_handler.codebase_context = codebase_context
@@ -611,8 +567,6 @@ def _generate_context(
         try:
             # Check if we're in companion mode
             if ai_companion is not None:
-                if verbose:
-                    logger.info("🤖 Routing to companion workflow...")
 
                 # TASK 3 FIX: Provide codebase context to companion mode
                 if codebase_context:
@@ -627,13 +581,11 @@ def _generate_context(
                     verbose=verbose,
                 )
 
-            if verbose:
-                logger.info("🔍 Analyzing file content...")
-            context_start = time.time()
             if hasattr(handler, "generate_context"):
-                # Use LLM handler for traditional API workflow
-                file_specific_context = handler.generate_context(
+                # Use composition workflow to combine base handler + extensions
+                file_specific_context = HandlerRegistry.execute_composition_workflow(
                     file_path=file_path,
+                    base_handler=handler,
                     data_object=data_object,
                     ai_companion=llm_handler,
                 )
@@ -641,14 +593,9 @@ def _generate_context(
                 file_specific_context = {
                     "error": "Handler does not support generate_context",
                 }
-            if verbose:
-                context_time = time.time() - context_start
-                logger.info("✓ File analysis completed in %.2f seconds", context_time)
 
             # Add universal file metadata if available
             if universal_metadata and "statistics" in universal_metadata:
-                if verbose:
-                    logger.info("📊 Adding enhanced statistics to context")
                 # Add statistics to the existing data structure if it exists
                 if "data_structure" in file_specific_context:
                     data_struct = file_specific_context["data_structure"]
@@ -687,10 +634,6 @@ def _generate_context(
                 if hasattr(base_context, key):
                     setattr(base_context, key, value)
 
-            # NOTE: codebase_context removed from output as it provides no valuable information
-            # and wastes space in the metacontext YAML files. The context is still available
-            # internally for LLM processing but not included in the final output.
-
             overall_conf = _assess_overall_confidence(
                 file_specific_context,
                 has_llm=llm_handler is not None,
@@ -699,9 +642,8 @@ def _generate_context(
                 overall=ConfidenceLevel(overall_conf),
             )
 
-            logger.info("✅ Two-tier context generation complete")
             return base_context.model_dump(
-                mode="json", by_alias=True, exclude_none=True
+                mode="json", by_alias=True, exclude_none=True,
             )
 
         except Exception:
@@ -767,7 +709,3 @@ def _generate_fallback_context(data_object: object, file_path: Path) -> dict:
         },
         "confidence_assessment": {"overall": "LOW"},
     }
-
-    # NOTE: codebase_context removed from output as it provides no valuable information
-    # and wastes space in the metacontext YAML files. The context is still available
-    # internally for LLM processing but not included in the final output.

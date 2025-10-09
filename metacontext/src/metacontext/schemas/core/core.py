@@ -16,6 +16,7 @@ from metacontext.schemas.extensions.geospatial import (
 )
 from metacontext.schemas.extensions.media import MediaContext
 from metacontext.schemas.extensions.models import ModelContext
+from metacontext.schemas.extensions.spatial import SpatialExtension
 from metacontext.schemas.extensions.tabular import DataStructure
 
 
@@ -61,6 +62,26 @@ class FileInfo(BaseModel):
     creation_timestamp: datetime | None = None
 
 
+class FileContext(BaseModel):
+    """Universal context about the file's nature, creation, and intended use."""
+
+    file_summary: str = Field(
+        description="What this file is, how it was created, and what it's useful for",
+    )
+    creation_method: str | None = Field(
+        default=None,
+        description="How this file was generated (script, manual, tool, export, etc.)",
+    )
+    intended_use: str | None = Field(
+        default=None,
+        description="Primary purpose and applications for this file",
+    )
+    data_lineage: str | None = Field(
+        default=None,
+        description="Source data and transformation history",
+    )
+
+
 class SystemInfo(BaseModel):
     """System information about the generation environment."""
 
@@ -88,6 +109,7 @@ class Metacontext(BaseModel):
     metacontext_version: str = Field(pattern=r"^\d+\.\d+\.\d+$")
     generation_info: GenerationInfo
     file_info: FileInfo
+    file_context: FileContext
     system_info: SystemInfo | None = None
     # NOTE: codebase_context removed as it provides no valuable information in output
     business_context: str | None = None
@@ -98,6 +120,7 @@ class Metacontext(BaseModel):
     data_structure: DataStructure | None = None
     geospatial_raster_context: GeospatialRasterContext | None = None
     geospatial_vector_context: GeospatialVectorContext | None = None
+    spatial_extension: SpatialExtension | None = None  # Lightweight spatial metadata
     model_context: ModelContext | None = None
     media_context: MediaContext | None = None
 
@@ -122,9 +145,16 @@ def create_base_metacontext(
     filename: str,
     file_purpose: str | None = None,
     project_context_summary: str | None = None,
+    file_summary: str | None = None,
+    creation_method: str | None = None,
+    intended_use: str | None = None,
 ) -> Metacontext:
     """Create a base metacontext with core fields populated."""
     file_path = Path(filename)
+
+    # Generate default file summary if not provided
+    if not file_summary:
+        file_summary = f"A {file_path.suffix} file containing data analysis and metadata context"
 
     return Metacontext(
         metacontext_version="0.3.0",
@@ -139,6 +169,11 @@ def create_base_metacontext(
             file_purpose=file_purpose,
             project_context_summary=project_context_summary,
             creation_timestamp=datetime.now(UTC),
+        ),
+        file_context=FileContext(
+            file_summary=file_summary,
+            creation_method=creation_method or "automatic_generation",
+            intended_use=intended_use or "data_analysis_and_context",
         ),
         system_info=SystemInfo(working_directory=str(Path.cwd())),
     )

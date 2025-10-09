@@ -1,0 +1,254 @@
+metacontext_version: 0.3.0
+generation_info:
+  generated_at: '2025-10-09T21:16:32.293570Z'
+  generation_method: explicit_function
+  function_call: metacontext.metacontextualize()
+  token_usage:
+    total_tokens: 17700
+    prompt_tokens: 9097
+    completion_tokens: 3043
+    total_api_calls: 4
+    provider: gemini
+    model: gemini-2.5-flash
+file_info:
+  filename: tabular_csv.csv
+  extension: .csv
+  file_purpose: Generated file with two-tier architecture
+  project_context_summary: Analysis with CSVHandler
+  creation_timestamp: '2025-10-09T21:16:32.293677Z'
+file_context:
+  file_summary: A .csv file containing data analysis and metadata context
+  creation_method: automatic_generation
+  intended_use: data_analysis_and_context
+system_info:
+  working_directory: /Users/bigdawg/Documents/repos/metacontext/bird_demo
+confidence_assessment:
+  overall: MEDIUM
+data_structure:
+  deterministic_metadata:
+    type: pandas_dataframe
+    shape:
+    - 200
+    - 21
+    memory_usage_bytes: 211389
+    column_dtypes:
+      species_name: object
+      taxonomic_family: object
+      taxonomic_order: object
+      asdawas: float64
+      beak_length: float64
+      weight_g: float64
+      nocturnal_diurnal: object
+      brrrrkk: object
+      diet_types: object
+      closest_relatives: object
+      latitude: float64
+      longitude: float64
+      altitude_m: float64
+      habitat_type: object
+      weather_condition: object
+      temperature_c: float64
+      observation_time: object
+      diet_dict: object
+      primary_diet: object
+      is_nocturnal: bool
+      blwl: float64
+  ai_enrichment:
+    domain_analysis: ''
+    data_quality_assessment: unknown
+    column_interpretations:
+      species_name:
+        deterministic:
+          null_count: 0
+          unique_count: 5
+        ai_enrichment:
+          semantic_meaning: Species identifier.
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      taxonomic_family:
+        deterministic:
+          null_count: 0
+          unique_count: 5
+        ai_enrichment:
+          semantic_meaning: Taxonomic family.
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      taxonomic_order:
+        deterministic:
+          null_count: 0
+          unique_count: 4
+        ai_enrichment:
+          semantic_meaning: Taxonomic order.
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      asdawas:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: Wing Length.
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      beak_length:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: Beak length.
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      weight_g:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: Weight (grams).
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      nocturnal_diurnal:
+        deterministic:
+          null_count: 0
+          unique_count: 2
+        ai_enrichment:
+          semantic_meaning: Activity pattern.
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      brrrrkk:
+        deterministic:
+          null_count: 0
+          unique_count: 158
+        ai_enrichment:
+          semantic_meaning: 'Cryptic: observation code.'
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      diet_types:
+        deterministic:
+          null_count: 0
+          unique_count: 5
+        ai_enrichment:
+          semantic_meaning: Diet categories.
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      closest_relatives:
+        deterministic:
+          null_count: 0
+          unique_count: 5
+        ai_enrichment:
+          semantic_meaning: Related species.
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      latitude:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: Geographic latitude.
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      longitude:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: Geographic longitude.
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      altitude_m:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: Altitude (meters).
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      habitat_type:
+        deterministic:
+          null_count: 0
+          unique_count: 4
+        ai_enrichment:
+          semantic_meaning: Habitat type.
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      weather_condition:
+        deterministic:
+          null_count: 0
+          unique_count: 5
+        ai_enrichment:
+          semantic_meaning: Weather condition.
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      temperature_c:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: Temperature (Celsius).
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      observation_time:
+        deterministic:
+          null_count: 0
+          unique_count: 184
+        ai_enrichment:
+          semantic_meaning: Observation time.
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      diet_dict:
+        deterministic:
+          null_count: 0
+          unique_count: 5
+        ai_enrichment:
+          semantic_meaning: Detailed diet info (object).
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      primary_diet:
+        deterministic:
+          null_count: 0
+          unique_count: 4
+        ai_enrichment:
+          semantic_meaning: Main diet category.
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from:
+          - diet_dict
+          - diet_types
+      is_nocturnal:
+        deterministic:
+          null_count: 0
+          unique_count: 2
+        ai_enrichment:
+          semantic_meaning: Nocturnal flag (boolean).
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from:
+          - nocturnal_diurnal
+      blwl:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: Beak/Wing Length ratio.
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from:
+          - beak_length
+          - asdawas
+    business_value_assessment: ''

@@ -23,6 +23,10 @@ class ModelDeterministicMetadata(DeterministicMetadata):
     input_shape: list[int] | None = None
     output_shape: list[int] | None = None
     model_size_bytes: int | None = None
+    training_features: list[str] | None = None  # Features used in training
+    target_variable: str | None = None  # What the model predicts
+    input_feature_count: int | None = None  # Number of input features
+    output_classes: list[str] | None = None  # Output class names if classification
 
 
 class TrainingData(BaseModel):
@@ -41,7 +45,18 @@ class TrainingData(BaseModel):
     preprocessing_steps: list[str] | None = None
 
     # AI enrichment fields (more flexible to handle LLM responses)
-    feature_descriptions: dict[str, str] | None = Field(default=None)
+    feature_descriptions: dict[str, str] | None = Field(
+        default=None,
+        description="What each training feature represents in business terms",
+    )
+    target_description: str | None = Field(
+        default=None,
+        description="What the target variable represents and its significance",
+    )
+    data_source: str | None = Field(
+        default=None,
+        description="Origin and collection method of training data",
+    )
 
     @model_validator(mode="before")
     @classmethod

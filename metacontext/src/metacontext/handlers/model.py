@@ -235,6 +235,9 @@ class ModelHandler(BaseFileHandler):
         """
         logger.info("📊 Extracting deterministic model metadata...")
 
+        # Extract training information from nearby scripts (always try this first)
+        training_info = self._extract_training_info_for_deterministic(model_path)
+
         try:
             # Basic file information
             model_size_bytes = model_path.stat().st_size
@@ -258,10 +261,6 @@ class ModelHandler(BaseFileHandler):
                 try:
                     params = actual_model.get_params()
                     hyperparameters = {k: v for k, v in params.items() if v is not None}
-                    logger.info(
-                        "   ⚙️  Extracted %s hyperparameters",
-                        len(hyperparameters),
-                    )
                 except AttributeError:
                     logger.warning("   ⚠️  Could not extract hyperparameters")
 
@@ -274,10 +273,6 @@ class ModelHandler(BaseFileHandler):
             if hasattr(actual_model, "classes_"):
                 output_shape = [len(actual_model.classes_)]
 
-            logger.info("   📊 Model type: %s", model_type)
-            logger.info("   🏗️  Framework: %s", framework)
-            logger.info("   💾 File size: %s bytes", f"{model_size_bytes:,}")
-
             return ModelDeterministicMetadata(
                 framework=framework,
                 model_type=model_type,
@@ -285,16 +280,24 @@ class ModelHandler(BaseFileHandler):
                 input_shape=input_shape,
                 output_shape=output_shape,
                 model_size_bytes=model_size_bytes,
+                training_features=training_info.get("training_features"),
+                target_variable=training_info.get("target_variable"),
+                input_feature_count=input_shape[0] if input_shape else None,
+                output_classes=training_info.get("output_classes"),
             )
 
         except (pickle.UnpicklingError, AttributeError, ImportError) as e:
             logger.warning("   ⚠️ Error loading model: %s", e)
 
-            # Fallback with minimal information
+            # Fallback with minimal information but include training info if available
             return ModelDeterministicMetadata(
                 framework="unknown",
                 model_type="unknown",
                 model_size_bytes=model_path.stat().st_size,
+                training_features=training_info.get("training_features"),
+                target_variable=training_info.get("target_variable"),
+                input_feature_count=training_info.get("input_feature_count"),
+                output_classes=training_info.get("output_classes"),
             )
 
     def _determine_framework(self, model_type: str) -> str:
@@ -310,6 +313,149 @@ class ModelHandler(BaseFileHandler):
         if "lightgbm" in model_type_lower:
             return "lightgbm"
         return "scikit-learn"
+
+    def _extract_training_info_for_deterministic(self, model_path: Path) -> dict[str, Any]:
+        """Extract training information for deterministic metadata from nearby scripts."""
+        training_info = {
+            "training_features": [],
+            "target_variable": None,
+            "input_feature_count": None,
+            "output_classes": None,
+        }
+
+        try:
+            # Look for training scripts in the directory
+            training_scripts = self._find_training_scripts(model_path)
+
+            # Extract training information from scripts
+            for script_path in training_scripts:
+                content = self._read_script_safely(script_path)
+                if not content:
+                    continue
+
+                # Extract different types of information
+                self._extract_features_from_content(content, training_info)
+                self._extract_target_from_content(content, training_info)
+                self._extract_classes_from_content(content, training_info)
+
+                # If we found substantial information, stop looking
+                if (training_info["training_features"] and
+                    training_info["target_variable"]):
+                    break
+
+        except OSError:
+            # File system errors are expected, return empty training info
+            pass
+
+        return training_info
+
+    def _find_training_scripts(self, model_path: Path) -> list[Path]:
+        """Find potential training scripts near the model file."""
+        keywords = ["train", "model", "fit", "learn", "classifier", "regressor"]
+        training_scripts = []
+        
+        # Start from model directory and search up the tree
+        search_dirs = [model_path.parent]  # Start with model directory
+        
+        # Add parent directories up to 3 levels up
+        current_dir = model_path.parent
+        for _ in range(3):
+            current_dir = current_dir.parent
+            if current_dir.exists():
+                search_dirs.append(current_dir)
+        
+        # Search in each directory and its subdirectories
+        for search_dir in search_dirs:
+            # Find potential training scripts using list comprehension
+            found_scripts = [
+                script_file for script_file in search_dir.glob("**/*.py")
+                if any(keyword in script_file.name.lower() for keyword in keywords)
+            ]
+            training_scripts.extend(found_scripts)
+            
+            # Stop if we found some training scripts
+            if training_scripts:
+                break
+
+        # If no specific training scripts, look for any Python files in the model directory
+        if not training_scripts:
+            training_scripts = list(model_path.parent.glob("*.py"))[:3]  # Limit to 3 files
+
+        return training_scripts[:5]  # Limit total to 5 files for performance
+
+    def _read_script_safely(self, script_path: Path) -> str | None:
+        """Safely read a script file, handling encoding errors."""
+        try:
+            with script_path.open(encoding="utf-8") as f:
+                return f.read()
+        except (UnicodeDecodeError, PermissionError, OSError):
+            return None
+
+    def _extract_features_from_content(self, content: str, training_info: dict[str, Any]) -> None:
+        """Extract feature information from script content."""
+        feature_patterns = [
+            # List literals: features = ["col1", "col2"]
+            r"features?\s*=\s*\[(.*?)\]",
+            r"input_features?\s*=\s*\[(.*?)\]",
+            r"feature_columns?\s*=\s*\[(.*?)\]",
+            # DataFrame column access: features = df[["col1", "col2"]]
+            r"features?\s*=\s*\w+\[\[(.*?)\]\]",
+            r"X\s*=\s*\w+\[\[(.*?)\]\]",
+            r"input_features?\s*=\s*\w+\[\[(.*?)\]\]",
+            # Variable assignments from DataFrame columns
+            r"X\s*=.*?\[(.*?)\]",
+        ]
+
+        for pattern in feature_patterns:
+            matches = re.findall(pattern, content, re.DOTALL | re.IGNORECASE)
+            for match in matches:
+                # Clean and extract feature names
+                features = [f.strip().strip("\"'") for f in match.split(",")
+                          if f.strip() and not f.strip().startswith("#")]
+                if features and len(features) > 1:
+                    training_info["training_features"] = features[:20]  # Limit to 20
+                    training_info["input_feature_count"] = len(features)
+                    return
+
+    def _extract_target_from_content(self, content: str, training_info: dict[str, Any]) -> None:
+        """Extract target variable information from script content."""
+        target_patterns = [
+            # String literals: target = "column_name"
+            r"target\s*=\s*[\"']([^\"']+)[\"']",
+            r"label\s*=\s*[\"']([^\"']+)[\"']",
+            r"target_column\s*=\s*[\"']([^\"']+)[\"']",
+            # DataFrame column access: target = df["column_name"]
+            r"target\s*=\s*\w+\[\"([^\"]+)\"\]",
+            r"target\s*=\s*\w+\['([^']+)'\]",
+            r"y\s*=\s*\w+\[\"([^\"]+)\"\]",
+            r"y\s*=\s*\w+\['([^']+)'\]",
+            r"label\s*=\s*\w+\[\"([^\"]+)\"\]",
+            r"label\s*=\s*\w+\['([^']+)'\]",
+        ]
+
+        for pattern in target_patterns:
+            matches = re.findall(pattern, content, re.IGNORECASE)
+            if matches:
+                training_info["target_variable"] = matches[0]
+                return
+
+    def _extract_classes_from_content(self, content: str, training_info: dict[str, Any]) -> None:
+        """Extract class information from script content."""
+        class_patterns = [
+            r"classes?\s*=\s*\[(.*?)\]",
+            r"num_classes?\s*=\s*(\d+)",
+            r"n_classes?\s*=\s*(\d+)",
+        ]
+
+        for pattern in class_patterns:
+            matches = re.findall(pattern, content, re.IGNORECASE)
+            if matches:
+                if pattern.endswith(r"(\d+)"):
+                    training_info["output_classes"] = int(matches[0])
+                else:
+                    classes = [c.strip().strip("\"'") for c in matches[0].split(",")]
+                    training_info["output_classes"] = len(classes)
+                return
 
     INSTRUCTION_CONFIG: ClassVar[dict[str, str]] = {
         "ai_enrichment": "Analyze this ML model and generate comprehensive AI enrichment including specific training features used",
@@ -378,8 +524,6 @@ class ModelHandler(BaseFileHandler):
             logger.info("🤖 No LLM available - skipping AI enrichment")
             return None
 
-        logger.info("🤖 Generating AI enrichment through schema-first analysis...")
-
         # Discover and analyze training scripts
         training_scripts = self._discover_training_scripts(model_path)
 
@@ -425,20 +569,6 @@ class ModelHandler(BaseFileHandler):
                 context_data=context_data,
                 instruction=instruction,
             )
-
-            # Debug: print the generated AI enrichment
-            if ai_enrichment:
-                logger.info("AI Enrichment Content:")
-                for field_name, field_value in ai_enrichment.model_dump().items():
-                    if field_value:  # Only show non-empty fields
-                        logger.info(
-                            "  %s: %s",
-                            field_name,
-                            field_value[:DEBUG_FIELD_PREVIEW_LENGTH] + "..."
-                            if isinstance(field_value, str)
-                            and len(field_value) > DEBUG_FIELD_PREVIEW_LENGTH
-                            else field_value,
-                        )
 
             logger.info("✅ AI enrichment generated successfully")
             return (
@@ -589,9 +719,6 @@ class ModelHandler(BaseFileHandler):
             Dictionary with model_context containing deterministic_metadata and ai_enrichment
 
         """
-        logger.info("\n🚀 TWO-TIER MODEL ANALYSIS")
-        logger.info("📁 Analyzing: %s", file_path.name)
-        logger.info("=" * 60)
 
         # Tier 1: Always succeeds - deterministic metadata
         deterministic_metadata = self._extract_deterministic_metadata(file_path)
@@ -607,7 +734,6 @@ class ModelHandler(BaseFileHandler):
                 hasattr(ai_companion, "codebase_context")
                 and ai_companion.codebase_context
             ):
-                logger.info("🔍 DEBUG: Codebase context found on ai_companion")
                 try:
                     # Check if we have semantic knowledge available
                     if (
@@ -618,9 +744,6 @@ class ModelHandler(BaseFileHandler):
                             "semantic_knowledge",
                         )
                     ):
-                        logger.info(
-                            "🔍 DEBUG: Found semantic knowledge in ai_enrichment",
-                        )
                         semantic_knowledge = ai_companion.codebase_context.ai_enrichment.semantic_knowledge
 
                         # Format semantic knowledge for AI analysis
@@ -628,21 +751,11 @@ class ModelHandler(BaseFileHandler):
                             semantic_knowledge,
                             "model_fields",
                         ):
-                            logger.info(
-                                "🔍 DEBUG: Semantic knowledge has %d model fields",
-                                len(semantic_knowledge.model_fields),
-                            )
                             field_descriptions = []
                             for (
                                 field_name,
                                 field_info,
                             ) in semantic_knowledge.model_fields.items():
-                                logger.info(
-                                    "🔍 DEBUG: Field %s: pydantic='%s', definition='%s'",
-                                    field_name,
-                                    field_info.pydantic_description,
-                                    field_info.definition,
-                                )
                                 if field_info.pydantic_description:
                                     field_descriptions.append(
                                         f"- {field_name}: {field_info.pydantic_description}",
@@ -657,14 +770,9 @@ class ModelHandler(BaseFileHandler):
                                     "Semantic knowledge from codebase:\n"
                                     + "\n".join(field_descriptions)
                                 )
-                                logger.info(
-                                    "🔍 DEBUG: Using semantic knowledge: %s",
-                                    semantic_knowledge_text[:200] + "...",
-                                )
                 except (AttributeError, KeyError, TypeError) as e:
                     logger.warning("Error extracting semantic knowledge: %s", e)
 
-            # Use unified pipeline for AI enrichment (Steps E→I)
             # The LLM provider type determines whether this goes to API or companion mode
             if (
                 hasattr(llm_handler, "is_companion_mode")
@@ -693,17 +801,6 @@ class ModelHandler(BaseFileHandler):
             deterministic_metadata=deterministic_metadata,
             ai_enrichment=ai_enrichment,
         )
-
-        logger.info("✅ Two-tier analysis complete!")
-        logger.info(
-            "   🔧 Deterministic fields: %s",
-            len(deterministic_metadata.model_dump(exclude_none=True)),
-        )
-        if ai_enrichment:
-            logger.info(
-                "   🤖 AI enrichment fields: %s",
-                len(ai_enrichment.model_dump(exclude_none=True)),
-            )
 
         return {"model_context": model_context.model_dump()}
 

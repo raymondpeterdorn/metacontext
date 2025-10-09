@@ -1,0 +1,137 @@
+metacontext_version: 0.3.0
+generation_info:
+  generated_at: '2025-10-09T21:18:18.675023Z'
+  generation_method: explicit_function
+  function_call: metacontext.metacontextualize()
+file_info:
+  filename: tabular_csv.csv
+  extension: .csv
+  file_purpose: Generated file with two-tier architecture
+  project_context_summary: Analysis with CSVHandler
+  creation_timestamp: '2025-10-09T21:18:18.675092Z'
+file_context:
+  file_summary: A .csv file containing data analysis and metadata context
+  creation_method: automatic_generation
+  intended_use: data_analysis_and_context
+system_info:
+  working_directory: /Users/bigdawg/Documents/repos/metacontext/bird_demo
+confidence_assessment:
+  overall: MEDIUM
+data_structure:
+  deterministic_metadata:
+    type: pandas_dataframe
+    shape:
+    - 200
+    - 21
+    memory_usage_bytes: 211389
+    column_dtypes:
+      species_name: object
+      taxonomic_family: object
+      taxonomic_order: object
+      asdawas: float64
+      beak_length: float64
+      weight_g: float64
+      nocturnal_diurnal: object
+      brrrrkk: object
+      diet_types: object
+      closest_relatives: object
+      latitude: float64
+      longitude: float64
+      altitude_m: float64
+      habitat_type: object
+      weather_condition: object
+      temperature_c: float64
+      observation_time: object
+      diet_dict: object
+      primary_diet: object
+      is_nocturnal: bool
+      blwl: float64
+  ai_enrichment:
+    domain_analysis: ''
+    data_quality_assessment: unknown
+    column_interpretations:
+      species_name:
+        deterministic:
+          null_count: 0
+          unique_count: 5
+        ai_enrichment:
+          semantic_meaning: Scientific or common name of the bird species observed
+          data_quality_assessment: ''
+          domain_context: Taxonomic classification
+          derived_from: []
+      taxonomic_family:
+        deterministic:
+          null_count: 0
+          unique_count: 5
+        ai_enrichment:
+          semantic_meaning: Family classification in taxonomic hierarchy
+          data_quality_assessment: ''
+          domain_context: Taxonomic classification
+          derived_from: []
+      taxonomic_order:
+        deterministic:
+          null_count: 0
+          unique_count: 4
+        ai_enrichment:
+          semantic_meaning: Order classification in taxonomic hierarchy
+          data_quality_assessment: ''
+          domain_context: Taxonomic classification
+          derived_from: []
+      asdawas:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: Wing Length measurement in appropriate units
+          data_quality_assessment: ''
+          domain_context: Morphological characteristic
+          derived_from: []
+      beak_length:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: Length of bird's beak in appropriate units
+          data_quality_assessment: ''
+          domain_context: Morphological characteristic
+          derived_from: []
+      brrrrkk:
+        deterministic:
+          null_count: 0
+          unique_count: 158
+        ai_enrichment:
+          semantic_meaning: Observation date in date format
+          data_quality_assessment: ''
+          domain_context: Temporal data
+          derived_from: []
+      nocturnal_diurnal:
+        deterministic:
+          null_count: 0
+          unique_count: 2
+        ai_enrichment:
+          semantic_meaning: Classification of bird's active period
+          data_quality_assessment: ''
+          domain_context: Behavioral characteristic
+          derived_from: []
+      is_nocturnal:
+        deterministic:
+          null_count: 0
+          unique_count: 2
+        ai_enrichment:
+          semantic_meaning: Boolean indicator of nocturnal activity
+          data_quality_assessment: ''
+          domain_context: Behavioral characteristic
+          derived_from:
+          - nocturnal_diurnal
+      blwl:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: Beak length to weight ratio
+          data_quality_assessment: ''
+          domain_context: Derived morphological feature
+          derived_from:
+          - beak_length
+          - weight_g
+    business_value_assessment: ''

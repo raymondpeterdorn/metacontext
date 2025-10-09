@@ -1,7 +1,5 @@
 """Tabular data extension schemas."""
 
-from typing import Any
-
 from pydantic import BaseModel, Field
 
 from metacontext.schemas.extensions.base import (
@@ -16,11 +14,8 @@ from metacontext.schemas.extensions.base import (
 class ColumnDeterministicInfo(DeterministicMetadata):
     """Deterministic facts about a column extracted through code execution."""
 
-    dtype: str | None = None
     null_count: int | None = None
-    null_percentage: float | None = None
     unique_count: int | None = None
-    sample_values: list[Any] | None = None
 
 
 class ColumnAIEnrichment(ForensicAIEnrichment):
@@ -42,9 +37,9 @@ class ColumnAIEnrichment(ForensicAIEnrichment):
         default=None,
         description="Domain-specific context and significance of this column in the dataset.",
     )
-    relationship_to_other_columns: list[str] | None = Field(
+    derived_from: list[str] | None = Field(
         default=None,
-        description="How this column relates to or depends on other columns in the dataset.",
+        description="Source columns used in calculation (only for code-derived columns).",
     )
 
 

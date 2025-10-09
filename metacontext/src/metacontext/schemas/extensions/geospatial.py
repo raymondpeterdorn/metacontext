@@ -31,10 +31,15 @@ class RasterDeterministicMetadata(DeterministicMetadata):
 
     format: str | None = None  # "GeoTIFF", "NetCDF", etc.
     crs: str | None = None  # Coordinate Reference System
+    crs_type: str | None = None  # "Geographic", "Projected", "Unknown"
+    crs_units: str | None = None  # "degrees", "meters", "feet", etc.
     bounds: list[float] | None = None  # [xmin, ymin, xmax, ymax]
+    bounds_crs: str | None = None  # CRS of the bounds if different from main CRS
     pixel_dimensions: list[int] | None = None  # [width, height]
     band_count: int | None = None
     pixel_size: list[float] | None = None  # [x_size, y_size] in CRS units
+    spatial_resolution: str | None = None  # "High", "Medium", "Low" resolution assessment
+    area_coverage_km2: float | None = None  # Approximate area covered in square kilometers
     nodata_value: int | float | None = None
     data_type: str | None = None  # "Float32", "UInt16", etc.
     compression: str | None = None  # "LZW", "DEFLATE", etc.
@@ -73,10 +78,16 @@ class VectorDeterministicMetadata(DeterministicMetadata):
 
     format: str | None = None  # "Shapefile", "GeoJSON", "GeoPackage", etc.
     crs: str | None = None  # Coordinate Reference System
+    crs_type: str | None = None  # "Geographic", "Projected", "Unknown"
+    crs_units: str | None = None  # "degrees", "meters", "feet", etc.
     bounds: list[float] | None = None  # [xmin, ymin, xmax, ymax]
+    bounds_crs: str | None = None  # CRS of the bounds if different from main CRS
     geometry_type: str | None = None  # "Point", "LineString", "Polygon", etc.
     feature_count: int | None = None
+    area_coverage_km2: float | None = None  # Approximate area covered in square kilometers
+    coordinate_precision: int | None = None  # Number of decimal places in coordinates
     attribute_fields: list[str] | None = None  # Field names in attribute table
+    spatial_index_available: bool | None = None  # Whether spatial indexing is available
     encoding: str | None = None  # "UTF-8", etc. for Shapefiles
 
 

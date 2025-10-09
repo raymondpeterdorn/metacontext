@@ -33,10 +33,6 @@ def extract_deterministic_metadata(
         Dictionary containing deterministic analysis results
 
     """
-    logger.info(
-        "🔍 Extracting deterministic metadata using %s",
-        handler.__class__.__name__,
-    )
 
     try:
         # Use the handler's existing deterministic analysis
@@ -50,7 +46,6 @@ def extract_deterministic_metadata(
             "fallback": True,
         }
     else:
-        logger.info("✅ Deterministic analysis completed successfully")
         return deterministic_data
 
 
@@ -77,7 +72,6 @@ def create_base_structure(
         Base metacontext structure with core fields populated
 
     """
-    logger.info("🏗️ Creating base metacontext structure for %s", file_path.name)
 
     # Current timestamp
     now = datetime.now(UTC)
@@ -117,7 +111,6 @@ def create_base_structure(
         },
     }
 
-    logger.info("✅ Base structure created successfully")
     return base_structure
 
 
@@ -150,5 +143,4 @@ def validate_deterministic_consistency(
             )
             return False
 
-    logger.info("✅ Deterministic data consistency validated")
     return True

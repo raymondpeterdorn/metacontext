@@ -234,6 +234,43 @@ class BaseFileHandler(ABC):
         """
         return self.PROMPT_CONFIG.copy() if hasattr(self, "PROMPT_CONFIG") else {}
 
+    def _generate_file_context(self, file_path: Path, args: MetacontextArgs) -> dict[str, str]:
+        """Generate intelligent file context based on file type and content.
+
+        Args:
+            file_path: Path to the file
+            args: Metacontext arguments
+
+        Returns:
+            Dictionary with file_summary, creation_method, and intended_use
+
+        """
+        file_type = self.__class__.__name__.replace("Handler", "").lower()
+        extension = file_path.suffix.lower()
+
+        # Generate intelligent file summary
+        file_summary = f"A {extension} file analyzed with {file_type} processing to extract metadata and insights"
+
+        # Determine creation method
+        creation_method = "analysis_tool_generated"
+        if args.data_object is not None:
+            creation_method = "programmatic_data_analysis"
+
+        # Determine intended use based on file type
+        intended_use_map = {
+            "csv": "data_analysis_exploration_and_ml_modeling",
+            "model": "machine_learning_inference_and_deployment",
+            "geospatial": "spatial_analysis_and_mapping",
+            "media": "content_analysis_and_processing",
+        }
+        intended_use = intended_use_map.get(file_type, "data_context_and_analysis")
+
+        return {
+            "file_summary": file_summary,
+            "creation_method": creation_method,
+            "intended_use": intended_use,
+        }
+
     def create_metacontext(
         self,
         file_path: Path,
@@ -250,10 +287,14 @@ class BaseFileHandler(ABC):
 
         """
         # Create base metacontext with core fields
+        file_context_info = self._generate_file_context(file_path, args)
         metacontext = create_base_metacontext(
             filename=str(file_path),
             file_purpose=args.file_purpose,
             project_context_summary=args.project_context_summary,
+            file_summary=file_context_info.get("file_summary"),
+            creation_method=file_context_info.get("creation_method"),
+            intended_use=file_context_info.get("intended_use"),
         )
 
         # Generate file-type-specific context

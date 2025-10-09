@@ -2,18 +2,22 @@
 
 This handler processes geospatial data files to extract metadata using
 both deterministic techniques and AI enrichment. It implements the architectural
-patterns defined in the central architecture reference.
+patterns defined in the central architecture reference and uses the unified
+geospatial interface for consistent spatial analysis.
 
 See:
-                    metadata.attribute_fields = [col for col in gdf.columns if col != "geometry"] architecture_reference.ArchitecturalComponents.TWO_TIER_ARCHITECTURE
+- architecture_reference.ArchitecturalComponents.TWO_TIER_ARCHITECTURE
 - architecture_reference.ArchitecturalComponents.SCHEMA_FIRST_LLM
+- interfaces.geospatial.GeospatialAnalyzer for unified spatial operations
 """
 
-import json
 import logging
+import math
 import tempfile
 from pathlib import Path
 from typing import Any, ClassVar
+
+import numpy as np
 
 from metacontext.ai.handlers.companions.template_adapter import (
     CompanionTemplateAdapter,
@@ -24,6 +28,11 @@ from metacontext.ai.handlers.llms.prompt_constraints import (
     calculate_response_limits,
 )
 from metacontext.handlers.base import BaseFileHandler, register_handler
+from metacontext.interfaces.geospatial import (
+    GeospatialInterfaceFactory,
+    VectorGeospatialAnalyzer,
+    RasterGeospatialAnalyzer,
+)
 from metacontext.schemas.extensions.geospatial import (
     GeospatialRasterContext,
     GeospatialVectorContext,
@@ -63,60 +72,94 @@ except ImportError:
 
 @register_handler
 class GeospatialHandler(BaseFileHandler):
-    """Handler for geospatial data files.
+    """Handler for geospatial data files using extension composition pattern.
 
+    This handler implements the extension pattern where:
+    - Pure geospatial files (.kml, .kmz) are handled directly
+    - Vector geospatial files (.gpkg, .shp, .geojson) delegate to CSVHandler + geospatial extension
+    - Raster geospatial files (.tif, .tiff, .nc) delegate to MediaHandler + geospatial extension
+    
     Supports: GeoJSON, Shapefile, GeoTIFF, NetCDF, KML files
-    Extensions: raster_context, vector_context
+    Extensions: geospatial_raster_context, geospatial_vector_context
     """
 
-    supported_extensions: ClassVar[list[str]] = [
-        ".geojson",
-        ".json",  # Vector data
-        ".shp",
+    # Pure geospatial formats handled directly by this handler
+    pure_geospatial_extensions: ClassVar[list[str]] = [
         ".kml",
         ".kmz",
-        ".gpkg",  # Vector data
+    ]
+    
+    # Vector geospatial formats that should use tabular + geospatial composition
+    vector_geospatial_extensions: ClassVar[list[str]] = [
+        ".geojson",
+        ".json",  # GeoJSON - has attributes like GPKG/SHP
+        ".shp",
+        ".gpkg",  # SQLite-based, needs special handling in composition
+    ]
+    
+    # Raster geospatial formats that should use media + geospatial composition
+    raster_geospatial_extensions: ClassVar[list[str]] = [
         ".tif",
         ".tiff",
         ".nc",
-        ".hdf",  # Raster data
+        ".hdf",
     ]
 
+    supported_extensions: ClassVar[list[str]] = (
+        pure_geospatial_extensions + 
+        vector_geospatial_extensions + 
+        raster_geospatial_extensions
+    )
+
     def __init__(self) -> None:
-        """Initialize the geospatial handler."""
+        """Initialize the geospatial handler with unified interface."""
+        self._vector_analyzer = VectorGeospatialAnalyzer()
+        self._raster_analyzer = RasterGeospatialAnalyzer()
 
     def can_handle(self, file_path: Path, data_object: object | None = None) -> bool:
-        """Check if this is a geospatial data file."""
-        if file_path.suffix.lower() in self.supported_extensions:
-            return True
-
-        # Check if JSON file might be GeoJSON
-        if file_path.suffix.lower() == ".json":
-            try:
-                with open(file_path, encoding="utf-8") as f:
-                    data = json.load(f)
-                    # Check for GeoJSON structure
-                    return data.get("type") in [
-                        "FeatureCollection",
-                        "Feature",
-                        "Point",
-                        "LineString",
-                        "Polygon",
-                    ]
-            except (OSError, json.JSONDecodeError):
-                pass
-
-        return False
+        """Check if this is a geospatial data file using extension pattern.
+        
+        This handler now follows the extension pattern:
+        - Only handles pure geospatial files (.kml, .kmz) directly
+        - Vector geospatial files (.geojson, .gpkg, .shp) should be handled by CSVHandler + geospatial extension
+        - Raster geospatial files should be handled by MediaHandler + geospatial extension
+        """
+        file_ext = file_path.suffix.lower()
+        logger.debug("🔍 TASK-2.8 GeospatialHandler.can_handle: Evaluating file %s (ext: %s)", file_path.name, file_ext)
+        
+        # Only handle pure geospatial formats directly (KML/KMZ only)
+        can_handle_result = file_ext in self.pure_geospatial_extensions
+        
+        if can_handle_result:
+            logger.debug("✓ TASK-2.8 Extension pattern: %s matches pure_geospatial_extensions %s", file_ext, self.pure_geospatial_extensions)
+        else:
+            logger.debug("✗ TASK-2.8 Extension pattern: %s not in pure_geospatial_extensions %s (should use composition)", file_ext, self.pure_geospatial_extensions)
+            
+        return can_handle_result
 
     def get_required_extensions(
         self,
         file_path: Path,
         data_object: object = None,
     ) -> list[str]:
-        """Return required extensions for geospatial data."""
-        if self._is_raster_file(file_path):
-            return ["raster_context"]
-        return ["vector_context"]
+        """Return required extensions for pure geospatial data.
+        
+        Note: In the extension pattern, this only applies to pure geospatial files
+        that are handled directly by this handler (.kml, .kmz, GeoJSON).
+        Vector/raster geospatial files are handled by other handlers with extensions.
+        """
+        file_ext = file_path.suffix.lower()
+        
+        # Pure geospatial files handled directly
+        if file_ext in self.pure_geospatial_extensions:
+            return ["geospatial_vector_context"]  # KML/KMZ are vector-like
+            
+        # GeoJSON as pure geospatial
+        if file_ext == ".json" and self.can_handle(file_path):
+            return ["geospatial_vector_context"]
+            
+        # This handler no longer handles raster/vector files with composition
+        return []
 
     def _is_raster_file(self, file_path: Path) -> bool:
         """Determine if file is raster or vector data."""
@@ -221,17 +264,30 @@ class GeospatialHandler(BaseFileHandler):
                     deterministic_metadata = self._analyze_raster_deterministic(
                         file_path,
                     )
-                    return self._generate_raster_companion_context(
+                    result = self._generate_raster_companion_context(
                         file_path,
                         deterministic_metadata,
                         ai_companion,
                     )
-                deterministic_metadata = self._analyze_vector_deterministic(file_path)
-                return self._generate_vector_companion_context(
-                    file_path,
-                    deterministic_metadata,
-                    ai_companion,
-                )
+                else:
+                    deterministic_metadata = self._analyze_vector_deterministic(file_path)
+                    result = self._generate_vector_companion_context(
+                        file_path,
+                        deterministic_metadata,
+                        ai_companion,
+                    )
+                    
+                    # For vector data in companion mode, try to add tabular analysis
+                    try:
+                        tabular_context = self._add_tabular_analysis(
+                            file_path, data_object, ai_companion
+                        )
+                        if tabular_context:
+                            result.update(tabular_context)
+                    except Exception as e:
+                        logger.debug("Could not add tabular analysis in companion mode: %s", e)
+                        
+                return result
 
             # Extract semantic knowledge for enhanced context (API mode)
             semantic_knowledge_text = "No semantic knowledge extracted from codebase."
@@ -281,27 +337,113 @@ class GeospatialHandler(BaseFileHandler):
 
             # Determine if raster or vector
             if self._is_raster_file(file_path):
-                return self._generate_raster_context(
+                result = self._generate_raster_context(
+                    file_path,
+                    ai_companion,
+                    semantic_knowledge_text,
+                    data_object,
+                )
+            else:
+                result = self._generate_vector_context(
                     file_path,
                     ai_companion,
                     semantic_knowledge_text,
                 )
-            return self._generate_vector_context(
-                file_path,
-                ai_companion,
-                semantic_knowledge_text,
-            )
+                
+                # For vector data, try to add tabular analysis
+                try:
+                    tabular_context = self._add_tabular_analysis(
+                        file_path, 
+                        data_object, 
+                        ai_companion,
+                    )
+                    if tabular_context:
+                        result.update(tabular_context)
+                except Exception as e:
+                    logger.debug("Could not add tabular analysis: %s", e)
+                    
+            return result
         except Exception:
             logger.exception("Error generating geospatial context for %s", file_path)
             return {"error": "Failed to generate geospatial context"}
+
+    def _add_tabular_analysis(
+        self, 
+        file_path: Path, 
+        data_object: object | None, 
+        ai_companion: object | None,
+    ) -> dict[str, object] | None:
+        """Add tabular analysis for vector data with attributes."""
+        try:
+            # Import CSVHandler for tabular analysis
+            from metacontext.handlers.tabular import CSVHandler
+            
+            csv_handler = CSVHandler()
+            tabular_data = None
+            
+            # Try to extract tabular data for analysis
+            if data_object is not None and hasattr(data_object, 'drop'):
+                # For GeoDataFrame, drop geometry column for tabular analysis
+                tabular_data = data_object.drop(columns=['geometry'], errors='ignore')
+                if len(tabular_data.columns) == 0:
+                    return None  # No non-spatial columns to analyze
+                    
+                # Use CSVHandler to analyze the tabular portion
+                return csv_handler.generate_context(
+                    file_path, 
+                    data_object=tabular_data,
+                    ai_companion=ai_companion,
+                )
+            elif file_path.suffix.lower() in ['.gpkg', '.shp', '.geojson']:
+                # For spatial files, check if CSVHandler can extract tabular data
+                if csv_handler.can_handle(file_path, data_object):
+                    return csv_handler.generate_context(
+                        file_path, 
+                        data_object=data_object,
+                        ai_companion=ai_companion,
+                    )
+                    
+            return None
+            
+        except Exception as e:
+            logger.debug("Tabular analysis failed: %s", e)
+            return None
+
+    def _add_media_analysis(
+        self, 
+        file_path: Path, 
+        data_object: object | None, 
+        ai_companion: object | None,
+    ) -> dict[str, object] | None:
+        """Add media analysis for raster geospatial data."""
+        try:
+            # Import MediaHandler for media analysis
+            from metacontext.handlers.media import MediaHandler
+            
+            media_handler = MediaHandler()
+            
+            # Check if MediaHandler can handle this file
+            if media_handler.can_handle(file_path, data_object):
+                return media_handler.generate_context(
+                    file_path, 
+                    data_object=data_object,
+                    ai_companion=ai_companion,
+                )
+            
+            return None
+            
+        except Exception as e:
+            logger.debug("Media analysis failed: %s", e)
+            return None
 
     def _generate_raster_context(
         self,
         file_path: Path,
         ai_companion: object | None,
         semantic_knowledge: str | None = None,
+        data_object: object | None = None,
     ) -> dict[str, Any]:
-        """Generate context for raster geospatial data."""
+        """Generate context for raster geospatial data with media analysis."""
         # Deterministic analysis
         deterministic_metadata = self._analyze_raster_deterministic(file_path)
 
@@ -315,12 +457,27 @@ class GeospatialHandler(BaseFileHandler):
                 semantic_knowledge,
             )
 
-        return {
-            "raster_context": GeospatialRasterContext(
+        # Prepare result with geospatial context
+        result = {
+            "geospatial_raster_context": GeospatialRasterContext(
                 deterministic_metadata=deterministic_metadata,
                 ai_enrichment=ai_enrichment,
             ).model_dump(),
         }
+        
+        # Add media analysis for comprehensive raster analysis
+        try:
+            media_context = self._add_media_analysis(
+                file_path, 
+                data_object, 
+                ai_companion,
+            )
+            if media_context:
+                result.update(media_context)
+        except Exception as e:
+            logger.debug("Could not add media analysis: %s", e)
+        
+        return result
 
     def _generate_vector_context(
         self,
@@ -343,10 +500,10 @@ class GeospatialHandler(BaseFileHandler):
             )
 
         return {
-            "vector_context": GeospatialVectorContext(
+            "geospatial_vector_context": GeospatialVectorContext(
                 deterministic_metadata=deterministic_metadata,
                 ai_enrichment=ai_enrichment,
-            ).model_dump(),
+            ),
         }
 
     def _analyze_raster_deterministic(
@@ -373,12 +530,66 @@ class GeospatialHandler(BaseFileHandler):
                     )
                     metadata.nodata_value = dataset.nodata
 
+                    # Enhanced spatial metadata
+                    if dataset.crs:
+                        crs_info = self._analyze_crs(str(dataset.crs))
+                        metadata.crs_type = crs_info["type"]
+                        metadata.crs_units = crs_info["units"]
+                        metadata.bounds_crs = str(dataset.crs)
+                        
+                        # Calculate area coverage and resolution assessment
+                        if dataset.bounds and metadata.pixel_size:
+                            metadata.area_coverage_km2 = self._calculate_area_coverage(
+                                dataset.bounds, str(dataset.crs),
+                            )
+                            metadata.spatial_resolution = self._assess_spatial_resolution(
+                                metadata.pixel_size, crs_info["units"],
+                            )
+
                     # Try to get compression info
                     if hasattr(dataset, "compression"):
                         metadata.compression = dataset.compression
 
             except Exception as e:
                 logger.warning("Error analyzing raster file %s: %s", file_path, e)
+        else:
+            # Fallback: Use lightweight geospatial extension for worldfile reading
+            try:
+                from metacontext.extensions.geospatial import GeospatialExtension
+                
+                extension = GeospatialExtension()
+                spatial_info = extension.extract_spatial_metadata(file_path)
+                
+                if spatial_info.get("crs"):
+                    metadata.crs = spatial_info["crs"]
+                    metadata.crs_type = "geographic" if "4326" in spatial_info["crs"] else "unknown"
+                    metadata.crs_units = "degrees" if "4326" in spatial_info["crs"] else "unknown"
+                    metadata.bounds_crs = spatial_info["crs"]
+                
+                if spatial_info.get("bounds_estimate"):
+                    bounds = spatial_info["bounds_estimate"]
+                    metadata.bounds = [
+                        bounds["min_lon"], bounds["min_lat"],
+                        bounds["max_lon"], bounds["max_lat"]
+                    ]
+                
+                if spatial_info.get("pixel_dimensions"):
+                    metadata.pixel_dimensions = spatial_info["pixel_dimensions"]
+                    
+                if spatial_info.get("pixel_size"):
+                    metadata.pixel_size = spatial_info["pixel_size"]
+                    # Estimate basic resolution
+                    avg_pixel_size = sum(spatial_info["pixel_size"]) / 2
+                    if metadata.crs_units == "degrees":
+                        metadata.spatial_resolution = self._assess_spatial_resolution(
+                            spatial_info["pixel_size"], "degrees"
+                        )
+                        
+                # Set basic format info
+                metadata.format = "TIFF" if file_path.suffix.lower() in {".tif", ".tiff"} else "unknown"
+                
+            except Exception as e:
+                logger.debug("Worldfile fallback failed: %s", e)
 
         return metadata
 
@@ -391,7 +602,7 @@ class GeospatialHandler(BaseFileHandler):
 
         try:
             if file_path.suffix.lower() in [".geojson", ".json"]:
-                with open(file_path, encoding="utf-8") as f:
+                with file_path.open(encoding="utf-8") as f:
                     data = json.load(f)
                     metadata.format = "GeoJSON"
                     if data.get("type") == "FeatureCollection":
@@ -404,6 +615,15 @@ class GeospatialHandler(BaseFileHandler):
                             # Get property names
                             properties = features[0].get("properties", {})
                             metadata.attribute_fields = list(properties.keys())
+                            
+                            # Enhanced spatial metadata for GeoJSON
+                            metadata.coordinate_precision = self._analyze_coordinate_precision(features)
+                            crs_info = data.get("crs")
+                            if crs_info:
+                                metadata.crs = str(crs_info)
+                                crs_analysis = self._analyze_crs(str(crs_info))
+                                metadata.crs_type = crs_analysis["type"]
+                                metadata.crs_units = crs_analysis["units"]
 
             elif GEOPANDAS_AVAILABLE:
                 gdf = gpd.read_file(file_path)
@@ -416,8 +636,27 @@ class GeospatialHandler(BaseFileHandler):
                     metadata.attribute_fields = [
                         col for col in gdf.columns if col != "geometry"
                     ]
+                    
+                    # Enhanced spatial metadata
+                    if gdf.crs:
+                        crs_info = self._analyze_crs(str(gdf.crs))
+                        metadata.crs_type = crs_info["type"]
+                        metadata.crs_units = crs_info["units"]
+                        metadata.bounds_crs = str(gdf.crs)
+                        
+                        # Calculate area coverage
+                        if not np.isnan(gdf.total_bounds).any():
+                            metadata.area_coverage_km2 = self._calculate_area_coverage(
+                                gdf.total_bounds, str(gdf.crs),
+                            )
+                    
+                    # Analyze coordinate precision
+                    metadata.coordinate_precision = self._analyze_gdf_coordinate_precision(gdf)
+                    
+                    # Check for spatial index
+                    metadata.spatial_index_available = hasattr(gdf, 'sindex') and gdf.sindex is not None
 
-        except Exception as e:
+        except (OSError, ValueError, json.JSONDecodeError) as e:
             logger.warning("Error analyzing vector file %s: %s", file_path, e)
 
         return metadata
@@ -498,7 +737,7 @@ class GeospatialHandler(BaseFileHandler):
         file_path: Path,
         metadata: RasterDeterministicMetadata,
     ) -> str:
-        """Build constraints for raster AI enrichment."""
+        """Build constraints for raster AI enrichment with codebase context scanning."""
         # Calculate complexity based on bands and dimensions
         complexity_factor = 1.0
         if metadata.band_count:
@@ -524,7 +763,35 @@ class GeospatialHandler(BaseFileHandler):
             "applications": "2-3 key use cases",
         }
 
-        base_instruction = "Analyze this raster geospatial dataset"
+        # Enhanced instruction for AI-first raster analysis
+        base_instruction = """Analyze this raster geospatial dataset using AI-first spatial inference.
+
+RASTER ANALYSIS APPROACH:
+Since raster files often lack embedded metadata, you should:
+
+1. **CODEBASE SCANNING**: Look for spatial clues in:
+   - Variable names containing coordinates, CRS codes, or geographic terms
+   - Comments mentioning regions, projections, or coordinate systems  
+   - File paths suggesting geographic areas or data sources
+   - Function names related to spatial processing or coordinate transforms
+
+2. **FILENAME ANALYSIS**: Extract spatial hints from:
+   - Geographic region names (e.g., "california", "north_america", "arctic")
+   - Coordinate system codes (e.g., "utm", "wgs84", "epsg4326")
+   - Resolution indicators (e.g., "30m", "1km", "high_res")
+   - Data source indicators (e.g., "landsat", "modis", "sentinel")
+
+3. **CONTEXTUAL INFERENCE**: Use project context to determine:
+   - Likely coordinate reference systems based on geographic focus
+   - Probable data sources based on research domain
+   - Expected spatial resolution based on analysis type
+   - Geographic coverage based on study area
+
+4. **WORLDFILE DETECTION**: Check if companion .tfw, .tifw, or .wld files exist
+   that might contain georeferencing information
+
+PRIORITY: Focus on extracting maximum spatial context even when technical metadata is absent."""
+        
         constraints = build_schema_constraints(
             max_total_chars=max_total_chars,
             max_field_chars=max_field_chars,
@@ -532,7 +799,7 @@ class GeospatialHandler(BaseFileHandler):
             complexity_context=f"Raster: {metadata.band_count or 'unknown'} bands",
         )
 
-        return f"{base_instruction} and provide insights that fit within these STRICT LIMITS:\\n\\n{constraints}"
+        return f"{base_instruction}\\n\\n{constraints}"
 
     def _build_vector_constraints(
         self,
@@ -584,8 +851,9 @@ class GeospatialHandler(BaseFileHandler):
         ai_companion: object,
         semantic_knowledge: str | None = None,
     ) -> RasterAIEnrichment | None:
-        """Generate AI enrichment for raster data."""
+        """Generate AI enrichment for raster data with enhanced spatial context."""
         try:
+            # Enhanced context data with spatial clues for AI-first analysis
             context_data = {
                 "file_name": file_path.name,
                 "file_path": str(file_path),
@@ -594,6 +862,10 @@ class GeospatialHandler(BaseFileHandler):
                 "semantic_knowledge": semantic_knowledge
                 or "No semantic knowledge available from codebase",
             }
+            
+            # Add spatial context clues for AI analysis
+            spatial_clues = self._extract_spatial_clues(file_path)
+            context_data["spatial_clues"] = spatial_clues
 
             instruction = self._build_raster_constraints(file_path, metadata)
 
@@ -606,6 +878,21 @@ class GeospatialHandler(BaseFileHandler):
         except Exception:
             logger.exception("Error generating raster AI enrichment")
             return None
+    
+    def _extract_spatial_clues(self, file_path: Path) -> dict[str, Any]:
+        """Extract spatial context clues using unified interface.
+        
+        Args:
+            file_path: Path to the geospatial file
+            
+        Returns:
+            Dictionary of spatial context clues for AI enrichment
+        """
+        # Use the unified interface method for consistent spatial clue extraction
+        data_type = GeospatialInterfaceFactory.determine_data_type(file_path)
+        analyzer = GeospatialInterfaceFactory.create_analyzer(file_path, data_type)
+        
+        return analyzer.extract_spatial_clues(file_path)
 
     def _generate_vector_ai_enrichment(
         self,
@@ -776,27 +1063,24 @@ class GeospatialHandler(BaseFileHandler):
         ai_companion: object,
     ) -> dict[str, Any]:
         """Generate fallback raster context when companion fails."""
-        logger.info(
-            "Using %s companion for raster analysis of %s",
-            ai_companion.companion_type,
-            file_path.name,
-        )
 
         # Return deterministic data with companion marker
-        return GeospatialRasterContext(
-            deterministic_metadata=deterministic_metadata,
-            ai_enrichment=RasterAIEnrichment(
-                spatial_analysis={
-                    "companion_mode": True,
-                    "companion_type": ai_companion.companion_type,
-                    "analysis_note": f"Raster analyzed using {ai_companion.companion_type} companion",
-                },
-                semantic_tags=[f"{ai_companion.companion_type}_analyzed"],
-                contextual_insights=[
-                    f"Raster file processed via {ai_companion.companion_type} integration",
-                ],
-            ),
-        ).model_dump()
+        return {
+            "geospatial_raster_context": GeospatialRasterContext(
+                deterministic_metadata=deterministic_metadata,
+                ai_enrichment=RasterAIEnrichment(
+                    spatial_analysis={
+                        "companion_mode": True,
+                        "companion_type": ai_companion.companion_type,
+                        "analysis_note": f"Raster analyzed using {ai_companion.companion_type} companion",
+                    },
+                    semantic_tags=[f"{ai_companion.companion_type}_analyzed"],
+                    contextual_insights=[
+                        f"Raster file processed via {ai_companion.companion_type} integration",
+                    ],
+                ),
+            ).model_dump()
+        }
 
     def _generate_vector_companion_context(
         self,
@@ -864,10 +1148,12 @@ class GeospatialHandler(BaseFileHandler):
                         file_path, deterministic_metadata, ai_companion
                     )
 
-                return GeospatialVectorContext(
-                    deterministic_metadata=deterministic_metadata,
-                    ai_enrichment=ai_enrichment,
-                ).model_dump()
+                return {
+                    "geospatial_vector_context": GeospatialVectorContext(
+                        deterministic_metadata=deterministic_metadata,
+                        ai_enrichment=ai_enrichment,
+                    )
+                }
 
             return self._generate_fallback_vector_context(
                 file_path, deterministic_metadata, ai_companion
@@ -886,24 +1172,150 @@ class GeospatialHandler(BaseFileHandler):
         ai_companion: object,
     ) -> dict[str, Any]:
         """Generate fallback vector context when companion fails."""
-        logger.info(
-            "Using %s companion for vector analysis of %s",
-            ai_companion.companion_type,
-            file_path.name,
-        )
 
         # Return deterministic data with companion marker
-        return GeospatialVectorContext(
-            deterministic_metadata=deterministic_metadata,
-            ai_enrichment=VectorAIEnrichment(
-                spatial_analysis={
-                    "companion_mode": True,
-                    "companion_type": ai_companion.companion_type,
-                    "analysis_note": f"Vector analyzed using {ai_companion.companion_type} companion",
-                },
-                semantic_tags=[f"{ai_companion.companion_type}_analyzed"],
-                contextual_insights=[
-                    f"Vector file processed via {ai_companion.companion_type} integration",
-                ],
+        return {
+            "geospatial_vector_context": GeospatialVectorContext(
+                deterministic_metadata=deterministic_metadata,
+                ai_enrichment=VectorAIEnrichment(
+                    spatial_analysis={
+                        "companion_mode": True,
+                        "companion_type": ai_companion.companion_type,
+                        "analysis_note": f"Vector analyzed using {ai_companion.companion_type} companion",
+                    },
+                    semantic_tags=[f"{ai_companion.companion_type}_analyzed"],
+                    contextual_insights=[
+                        f"Vector file processed via {ai_companion.companion_type} integration",
+                    ],
+                ),
             ),
-        ).model_dump()
+        }
+
+    def _analyze_crs(self, crs_string: str) -> dict[str, str | None]:
+        """Analyze coordinate reference system using unified interface.
+        
+        Args:
+            crs_string: CRS specification string
+            
+        Returns:
+            Dictionary with parsed CRS information
+        """
+        # Use the unified interface for consistent CRS analysis
+        analyzer = self._vector_analyzer  # Both analyzers have the same CRS analysis
+        return analyzer.analyze_crs_info(crs_string)
+
+    def _calculate_area_coverage(self, bounds: list[float], crs: str) -> float | None:
+        """Calculate approximate area coverage in square kilometers."""
+        if bounds is None or len(bounds) != 4:
+            return None
+            
+        try:
+            xmin, ymin, xmax, ymax = bounds
+            
+            # For geographic coordinates (degrees), use rough conversion
+            crs_info = self._analyze_crs(crs)
+            if crs_info["units"] == "degrees":
+                # Rough approximation: 1 degree ≈ 111 km at equator
+                width_km = abs(xmax - xmin) * 111
+                height_km = abs(ymax - ymin) * 111
+                # Apply cosine correction for latitude (rough approximation)
+                avg_lat = abs((ymax + ymin) / 2)
+                width_km *= math.cos(math.radians(avg_lat))
+                return width_km * height_km
+            
+            elif crs_info["units"] == "meters":
+                # Convert square meters to square kilometers
+                width_m = abs(xmax - xmin)
+                height_m = abs(ymax - ymin)
+                return (width_m * height_m) / 1_000_000
+                
+            elif crs_info["units"] == "feet":
+                # Convert square feet to square kilometers
+                width_ft = abs(xmax - xmin)
+                height_ft = abs(ymax - ymin)
+                area_ft2 = width_ft * height_ft
+                return area_ft2 / 10_763_910.4  # sq ft to sq km conversion
+                
+        except (ValueError, TypeError, ZeroDivisionError):
+            pass
+            
+        return None
+
+    def _assess_spatial_resolution(self, pixel_size: list[float], units: str | None) -> str:
+        """Assess spatial resolution using unified interface.
+        
+        Args:
+            pixel_size: List of [x_size, y_size] in CRS units
+            units: CRS units ("degrees", "meters", etc.)
+            
+        Returns:
+            Resolution category string
+        """
+        # Use the unified interface for consistent resolution assessment
+        analyzer = self._raster_analyzer  # Use raster analyzer for resolution assessment
+        return analyzer.assess_spatial_resolution(pixel_size, units)
+
+    def _analyze_coordinate_precision(self, features: list[dict]) -> int | None:
+        """Analyze coordinate precision from GeoJSON features."""
+        if not features:
+            return None
+            
+        try:
+            # Sample first feature's coordinates
+            first_feature = features[0]
+            geometry = first_feature.get("geometry", {})
+            coordinates = geometry.get("coordinates", [])
+            
+            if not coordinates:
+                return None
+                
+            # Flatten coordinates to get individual numbers
+            def flatten_coords(coords):
+                if isinstance(coords, (int, float)):
+                    return [coords]
+                elif isinstance(coords, list):
+                    result = []
+                    for item in coords:
+                        result.extend(flatten_coords(item))
+                    return result
+                return []
+            
+            flat_coords = flatten_coords(coordinates)
+            if not flat_coords:
+                return None
+                
+            # Find max decimal places
+            max_precision = 0
+            for coord in flat_coords[:10]:  # Sample first 10 coordinates
+                if isinstance(coord, float):
+                    coord_str = str(coord)
+                    if "." in coord_str:
+                        decimal_places = len(coord_str.split(".")[1])
+                        max_precision = max(max_precision, decimal_places)
+                        
+            return max_precision if max_precision > 0 else None
+            
+        except (KeyError, TypeError, ValueError):
+            return None
+
+    def _analyze_gdf_coordinate_precision(self, gdf) -> int | None:
+        """Analyze coordinate precision from GeoPandas GeoDataFrame."""
+        if GEOPANDAS_AVAILABLE and len(gdf) > 0:
+            try:
+                # Sample first geometry
+                first_geom = gdf.geometry.iloc[0]
+                if first_geom and hasattr(first_geom, "coords"):
+                    coords_list = list(first_geom.coords)
+                    if coords_list:
+                        # Check precision of first coordinate pair
+                        x, y = coords_list[0][:2]
+                        max_precision = 0
+                        for coord in [x, y]:
+                            coord_str = str(coord)
+                            if "." in coord_str:
+                                decimal_places = len(coord_str.split(".")[1])
+                                max_precision = max(max_precision, decimal_places)
+                        return max_precision if max_precision > 0 else None
+            except (AttributeError, IndexError, TypeError):
+                pass
+        return None
