@@ -478,35 +478,83 @@ def _generate_companion_context(
     *,
     verbose: bool = False,
 ) -> dict:
-    """Generate context using companion workflow by delegating to handler.
+    """Generate context using companion workflow with unified schema wrapper.
 
-    Strategy 2: Delegate to Handler Companion Modes
-    This leverages the existing, well-tested companion implementations in
-    individual handlers rather than duplicating template logic.
+    TASK 1 FIX: Ensure companion outputs use the same schema construction
+    as API mode, wrapping handler responses in complete Metacontext schema.
     """
     try:
         if verbose:
             logger.info("🤖 Delegating to handler companion mode...")
 
-        if hasattr(handler, "generate_context"):
-            # Delegate to handler's existing companion implementation
-            # The handler will detect ai_companion and switch to companion mode
-            companion_response = handler.generate_context(
-                file_path=file_path,
-                data_object=data_object,
-                ai_companion=ai_companion,
+        if not hasattr(handler, "generate_context"):
+            # Fallback if handler doesn't support generate_context
+            return {
+                "error": "Handler does not support generate_context",
+                "handler_type": handler.__class__.__name__,
+            }
+
+        # Delegate to handler's existing companion implementation
+        # The handler will detect ai_companion and switch to companion mode
+        file_specific_context = handler.generate_context(
+            file_path=file_path,
+            data_object=data_object,
+            ai_companion=ai_companion,
+        )
+
+        if verbose:
+            logger.info("✅ Handler companion analysis complete")
+
+        # TASK 1 FIX: Use same schema builder as API mode
+        # Create the base metacontext schema with core fields
+        base_context = create_base_metacontext(
+            filename=file_path.name,
+            file_purpose="Generated file with two-tier architecture",
+            project_context_summary=f"Analysis with {handler.__class__.__name__}",
+        )
+
+        # Add companion-specific generation info
+        base_context.generation_info.generation_method = "explicit_function"
+        base_context.generation_info.function_call = "metacontext.metacontextualize()"
+
+        # Add handler-specific context to base schema (same as API mode)
+        for key, value in file_specific_context.items():
+            if hasattr(base_context, key):
+                setattr(base_context, key, value)
+
+        # Set confidence assessment
+        overall_conf = _assess_overall_confidence(
+            file_specific_context,
+            has_llm=True,  # Companion is considered an LLM mode
+        )
+        base_context.confidence_assessment = ConfidenceAssessment(
+            overall=ConfidenceLevel(overall_conf),
+        )
+
+        if verbose:
+            logger.info("✅ Companion context wrapped in complete schema")
+
+        # Return in same format as API mode with custom serialization for geometry objects
+        try:
+            return base_context.model_dump(
+                mode="json",
+                by_alias=True,
+                exclude_none=True,
+                serialize_as_any=True,  # Allow custom serialization
             )
-
-            if verbose:
-                logger.info("✅ Handler companion analysis complete")
-
-            return companion_response
-
-        # Fallback if handler doesn't support generate_context
-        return {
-            "error": "Handler does not support generate_context",
-            "handler_type": handler.__class__.__name__,
-        }
+        except Exception as serialization_error:
+            logger.warning(
+                "❌ Serialization failed, attempting with fallback: %s",
+                str(serialization_error),
+            )
+            # Fallback: Convert problematic objects to strings
+            return base_context.model_dump(
+                mode="json",
+                by_alias=True,
+                exclude_none=True,
+                serialize_as_any=True,
+                fallback=str,  # Convert non-serializable objects to strings
+            )
 
     except Exception:
         logger.exception("❌ Handler companion workflow failed")
@@ -565,7 +613,12 @@ def _generate_context(
             if ai_companion is not None:
                 if verbose:
                     logger.info("🤖 Routing to companion workflow...")
-                # Route to companion workflow instead of traditional LLM analysis
+
+                # TASK 3 FIX: Provide codebase context to companion mode
+                if codebase_context:
+                    ai_companion.codebase_context = codebase_context
+
+                # Route to companion workflow with the existing ai_companion
                 return _generate_companion_context(
                     file_path=file_path,
                     data_object=data_object,
@@ -573,7 +626,7 @@ def _generate_context(
                     ai_companion=ai_companion,
                     verbose=verbose,
                 )
-            
+
             if verbose:
                 logger.info("🔍 Analyzing file content...")
             context_start = time.time()
@@ -647,7 +700,9 @@ def _generate_context(
             )
 
             logger.info("✅ Two-tier context generation complete")
-            return base_context.model_dump(mode="json", by_alias=True, exclude_none=True)
+            return base_context.model_dump(
+                mode="json", by_alias=True, exclude_none=True
+            )
 
         except Exception:
             logger.exception("❌ API analysis failed")

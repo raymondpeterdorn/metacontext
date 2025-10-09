@@ -6,12 +6,45 @@ and custom metacontext formats.
 
 import json
 import logging
+from enum import Enum
 from pathlib import Path
 from typing import Any
 
 import yaml
+from pydantic import BaseModel
+
+from metacontext.schemas.core.interfaces import ConfidenceLevel
 
 logger = logging.getLogger(__name__)
+
+
+def _enum_representer(dumper: yaml.SafeDumper, data: Enum) -> yaml.ScalarNode:
+    """YAML representer for Enum objects."""
+    return dumper.represent_scalar("tag:yaml.org,2002:str", data.value)
+
+
+def _pydantic_representer(dumper: yaml.SafeDumper, data: BaseModel) -> yaml.MappingNode:
+    """YAML representer for Pydantic models."""
+    return dumper.represent_mapping("tag:yaml.org,2002:map", data.model_dump())
+
+
+# Register custom YAML representers
+yaml.add_representer(ConfidenceLevel, _enum_representer)
+yaml.add_multi_representer(Enum, _enum_representer)
+yaml.add_multi_representer(BaseModel, _pydantic_representer)
+
+
+def _convert_enums_to_values(data: object) -> object:
+    """Recursively convert Enum objects to their values."""
+    if isinstance(data, Enum):
+        return data.value
+    if isinstance(data, dict):
+        return {key: _convert_enums_to_values(value) for key, value in data.items()}
+    if isinstance(data, list):
+        return [_convert_enums_to_values(item) for item in data]
+    if isinstance(data, BaseModel):
+        return _convert_enums_to_values(data.model_dump())
+    return data
 
 
 def write_yaml(data: dict[str, Any], output_path: Path) -> None:
@@ -22,9 +55,12 @@ def write_yaml(data: dict[str, Any], output_path: Path) -> None:
         output_path: Path to write the YAML file
 
     """
+    # Convert enums to their values to avoid serialization issues
+    converted_data = _convert_enums_to_values(data)
+
     with output_path.open("w", encoding="utf-8") as f:
         yaml.safe_dump(
-            data,
+            converted_data,
             f,
             default_flow_style=False,
             sort_keys=False,

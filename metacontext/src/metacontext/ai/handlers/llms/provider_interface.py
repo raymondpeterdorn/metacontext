@@ -13,6 +13,7 @@ from typing import Any, ClassVar, Protocol
 from pydantic import BaseModel
 
 from metacontext.ai.handlers.core.exceptions import LLMError
+from metacontext.ai.prompts.schema_utils import compact_schema_hint
 
 logger = logging.getLogger(__name__)
 
@@ -56,6 +57,15 @@ class LLMProvider(Protocol):
 
     def get_provider_info(self) -> dict[str, Any]:
         """Get information about the current provider configuration."""
+        ...
+
+    def is_companion_mode(self) -> bool:
+        """Return True if this provider uses companion workflow, False for API workflow."""
+        ...
+
+    @property
+    def execution_mode(self) -> str:
+        """Return 'api' or 'companion' to indicate execution mode."""
         ...
 
 
@@ -139,6 +149,79 @@ INSTRUCTIONS:
 7. For model analysis, include detailed assessments of model capabilities, limitations, and suggested uses
 8. Return ONLY valid JSON - no markdown formatting or additional text
 """
+
+    def is_companion_mode(self) -> bool:
+        """Return True if this provider uses companion workflow, False for API workflow.
+
+        Default implementation returns False (API mode). Companion providers should override
+        this method to return True.
+        """
+        return False
+
+    @property
+    def execution_mode(self) -> str:
+        """Return 'api' or 'companion' to indicate execution mode.
+
+        This property is derived from is_companion_mode() and provides a string
+        representation of the execution mode for logging and debugging.
+        """
+        return "companion" if self.is_companion_mode() else "api"
+
+    def _build_optimized_prompt(
+        self,
+        schema_class: type[BaseModel],
+        context_data: dict[str, Any],
+        instruction: str,
+    ) -> str:
+        """Build optimized prompt using existing generation logic.
+
+        This method extracts the prompt building logic to make it reusable
+        by both API and companion modes. It delegates to the existing
+        generate_schema_prompt method to preserve current behavior.
+
+        Args:
+            schema_class: Pydantic model class for response validation
+            context_data: Context data to include in prompt
+            instruction: Instruction text for the LLM
+
+        Returns:
+            Complete optimized prompt ready for LLM consumption
+
+        """
+        # Use existing schema prompt generation to preserve current behavior
+        # Subclasses can override this method to use more sophisticated logic
+        return self.generate_schema_prompt(schema_class, context_data, instruction)
+
+    def _generate_schema_hint(self, schema_class: type[BaseModel]) -> str:
+        """Generate compact schema hint for prompt optimization.
+
+        This method creates a compact representation of the schema that can be
+        used in prompt optimization strategies, using 80% fewer tokens than
+        full JSON schemas.
+
+        Args:
+            schema_class: Pydantic model class
+
+        Returns:
+            Compact schema hint optimized for token efficiency
+
+        """
+        return compact_schema_hint(schema_class)
+
+    def _preprocess_context(self, context_data: dict[str, Any]) -> dict[str, Any]:
+        """Preprocess context data for prompt optimization.
+
+        This method provides a hook for context preprocessing that can be
+        overridden by specific providers or companion implementations.
+
+        Args:
+            context_data: Raw context data
+
+        Returns:
+            Processed context data ready for prompt generation
+
+        """
+        return context_data  # Default: no preprocessing
 
 
 def parse_json_response(response: str) -> dict[str, Any]:

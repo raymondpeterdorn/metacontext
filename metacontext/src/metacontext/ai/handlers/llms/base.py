@@ -87,7 +87,13 @@ class SimplifiedLLMProvider(AbstractLLMProvider):
             # Get default retries from central configuration
             max_retries = get_config().llm.max_retries
 
-        prompt = self.generate_schema_prompt(schema_class, context_data, instruction)
+        # Preprocess context data using new helper method
+        processed_context = self._preprocess_context(context_data)
+
+        # Build optimized prompt using new helper method
+        prompt = self._build_optimized_prompt(
+            schema_class, processed_context, instruction
+        )
 
         # DEBUG: Log the COMPLETE prompt being sent to LLM
         separator = "=" * 80

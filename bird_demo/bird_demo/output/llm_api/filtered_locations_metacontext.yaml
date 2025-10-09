@@ -1,0 +1,229 @@
+metacontext_version: 0.3.0
+generation_info:
+  generated_at: '2025-10-08T22:54:13.866573Z'
+  generation_method: explicit_function
+  function_call: metacontext.metacontextualize()
+  token_usage:
+    total_tokens: 12659
+    prompt_tokens: 11167
+    completion_tokens: 6573
+    total_api_calls: 4
+    provider: gemini
+    model: gemini-2.5-flash
+file_info:
+  filename: filtered_locations.gpkg
+  extension: .gpkg
+  file_purpose: Generated file with two-tier architecture
+  project_context_summary: Analysis with CSVHandler
+  creation_timestamp: '2025-10-08T22:54:13.866806Z'
+system_info:
+  working_directory: /Users/bigdawg/Documents/repos/metacontext/bird_demo
+confidence_assessment:
+  overall: MEDIUM
+data_structure:
+  deterministic_metadata:
+    type: pandas_dataframe
+    shape:
+    - 200
+    - 16
+    memory_usage_bytes: 123229
+  ai_enrichment:
+    domain_analysis: ''
+    data_quality_assessment: unknown
+    column_interpretations:
+      species_name:
+        deterministic: {}
+        ai_enrichment:
+          semantic_meaning: The scientific name of the observed bird species.
+          data_quality_assessment: ''
+          domain_context: Core identifier for biological classification and ecological
+            studies.
+          relationship_to_other_columns:
+          - taxonomic_order
+          - closest_relatives
+          - diet_types
+          - nocturnal_diurnal
+          - weight_g
+          - asdawas
+      taxonomic_order:
+        deterministic: {}
+        ai_enrichment:
+          semantic_meaning: The taxonomic order to which the observed bird species
+            belongs.
+          data_quality_assessment: ''
+          domain_context: Provides a higher-level biological classification for the
+            species.
+          relationship_to_other_columns:
+          - species_name
+      asdawas:
+        deterministic: {}
+        ai_enrichment:
+          semantic_meaning: Wing Length. This column represents the measured length
+            of the bird's wing, likely in centimeters or millimeters, given the sample
+            values.
+          data_quality_assessment: ''
+          domain_context: A key morphological measurement used in ornithology for
+            species identification, age determination, and ecological studies related
+            to flight and habitat.
+          relationship_to_other_columns:
+          - species_name
+          - weight_g
+      weight_g:
+        deterministic: {}
+        ai_enrichment:
+          semantic_meaning: The weight of the observed bird in grams.
+          data_quality_assessment: ''
+          domain_context: A fundamental biometric measurement, crucial for understanding
+            bird health, energy requirements, and ecological roles.
+          relationship_to_other_columns:
+          - species_name
+          - asdawas
+      nocturnal_diurnal:
+        deterministic: {}
+        ai_enrichment:
+          semantic_meaning: Indicates whether the bird species is primarily active
+            during the day (Diurnal) or night (Nocturnal).
+          data_quality_assessment: ''
+          domain_context: Describes the activity pattern of the species, influencing
+            habitat use, foraging behavior, and predator-prey dynamics.
+          relationship_to_other_columns:
+          - species_name
+          - observation_time
+      brrrrkk:
+        deterministic: {}
+        ai_enrichment:
+          semantic_meaning: The date of the bird observation, formatted as 'YYYY-MM-DD'.
+          data_quality_assessment: ''
+          domain_context: Crucial for temporal analysis, tracking seasonal patterns,
+            migration, and long-term population trends.
+          relationship_to_other_columns:
+          - observation_time
+          - latitude
+          - longitude
+          - weather_condition
+          - temperature_c
+      diet_types:
+        deterministic: {}
+        ai_enrichment:
+          semantic_meaning: 'A dictionary (represented as a string) detailing the
+            proportional composition of the bird''s diet, e.g., {''food_type'': proportion}.'
+          data_quality_assessment: ''
+          domain_context: Essential for understanding the trophic level, ecological
+            role, and resource dependencies of the species.
+          relationship_to_other_columns:
+          - species_name
+          - habitat_type
+      closest_relatives:
+        deterministic: {}
+        ai_enrichment:
+          semantic_meaning: A list (represented as a string) of scientific names of
+            species considered to be the closest relatives of the observed bird.
+          data_quality_assessment: ''
+          domain_context: Provides phylogenetic context, useful for comparative biology,
+            evolutionary studies, and understanding shared traits or ecological niches.
+          relationship_to_other_columns:
+          - species_name
+          - taxonomic_order
+      latitude:
+        deterministic: {}
+        ai_enrichment:
+          semantic_meaning: The geographic latitude of the observation location in
+            decimal degrees.
+          data_quality_assessment: ''
+          domain_context: Fundamental for spatial analysis, mapping bird distributions,
+            and correlating observations with geographic features.
+          relationship_to_other_columns:
+          - longitude
+          - geometry
+          - altitude_m
+          - habitat_type
+          - weather_condition
+          - temperature_c
+      longitude:
+        deterministic: {}
+        ai_enrichment:
+          semantic_meaning: The geographic longitude of the observation location in
+            decimal degrees.
+          data_quality_assessment: ''
+          domain_context: Fundamental for spatial analysis, mapping bird distributions,
+            and correlating observations with geographic features.
+          relationship_to_other_columns:
+          - latitude
+          - geometry
+          - altitude_m
+          - habitat_type
+          - weather_condition
+          - temperature_c
+      altitude_m:
+        deterministic: {}
+        ai_enrichment:
+          semantic_meaning: The altitude or elevation of the observation location
+            in meters above sea level.
+          data_quality_assessment: ''
+          domain_context: Provides vertical spatial context, important for understanding
+            habitat preferences and species distribution across different elevations.
+          relationship_to_other_columns:
+          - latitude
+          - longitude
+          - habitat_type
+      habitat_type:
+        deterministic: {}
+        ai_enrichment:
+          semantic_meaning: The type of habitat where the bird observation occurred.
+          data_quality_assessment: ''
+          domain_context: Crucial for understanding species-habitat relationships,
+            ecological niches, and conservation planning.
+          relationship_to_other_columns:
+          - species_name
+          - latitude
+          - longitude
+          - altitude_m
+          - diet_types
+      weather_condition:
+        deterministic: {}
+        ai_enrichment:
+          semantic_meaning: The prevailing weather conditions at the time of observation.
+          data_quality_assessment: ''
+          domain_context: Environmental factor that can influence bird behavior, activity
+            levels, and detectability.
+          relationship_to_other_columns:
+          - brrrrkk
+          - observation_time
+          - temperature_c
+      temperature_c:
+        deterministic: {}
+        ai_enrichment:
+          semantic_meaning: The ambient air temperature at the observation location,
+            measured in degrees Celsius.
+          data_quality_assessment: ''
+          domain_context: An important environmental variable influencing bird physiology,
+            behavior, and habitat selection.
+          relationship_to_other_columns:
+          - brrrrkk
+          - weather_condition
+          - habitat_type
+      observation_time:
+        deterministic: {}
+        ai_enrichment:
+          semantic_meaning: The time of day when the bird observation was recorded,
+            in HH:MM format.
+          data_quality_assessment: ''
+          domain_context: Crucial for understanding daily activity patterns, foraging
+            times, and correlating with 'nocturnal_diurnal' behavior.
+          relationship_to_other_columns:
+          - brrrrkk
+          - nocturnal_diurnal
+      geometry:
+        deterministic: {}
+        ai_enrichment:
+          semantic_meaning: Geospatial point data representing the exact location
+            (latitude and longitude) of the bird observation.
+          data_quality_assessment: ''
+          domain_context: The primary spatial attribute, enabling direct mapping and
+            advanced geospatial analysis of bird distributions.
+          relationship_to_other_columns:
+          - latitude
+          - longitude
+          - habitat_type
+          - altitude_m
+    business_value_assessment: ''

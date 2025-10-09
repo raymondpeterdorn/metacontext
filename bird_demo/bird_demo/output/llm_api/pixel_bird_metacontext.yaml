@@ -1,0 +1,56 @@
+metacontext_version: 0.3.0
+generation_info:
+  generated_at: '2025-10-08T22:55:17.256796Z'
+  generation_method: explicit_function
+  function_call: metacontext.metacontextualize()
+  token_usage:
+    total_tokens: 3500
+    prompt_tokens: 2009
+    completion_tokens: 350
+    total_api_calls: 2
+    provider: gemini
+    model: gemini-2.5-flash
+file_info:
+  filename: pixel_bird.png
+  extension: .png
+  file_purpose: Generated file with two-tier architecture
+  project_context_summary: Analysis with MediaHandler
+  creation_timestamp: '2025-10-08T22:55:17.256928Z'
+system_info:
+  working_directory: /Users/bigdawg/Documents/repos/metacontext/bird_demo
+confidence_assessment:
+  overall: HIGH
+media_context:
+  deterministic_metadata:
+    media_type: image
+    file_size_bytes: 146
+    media_info:
+      dimensions:
+      - 20
+      - 20
+      color_space: RGB
+  ai_enrichment:
+    ai_interpretation: This image is a small, 20x20 pixel art representation of a
+      bird, likely intended for digital graphics or game assets.
+    ai_confidence: HIGH
+    ai_domain_context: Digital Art & Game Development; characterized by low resolution,
+      pixelated aesthetic, and minimal file size.
+    usage_guidance: Use as a game sprite for retro-style games or as a small icon/favicon
+      for web interfaces.
+    hidden_meaning: The extremely small size and pixelated style suggest intentional
+      design for resource efficiency or a specific retro aesthetic.
+    content_description: A 20x20 pixel art image depicting a bird, characterized by
+      its blocky, low-resolution visual style.
+    quality_assessment: Technical quality is high for its intended pixel art style;
+      no compression artifacts or defects beyond inherent pixelation.
+    technical_analysis: PNG format, 20x20 pixels, RGB color space. File size 146 bytes
+      indicates highly efficient lossless compression for simple pixel graphics.
+    use_case_recommendations:
+    - Game sprite for 2D pixel art games
+    - Web favicon or small UI icon
+    - Educational material for pixel art design
+    applications:
+    - Game Development
+    - Web Design
+    - Digital Art
+    - UI/UX Design
