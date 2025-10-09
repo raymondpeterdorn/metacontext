@@ -50,6 +50,8 @@ Metacontext automatically generates rich, contextual metadata for any data file 
 - **Two-Tier Architecture**: Clear separation between facts and AI insights
 - **Universal File Support**: Works with tabular data, ML models, geospatial data, and more
 - **Semantic Codebase Analysis**: Revolutionary system that extracts business context from code comments, docstrings, and Pydantic schemas
+- **AI Companion Integration**: Works with IDE-integrated tools like GitHub Copilot alongside traditional API providers
+- **Handler Composition System**: Extensible architecture that combines base handlers with applicable extensions
 - **Confidence Indicators**: Know how reliable each AI-generated insight is
 - **Open Standards**: Uses open YAML format for interoperability
 
@@ -96,7 +98,17 @@ Metacontext automatically generates rich, contextual metadata for any data file 
    - 6-phase analysis system with knowledge graph construction
    - Multi-format output optimization for different AI contexts
 
-4. **Customizable Schemas**
+4. **AI Companion Integration** ✅ **IMPLEMENTED**
+   - GitHub Copilot integration with unified architecture
+   - Template adaptation system for IDE consumption
+   - Cross-platform support with graceful fallback
+
+5. **Handler Composition System** ✅ **IMPLEMENTED**
+   - Extensible architecture combining base handlers with extensions
+   - GeospatialExtension for spatial metadata enhancement
+   - Dynamic extension discovery and application
+
+6. **Customizable Schemas**
    - Allow users to define custom metadata schemas
    - Support industry-specific metadata standards
 
