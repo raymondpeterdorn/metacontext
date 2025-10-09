@@ -1,0 +1,59 @@
+metacontext_version: 0.3.0
+generation_info:
+  generated_at: '2025-10-09T21:22:37.349916Z'
+  generation_method: explicit_function
+  function_call: metacontext.metacontextualize()
+  token_usage:
+    total_tokens: 3187
+    prompt_tokens: 2009
+    completion_tokens: 380
+    total_api_calls: 2
+    provider: gemini
+    model: gemini-2.5-flash
+file_info:
+  filename: media_png.png
+  extension: .png
+  file_purpose: Generated file with two-tier architecture
+  project_context_summary: Analysis with MediaHandler
+  creation_timestamp: '2025-10-09T21:22:37.349975Z'
+file_context:
+  file_summary: A .png file containing data analysis and metadata context
+  creation_method: automatic_generation
+  intended_use: data_analysis_and_context
+system_info:
+  working_directory: /Users/bigdawg/Documents/repos/metacontext/bird_demo
+confidence_assessment:
+  overall: HIGH
+media_context:
+  deterministic_metadata:
+    media_type: image
+    file_size_bytes: 146
+    media_info:
+      dimensions:
+      - 20
+      - 20
+      color_space: RGB
+  ai_enrichment:
+    ai_interpretation: This image is a very small, low-resolution PNG file, likely
+      intended for use as an icon, placeholder, or test asset.
+    ai_confidence: HIGH
+    ai_domain_context: Digital media; characterized by extremely small image assets,
+      typically used for UI elements or internal system functions.
+    usage_guidance: Suitable for UI icons, small graphic elements, or as a lightweight
+      placeholder image during development. Avoid scaling due to low resolution.
+    hidden_meaning: Its minimal dimensions and file size suggest it's either a functional
+      UI element or a generic test asset, not content-rich media.
+    content_description: A tiny 20x20 pixel image in PNG format, likely a simple graphic
+      or placeholder due to its minimal size.
+    quality_assessment: Technically lossless PNG. Resolution is extremely low (20x20
+      pixels), which is a characteristic, not a defect, for its likely purpose.
+    technical_analysis: PNG format, 20x20 pixels, RGB color space, 146 bytes file
+      size. This indicates a highly optimized or minimal graphic asset.
+    use_case_recommendations:
+    - UI icons
+    - Placeholder images
+    - Unit testing assets for image processing
+    applications:
+    - Web development (favicons, small buttons)
+    - Mobile app development (app icons, small UI elements)
+    - Software testing (dummy image data)

@@ -91,12 +91,6 @@ class CodebaseScanner:
             ".gitignore",
         }
 
-        logger.info("🔍 DEBUG: Collecting file inventory from: %s", self.cwd)
-        logger.info(
-            "🔍 DEBUG: Excluding dependency/cache directories: %s",
-            excluded_dirs,
-        )
-
         # Single directory traversal - only include user project files
         for file_path in self.cwd.rglob("*"):
             if not file_path.is_file() or file_path == data_file:
@@ -111,10 +105,6 @@ class CodebaseScanner:
             suffix = file_path.suffix.lower()
             if suffix in self.code_extensions:
                 inventory["code_files"].append(file_path)
-                logger.info(
-                    "🔍 DEBUG: Found code file: %s",
-                    file_path.relative_to(self.cwd),
-                )
             elif suffix in self.doc_extensions:
                 inventory["doc_files"].append(file_path)
             elif suffix in self.config_extensions:
@@ -130,13 +120,6 @@ class CodebaseScanner:
                 ".tsv",
             }:
                 inventory["data_files"].append(file_path)
-
-        logger.info("🔍 DEBUG: File inventory summary:")
-        logger.info("   Code files: %d", len(inventory["code_files"]))
-        logger.info("   Doc files: %d", len(inventory["doc_files"]))
-        logger.info("   Config files: %d", len(inventory["config_files"]))
-        logger.info("   Data files: %d", len(inventory["data_files"]))
-        logger.info("   Total files: %d", len(inventory["all_files"]))
 
         return inventory
 
@@ -435,21 +418,8 @@ class CodebaseScanner:
                 "message": "No Python files found for semantic analysis",
             }
 
-        # Debug logging to see what we're working with
-        logger.info(
-            "🔍 DEBUG: Found %d Python files for semantic analysis",
-            len(python_files),
-        )
-        for f in python_files[:5]:  # Show first 5
-            logger.info("🔍 DEBUG: Python file: %s", f.relative_to(self.cwd))
-
-        logger.info("🔍 DEBUG: Aggregated code length: %d characters", len(all_code))
-        logger.info("🔍 DEBUG: First 500 chars of aggregated code:")
-        logger.info("🔍 DEBUG: %s", all_code[:500])
-
         # Extract semantic patterns from aggregated content
         semantic_patterns = self._extract_semantic_patterns_from_code(all_code)
-        logger.info("🔍 DEBUG: Semantic patterns result: %s", semantic_patterns)
 
         if semantic_patterns:
             return {
@@ -712,13 +682,6 @@ class CodebaseScanner:
             "scan_depth": self._get_scan_depth(),
             "timing": timing_log,  # Add timing info to summary
         }
-
-        # Log timing information for slow operations
-        if total_scan_time > 1.0:  # Only log if scan takes more than 1 second
-            logger.info("🔍 CODEBASE SCAN TIMING:")
-            for operation, duration in timing_log.items():
-                if duration > 0.1:  # Only show operations that take > 100ms
-                    logger.info("   %s: %.3fs", operation, duration)
 
         return context
 
@@ -1355,7 +1318,6 @@ class CodebaseScanner:
 
     def _extract_semantic_knowledge(self) -> dict[str, Any]:
         """Extract semantic knowledge using our comprehensive analysis system."""
-        logger.info("🔍 DEBUG: Starting semantic knowledge extraction")
         try:
             # Import here to avoid circular imports
             from metacontext.ai.prompts.context_preprocessor import (
@@ -1370,29 +1332,13 @@ class CodebaseScanner:
                         with file_path.open(encoding="utf-8") as f:
                             relative_path = str(file_path.relative_to(self.cwd))
                             files_content[relative_path] = f.read()
-                            logger.info(
-                                "🔍 DEBUG: Added file for semantic analysis: %s",
-                                relative_path,
-                            )
                     except (UnicodeDecodeError, OSError) as e:
                         logger.warning("Could not read file %s: %s", file_path, e)
                         continue
 
-            logger.info(
-                "🔍 DEBUG: Found %d Python files for semantic analysis",
-                len(files_content),
-            )
-
             # Run semantic analysis if we have files
             if files_content:
-                logger.info("🔍 DEBUG: Running semantic knowledge extraction on files")
-                result = build_semantic_knowledge_graph(files_content)
-                logger.info(
-                    "🔍 DEBUG: Semantic knowledge result: %s",
-                    str(result)[:200] + "...",
-                )
-                return result
-            logger.info("🔍 DEBUG: No Python files found for semantic analysis")
+                return build_semantic_knowledge_graph(files_content)
             return {
                 "semantic_knowledge": None,
                 "message": "No Python files found for semantic analysis",

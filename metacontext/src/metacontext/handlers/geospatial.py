@@ -477,8 +477,6 @@ class GeospatialHandler(BaseFileHandler):
         except Exception as e:
             logger.debug("Could not add media analysis: %s", e)
         
-        # Debug: Log what we're returning
-        logger.info("Raster context result keys: %s", list(result.keys()))
         return result
 
     def _generate_vector_context(
@@ -589,8 +587,6 @@ class GeospatialHandler(BaseFileHandler):
                         
                 # Set basic format info
                 metadata.format = "TIFF" if file_path.suffix.lower() in {".tif", ".tiff"} else "unknown"
-                
-                logger.info("Raster analysis completed using worldfile fallback")
                 
             except Exception as e:
                 logger.debug("Worldfile fallback failed: %s", e)
@@ -1067,11 +1063,6 @@ PRIORITY: Focus on extracting maximum spatial context even when technical metada
         ai_companion: object,
     ) -> dict[str, Any]:
         """Generate fallback raster context when companion fails."""
-        logger.info(
-            "Using %s companion for raster analysis of %s",
-            ai_companion.companion_type,
-            file_path.name,
-        )
 
         # Return deterministic data with companion marker
         return {
@@ -1181,11 +1172,6 @@ PRIORITY: Focus on extracting maximum spatial context even when technical metada
         ai_companion: object,
     ) -> dict[str, Any]:
         """Generate fallback vector context when companion fails."""
-        logger.info(
-            "Using %s companion for vector analysis of %s",
-            ai_companion.companion_type,
-            file_path.name,
-        )
 
         # Return deterministic data with companion marker
         return {

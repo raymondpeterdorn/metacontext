@@ -1,0 +1,91 @@
+metacontext_version: 0.3.0
+generation_info:
+  generated_at: '2025-10-09T20:53:50.739335Z'
+  generation_method: explicit_function
+  function_call: metacontext.metacontextualize()
+  token_usage:
+    total_tokens: 5981
+    prompt_tokens: 3406
+    completion_tokens: 646
+    total_api_calls: 2
+    provider: gemini
+    model: gemini-2.5-flash
+file_info:
+  filename: model_pkl.pkl
+  extension: .pkl
+  file_purpose: Generated file with two-tier architecture
+  project_context_summary: Analysis with ModelHandler
+  creation_timestamp: '2025-10-09T20:53:50.739517Z'
+file_context:
+  file_summary: A .pkl file containing data analysis and metadata context
+  creation_method: automatic_generation
+  intended_use: data_analysis_and_context
+system_info:
+  working_directory: /Users/bigdawg/Documents/repos/metacontext/bird_demo
+confidence_assessment:
+  overall: HIGH
+model_context:
+  deterministic_metadata:
+    framework: scikit-learn
+    model_type: RandomForestClassifier
+    hyperparameters:
+      bootstrap: true
+      ccp_alpha: 0.0
+      criterion: gini
+      max_features: sqrt
+      min_impurity_decrease: 0.0
+      min_samples_leaf: 1
+      min_samples_split: 2
+      min_weight_fraction_leaf: 0.0
+      n_estimators: 10
+      oob_score: false
+      random_state: 42
+      verbose: 0
+      warm_start: false
+    input_shape:
+    - 3
+    output_shape:
+    - 5
+    model_size_bytes: 10824
+    training_features:
+    - observation_month
+    - location_type
+    target_variable: species_name
+    input_feature_count: 3
+  ai_enrichment:
+    ai_interpretation: This model is a scikit-learn RandomForestClassifier designed
+      for bird species classification based on limited observational features.
+    ai_confidence: HIGH
+    ai_domain_context: 'Ecology/Biology: Bird species identification, likely for environmental
+      monitoring or biodiversity studies.'
+    usage_guidance: Predict bird species from environmental observations. Useful for
+      ecological surveys or automated wildlife monitoring.
+    hidden_meaning: The small `n_estimators=10` suggests a focus on computational
+      efficiency or smaller datasets, potentially sacrificing some accuracy.
+    suspicious_patterns:
+    - '`model_version` and `output_classes` are null, hindering traceability. Mismatch:
+      `input_feature_count` (3) vs. `training_features` (2).'
+    cross_references: {}
+    model_type_analysis: Scikit-learn RandomForestClassifier, an ensemble of 10 decision
+      trees. Uses Gini impurity for splits and 'sqrt' max_features.
+    purpose: To accurately classify bird species (`species_name`) using limited input
+      features like observation month and location type.
+    training_approach: Ensemble learning via Bootstrap Aggregating (Bagging) with
+      10 decision trees. Splits use Gini criterion, `random_state=42`.
+    expected_inputs: '3 numerical features in a 1D array. Two identified: ''observation_month''
+      (int/float) and ''location_type'' (categorical/encoded).'
+    expected_outputs: A prediction for one of 5 possible output classes, representing
+      the `species_name`. Likely a class label or probability distribution.
+    limitations: Low `n_estimators` (10) may limit robustness. Only 3 input features
+      could lead to underfitting. Missing explicit output class labels.
+    ideal_use_cases: ''
+    data_requirements: ''
+    training_data:
+      features_used:
+      - observation_month
+      - location_type
+      target_variable: species_name
+      feature_descriptions:
+        observation_month: Month of observation (e.g., 1-12).
+        location_type: Categorical type of habitat or geographical location.
+      target_description: The specific bird species identified by the model.

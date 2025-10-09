@@ -21,7 +21,7 @@ DEFAULT_MODEL_CONFIG: dict[str, Any] = {
 
 
 def train_bird_classifier(
-    file_path: str | Path, config: dict[str, Any] | None = None,
+    file_path: str | Path
 ) -> RandomForestClassifier:
     """Train a Random Forest model to classify bird species.
 
@@ -41,18 +41,16 @@ def train_bird_classifier(
     df = pd.read_csv(file_path)
 
     # Basic Feature Engineering
-    df["observation_month"] = pd.to_datetime(df["observation_date"]).dt.month
-    df["location_type"] = "urban"
-    df.loc[
-        df["location_description"].str.contains("park|reserve|forest"), "location_type",
-    ] = "natural"
+    # Calculate is_nocturnal if it doesn't exist
+    if "nocturnal_diurnal" in df.columns and "is_nocturnal" not in df.columns:
+        df["is_nocturnal"] = (df["nocturnal_diurnal"] == "Nocturnal").astype(int)
 
-    # Prepare features and target
-    features = df[["observation_month", "location_type"]]
+    # Prepare features and target using available columns
+    features = df[["asdawas", "beak_length", "is_nocturnal"]]
     target = df["species_name"]
 
-    # Convert categorical features to numeric
-    features = pd.get_dummies(features, columns=["location_type"], drop_first=True)
+    # No need for get_dummies since all features are numeric
+    # Features are already in the right format
 
     # Encode target variable
     label_encoder = LabelEncoder()

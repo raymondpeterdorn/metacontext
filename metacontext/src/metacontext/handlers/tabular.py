@@ -216,7 +216,6 @@ class CSVHandler(BaseFileHandler):
                 hasattr(ai_companion, "codebase_context")
                 and ai_companion.codebase_context
             ):
-                logger.info("🔍 DEBUG: Codebase context found on ai_companion")
                 try:
                     # Check if we have semantic knowledge available
                     if (
@@ -227,9 +226,6 @@ class CSVHandler(BaseFileHandler):
                             "semantic_knowledge",
                         )
                     ):
-                        logger.info(
-                            "🔍 DEBUG: Found semantic knowledge in ai_enrichment",
-                        )
                         semantic_knowledge = ai_companion.codebase_context.ai_enrichment.semantic_knowledge
 
                         # Format semantic knowledge for AI analysis
@@ -237,21 +233,11 @@ class CSVHandler(BaseFileHandler):
                             semantic_knowledge,
                             "columns",
                         ):
-                            logger.info(
-                                "🔍 DEBUG: Semantic knowledge has %d columns",
-                                len(semantic_knowledge.columns),
-                            )
                             column_descriptions = []
                             for (
                                 col_name,
                                 col_info,
                             ) in semantic_knowledge.columns.items():
-                                logger.info(
-                                    "🔍 DEBUG: Column %s: pydantic='%s', definition='%s'",
-                                    col_name,
-                                    col_info.pydantic_description,
-                                    col_info.definition,
-                                )
                                 if col_info.pydantic_description:
                                     column_descriptions.append(
                                         f"- {col_name}: {col_info.pydantic_description}",
@@ -266,29 +252,15 @@ class CSVHandler(BaseFileHandler):
                                     "Extracted column meanings:\n"
                                     + "\n".join(column_descriptions)
                                 )
-                                logger.info(
-                                    "🔍 DEBUG: Formatted semantic knowledge: %s",
-                                    semantic_knowledge_text,
-                                )
                         elif (
                             semantic_knowledge
                             and isinstance(semantic_knowledge, dict)
                             and "columns" in semantic_knowledge
                         ):
-                            logger.info(
-                                "🔍 DEBUG: Semantic knowledge is dict with %d columns",
-                                len(semantic_knowledge["columns"]),
-                            )
                             column_descriptions = []
                             for col_name, col_info in semantic_knowledge[
                                 "columns"
                             ].items():
-                                logger.info(
-                                    "🔍 DEBUG: Dict column %s: pydantic='%s', definition='%s'",
-                                    col_name,
-                                    col_info.get("pydantic_description"),
-                                    col_info.get("definition"),
-                                )
                                 if col_info.get("pydantic_description"):
                                     column_descriptions.append(
                                         f"- {col_name}: {col_info['pydantic_description']}",
@@ -303,28 +275,11 @@ class CSVHandler(BaseFileHandler):
                                     "Extracted column meanings:\n"
                                     + "\n".join(column_descriptions)
                                 )
-                                logger.info(
-                                    "🔍 DEBUG: Formatted semantic knowledge: %s",
-                                    semantic_knowledge_text,
-                                )
-                        else:
-                            logger.info(
-                                "🔍 DEBUG: Semantic knowledge exists but has no columns or wrong format: %s",
-                                type(semantic_knowledge),
-                            )
-                    else:
-                        logger.info(
-                            "🔍 DEBUG: No semantic knowledge found in ai_enrichment",
-                        )
 
                     enhanced_context = {
                         **data_analysis,
                         "semantic_column_knowledge": semantic_knowledge_text,
                     }
-                    logger.info(
-                        "🔍 DEBUG: Enhanced context includes semantic_column_knowledge: %s...",
-                        semantic_knowledge_text[:200],
-                    )
                 except AttributeError as e:
                     # Fallback to basic analysis if semantic extraction fails
                     logger.warning("Could not extract semantic knowledge: %s", e)
@@ -357,23 +312,6 @@ class CSVHandler(BaseFileHandler):
             enhanced_context if "enhanced_context" in locals() else data_analysis
         )
         context["data_structure"] = self._create_data_structure(final_analysis)
-        
-        # Performance and validation logging for Tasks 2.6-2.8
-        total_time = time.time() - start_time
-        ai_time = time.time() - ai_start if 'ai_start' in locals() else 0.0
-        
-        logger.info("✅ TASK-2.7 TabularHandler.generate_context completed in %.3f seconds (det: %.3f, ai: %.3f)", 
-                   total_time, deterministic_time, ai_time)
-        
-        # Schema validation logging for Task 2.6
-        data_structure = context.get("data_structure", {})
-        if isinstance(data_structure, dict):
-            columns_count = len(data_structure.get("columns", {}))
-            logger.info("📊 TASK-2.6 Schema output: Generated data_structure with %d columns", columns_count)
-            
-            # Check for extension pattern context
-            if file_ext in [".gpkg", ".geojson", ".shp"]:
-                logger.info("🗺️ TASK-2.6 Extension pattern: Vector geospatial file processed by TabularHandler")
         
         return context
 
@@ -498,7 +436,6 @@ class CSVHandler(BaseFileHandler):
 
         # Bulk column analysis prompt - pass full data_analysis which includes semantic knowledge
         if data_analysis.get("columns"):
-            logger.info("🔍 Starting column analysis...")
             column_start = time.time()
             column_analysis = self._bulk_analyze_columns(
                 data_analysis,  # Pass full context including semantic knowledge
@@ -506,30 +443,16 @@ class CSVHandler(BaseFileHandler):
                 codebase_context,
                 llm_handler,
             )
-            column_time = time.time() - column_start
-            logger.info("🔍 Column analysis completed in %.2f seconds", column_time)
             ai_analysis["column_analysis"] = column_analysis
 
         # Schema interpretation prompt
-        logger.info("🔍 Starting schema analysis...")
-        schema_start = time.time()
         schema_interpretation = self._bulk_analyze_schema(
             data_analysis,
             file_path,
             codebase_context,
             llm_handler,
         )
-        schema_time = time.time() - schema_start
-        logger.info("🔍 Schema analysis completed in %.2f seconds", schema_time)
         ai_analysis["domain_summary"] = schema_interpretation
-
-        total_time = time.time() - start_time
-        logger.info(
-            "🔍 Total AI analysis time: %.2f seconds (column: %.2f, schema: %.2f)",
-            total_time,
-            column_time,
-            schema_time,
-        )
 
         return ai_analysis
 
@@ -570,35 +493,11 @@ class CSVHandler(BaseFileHandler):
                 template_context,
             )
 
-            # DEBUG: Print the complete prompt that gets sent to the LLM
-            logger.info("🔍 DEBUG: Complete template context being sent:")
-            logger.info(
-                "🔍 DEBUG: Template context keys: %s",
-                list(template_context.keys()),
-            )
-            if "semantic_column_knowledge" in template_context:
-                logger.info(
-                    "🔍 DEBUG: Semantic column knowledge in template context: %s",
-                    template_context["semantic_column_knowledge"],
-                )
-            else:
-                logger.info(
-                    "🔍 DEBUG: No semantic_column_knowledge found in template context",
-                )
-
-            logger.info("🔍 DEBUG: Complete rendered prompt being sent to LLM:")
-            logger.info("=" * 80)
-            logger.info("%s", rendered_prompt)
-            logger.info("=" * 80)
-
             # Call LLM using unified pipeline with proper schema
             ai_enrichment = llm_handler.generate_with_schema(
                 schema_class=DataAIEnrichment,
                 context_data={"rendered_prompt": rendered_prompt},
             )
-
-            logger.info("🔍 DEBUG: LLM response received and validated:")
-            logger.info("%s", ai_enrichment)
 
             # Extract column interpretations from the properly structured DataAIEnrichment
             result = {}
@@ -625,9 +524,6 @@ class CSVHandler(BaseFileHandler):
 
             # If we got column interpretations, that's our result
             if result:
-                logger.info(
-                    f"🔍 DEBUG: Extracted {len(result)} column analyses from DataAIEnrichment.column_interpretations"
-                )
                 return result
 
             # Fallback: check for legacy flat format
@@ -648,9 +544,6 @@ class CSVHandler(BaseFileHandler):
 
             # If we got direct column mappings in the response, that's our result
             if result:
-                logger.info(
-                    f"🔍 DEBUG: Extracted {len(result)} column analyses from flat response"
-                )
                 return result
 
             # Fallback to empty result

@@ -89,16 +89,6 @@ class HandlerRegistry:
                     
                     # Enhanced logging for Tasks 2.6-2.8
                     file_ext = file_path.suffix.lower()
-                    logger.info("🎯 TASK-2.8 Handler Selection: %s selected for %s (ext: %s)", 
-                               handler_class.__name__, file_path.name, file_ext)
-                    
-                    # Log extension pattern validation
-                    if handler_class.__name__ == "CSVHandler" and file_ext in [".gpkg", ".geojson", ".shp"]:
-                        logger.info("✅ TASK-2.6 Extension Pattern: Vector geospatial file routed to TabularHandler")
-                    elif handler_class.__name__ == "MediaHandler" and file_ext in [".tif", ".tiff"]:
-                        logger.info("✅ TASK-2.6 Extension Pattern: Raster geospatial file routed to MediaHandler") 
-                    elif handler_class.__name__ == "GeospatialHandler" and file_ext in [".kml", ".kmz"]:
-                        logger.info("✅ TASK-2.6 Extension Pattern: Pure geospatial file routed to GeospatialHandler")
                     
                     return cast("HandlerProtocol", handler)
             except (AttributeError, TypeError, ValueError) as e:
@@ -173,8 +163,6 @@ class HandlerRegistry:
         
         # Step 1: Get base handler results
         try:
-            logger.info("🔄 TASK-2.5 Composition: Starting base handler analysis with %s", 
-                      base_handler.__class__.__name__)
             
             # Call base handler's generate_context method
             base_context = base_handler.generate_context(
@@ -192,7 +180,6 @@ class HandlerRegistry:
         # Step 2: Get and apply extensions
         extensions = cls.get_applicable_extensions(file_path, data_object)
         if extensions:
-            logger.info("🔄 TASK-2.5 Composition: Found %d applicable extensions", len(extensions))
             
             for extension in extensions:
                 try:
@@ -210,8 +197,6 @@ class HandlerRegistry:
                         # Add extension data to result
                         result[extension_key] = extension_data
                         
-                        logger.info("✅ TASK-2.5 Composition: Successfully applied %s",
-                                  extension.__class__.__name__)
                     else:
                         logger.warning("No data extracted by %s extension", 
                                      extension.__class__.__name__)

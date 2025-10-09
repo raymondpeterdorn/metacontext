@@ -261,10 +261,6 @@ class ModelHandler(BaseFileHandler):
                 try:
                     params = actual_model.get_params()
                     hyperparameters = {k: v for k, v in params.items() if v is not None}
-                    logger.info(
-                        "   ⚙️  Extracted %s hyperparameters",
-                        len(hyperparameters),
-                    )
                 except AttributeError:
                     logger.warning("   ⚠️  Could not extract hyperparameters")
 
@@ -276,10 +272,6 @@ class ModelHandler(BaseFileHandler):
                 input_shape = [actual_model.n_features_in_]
             if hasattr(actual_model, "classes_"):
                 output_shape = [len(actual_model.classes_)]
-
-            logger.info("   📊 Model type: %s", model_type)
-            logger.info("   🏗️  Framework: %s", framework)
-            logger.info("   💾 File size: %s bytes", f"{model_size_bytes:,}")
 
             return ModelDeterministicMetadata(
                 framework=framework,
@@ -532,8 +524,6 @@ class ModelHandler(BaseFileHandler):
             logger.info("🤖 No LLM available - skipping AI enrichment")
             return None
 
-        logger.info("🤖 Generating AI enrichment through schema-first analysis...")
-
         # Discover and analyze training scripts
         training_scripts = self._discover_training_scripts(model_path)
 
@@ -579,20 +569,6 @@ class ModelHandler(BaseFileHandler):
                 context_data=context_data,
                 instruction=instruction,
             )
-
-            # Debug: print the generated AI enrichment
-            if ai_enrichment:
-                logger.info("AI Enrichment Content:")
-                for field_name, field_value in ai_enrichment.model_dump().items():
-                    if field_value:  # Only show non-empty fields
-                        logger.info(
-                            "  %s: %s",
-                            field_name,
-                            field_value[:DEBUG_FIELD_PREVIEW_LENGTH] + "..."
-                            if isinstance(field_value, str)
-                            and len(field_value) > DEBUG_FIELD_PREVIEW_LENGTH
-                            else field_value,
-                        )
 
             logger.info("✅ AI enrichment generated successfully")
             return (
@@ -743,9 +719,6 @@ class ModelHandler(BaseFileHandler):
             Dictionary with model_context containing deterministic_metadata and ai_enrichment
 
         """
-        logger.info("\n🚀 TWO-TIER MODEL ANALYSIS")
-        logger.info("📁 Analyzing: %s", file_path.name)
-        logger.info("=" * 60)
 
         # Tier 1: Always succeeds - deterministic metadata
         deterministic_metadata = self._extract_deterministic_metadata(file_path)
@@ -761,7 +734,6 @@ class ModelHandler(BaseFileHandler):
                 hasattr(ai_companion, "codebase_context")
                 and ai_companion.codebase_context
             ):
-                logger.info("🔍 DEBUG: Codebase context found on ai_companion")
                 try:
                     # Check if we have semantic knowledge available
                     if (
@@ -772,9 +744,6 @@ class ModelHandler(BaseFileHandler):
                             "semantic_knowledge",
                         )
                     ):
-                        logger.info(
-                            "🔍 DEBUG: Found semantic knowledge in ai_enrichment",
-                        )
                         semantic_knowledge = ai_companion.codebase_context.ai_enrichment.semantic_knowledge
 
                         # Format semantic knowledge for AI analysis
@@ -782,21 +751,11 @@ class ModelHandler(BaseFileHandler):
                             semantic_knowledge,
                             "model_fields",
                         ):
-                            logger.info(
-                                "🔍 DEBUG: Semantic knowledge has %d model fields",
-                                len(semantic_knowledge.model_fields),
-                            )
                             field_descriptions = []
                             for (
                                 field_name,
                                 field_info,
                             ) in semantic_knowledge.model_fields.items():
-                                logger.info(
-                                    "🔍 DEBUG: Field %s: pydantic='%s', definition='%s'",
-                                    field_name,
-                                    field_info.pydantic_description,
-                                    field_info.definition,
-                                )
                                 if field_info.pydantic_description:
                                     field_descriptions.append(
                                         f"- {field_name}: {field_info.pydantic_description}",
@@ -811,14 +770,9 @@ class ModelHandler(BaseFileHandler):
                                     "Semantic knowledge from codebase:\n"
                                     + "\n".join(field_descriptions)
                                 )
-                                logger.info(
-                                    "🔍 DEBUG: Using semantic knowledge: %s",
-                                    semantic_knowledge_text[:200] + "...",
-                                )
                 except (AttributeError, KeyError, TypeError) as e:
                     logger.warning("Error extracting semantic knowledge: %s", e)
 
-            # Use unified pipeline for AI enrichment (Steps E→I)
             # The LLM provider type determines whether this goes to API or companion mode
             if (
                 hasattr(llm_handler, "is_companion_mode")
@@ -847,17 +801,6 @@ class ModelHandler(BaseFileHandler):
             deterministic_metadata=deterministic_metadata,
             ai_enrichment=ai_enrichment,
         )
-
-        logger.info("✅ Two-tier analysis complete!")
-        logger.info(
-            "   🔧 Deterministic fields: %s",
-            len(deterministic_metadata.model_dump(exclude_none=True)),
-        )
-        if ai_enrichment:
-            logger.info(
-                "   🤖 AI enrichment fields: %s",
-                len(ai_enrichment.model_dump(exclude_none=True)),
-            )
 
         return {"model_context": model_context.model_dump()}
 

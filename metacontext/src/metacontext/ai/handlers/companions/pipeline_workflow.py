@@ -51,12 +51,6 @@ def generate_companion_context_with_pipeline(
 
     """
     try:
-        if verbose:
-            logger.info("🔄 Using pipeline-based companion workflow...")
-
-        # Phase 1: Run deterministic analysis (same as main pipeline)
-        if verbose:
-            logger.info("📊 Running deterministic analysis...")
 
         deterministic_result = handler.analyze_deterministic(file_path, data_object)
 
@@ -85,9 +79,6 @@ def generate_companion_context_with_pipeline(
             exclude_none=False,  # Keep nulls for companion
         )
 
-        if verbose:
-            logger.info("📝 Generated baseline YAML with null AI fields")
-
         # Phase 5: Create companion prompt with the YAML
         companion_prompt = _create_pipeline_companion_prompt(
             file_path,
@@ -96,9 +87,6 @@ def generate_companion_context_with_pipeline(
         )
 
         # Phase 6: Send to companion
-        if verbose:
-            logger.info("🤖 Sending enhanced prompt to companion...")
-
         # Create response file
         with tempfile.NamedTemporaryFile(suffix=".yaml", delete=False) as tmp_file:
             response_file_path = Path(tmp_file.name)
@@ -121,9 +109,6 @@ def generate_companion_context_with_pipeline(
             enhanced_context.confidence_assessment = ConfidenceAssessment(
                 overall=ConfidenceLevel("HIGH"),  # Companion + deterministic
             )
-
-            if verbose:
-                logger.info("✅ Pipeline companion workflow complete")
 
             return enhanced_context.model_dump(
                 mode="json",
@@ -307,9 +292,6 @@ def _merge_companion_response(
 
         # Create new validated instance from companion response
         enhanced_context = Metacontext.model_validate(companion_response)
-
-        if verbose:
-            logger.info("✅ Companion response successfully validated")
 
         return enhanced_context
 

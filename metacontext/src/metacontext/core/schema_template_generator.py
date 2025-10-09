@@ -135,7 +135,6 @@ class SchemaTemplateGenerator:
 
         for filename, config in templates.items():
             self.save_template(config, output_dir / filename)
-            logger.info("Generated %s from schema", filename)
 
 
 def main() -> None:
@@ -145,9 +144,6 @@ def main() -> None:
     # Generate templates in the templates directory
     templates_dir = Path(__file__).parent / "templates"
     generator.generate_all_templates(templates_dir)
-
-    logger.info("✅ All templates generated from schemas successfully!")
-    logger.info("🔄 Templates are now schema-driven - no more hardcoded YAML!")
 
 
 if __name__ == "__main__":

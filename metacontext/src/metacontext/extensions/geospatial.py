@@ -489,8 +489,6 @@ class GeospatialExtension:
                 info["geometry_type"] = "Raster"
                 info["requires_ai_enrichment"] = True  # AI may be able to infer from context
                 
-                logger.info("Successfully read worldfile (CRS unknown)", extra={"worldfile_name": worldfile_path.name})
-                
         except (OSError, ValueError, IndexError) as e:
             logger.debug("Error reading worldfile", extra={"path": str(worldfile_path), "error": str(e)})
             
@@ -507,8 +505,6 @@ class GeospatialExtension:
             # GeoPandas not available, fall back to AI enrichment
             info["requires_ai_enrichment"] = True
             info["crs_detected_method"] = self.METHOD_GEOPANDAS_NOT_AVAILABLE_AI_FALLBACK
-            logger.info("GeoPandas not available for spatial file reading", 
-                       extra={"file": file_path.name, "dependency_message": self._get_dependency_error_message("geopandas")})
             return info
         
         try:
