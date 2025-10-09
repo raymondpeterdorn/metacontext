@@ -413,7 +413,7 @@ class GeospatialHandler(BaseFileHandler):
                 if len(gdf) > 0:
                     metadata.geometry_type = gdf.geometry.type.iloc[0]
                     metadata.bounds = list(gdf.total_bounds)
-                    metadata.property_names = [
+                    metadata.attribute_fields = [
                         col for col in gdf.columns if col != "geometry"
                     ]
 
@@ -697,7 +697,7 @@ class GeospatialHandler(BaseFileHandler):
         """Generate raster context using companion mode with template adaptation."""
         try:
             adapter = CompanionTemplateAdapter()
-            
+
             # Create context variables for template substitution
             context_variables = {
                 "file_name": file_path.name,
@@ -708,52 +708,67 @@ class GeospatialHandler(BaseFileHandler):
                 "height": deterministic_metadata.height or 0,
                 "crs": deterministic_metadata.crs or "unknown",
             }
-            
+
             # Load and adapt the geospatial analysis template
             template_path = "geospatial/raster_analysis.yaml"
             template_data = adapter.load_api_template(template_path)
-            
+
             # Generate companion prompt
             companion_prompt = adapter.generate_companion_prompt(
-                template_data, context_variables,
+                template_data,
+                context_variables,
             )
-            
+
             # Create a temporary response file path
             with tempfile.NamedTemporaryFile(suffix=".yaml", delete=False) as tmp_file:
                 response_file_path = Path(tmp_file.name)
-            
+
             # Display prompt and wait for companion response
-            parsed_data = ai_companion.display_prompt_and_wait(companion_prompt, response_file_path)
-            
+            parsed_data = ai_companion.display_prompt_and_wait(
+                companion_prompt, response_file_path
+            )
+
             if parsed_data:
                 # Validate response structure
-                schema_path = "metacontext.schemas.extensions.geospatial.RasterAIEnrichment"
+                schema_path = (
+                    "metacontext.schemas.extensions.geospatial.RasterAIEnrichment"
+                )
                 is_valid, validation_errors = adapter.validate_response_structure(
-                    parsed_data, schema_path,
+                    parsed_data,
+                    schema_path,
                 )
                 if not is_valid:
                     logger.error("Response validation failed: %s", validation_errors)
-                    return self._generate_fallback_raster_context(file_path, deterministic_metadata, ai_companion)
-                
+                    return self._generate_fallback_raster_context(
+                        file_path, deterministic_metadata, ai_companion
+                    )
+
                 # Convert to Pydantic instance
                 ai_enrichment, conversion_errors = adapter.convert_yaml_to_pydantic(
-                    parsed_data, schema_path,
+                    parsed_data,
+                    schema_path,
                 )
                 if conversion_errors:
                     logger.error("Response conversion failed: %s", conversion_errors)
-                    return self._generate_fallback_raster_context(file_path, deterministic_metadata, ai_companion)
-                
+                    return self._generate_fallback_raster_context(
+                        file_path, deterministic_metadata, ai_companion
+                    )
+
                 return GeospatialRasterContext(
                     deterministic_metadata=deterministic_metadata,
                     ai_enrichment=ai_enrichment,
                 ).model_dump()
-            
-            return self._generate_fallback_raster_context(file_path, deterministic_metadata, ai_companion)
-            
+
+            return self._generate_fallback_raster_context(
+                file_path, deterministic_metadata, ai_companion
+            )
+
         except Exception as e:
             logger.exception("Companion analysis failed: %s", e)
-            return self._generate_fallback_raster_context(file_path, deterministic_metadata, ai_companion)
-    
+            return self._generate_fallback_raster_context(
+                file_path, deterministic_metadata, ai_companion
+            )
+
     def _generate_fallback_raster_context(
         self,
         file_path: Path,
@@ -792,7 +807,7 @@ class GeospatialHandler(BaseFileHandler):
         """Generate vector context using companion mode with template adaptation."""
         try:
             adapter = CompanionTemplateAdapter()
-            
+
             # Create context variables for template substitution
             context_variables = {
                 "file_name": file_path.name,
@@ -803,52 +818,67 @@ class GeospatialHandler(BaseFileHandler):
                 "crs": deterministic_metadata.crs or "unknown",
                 "attribute_fields": deterministic_metadata.attribute_fields or [],
             }
-            
+
             # Load and adapt the geospatial analysis template
             template_path = "geospatial/vector_analysis.yaml"
             template_data = adapter.load_api_template(template_path)
-            
+
             # Generate companion prompt
             companion_prompt = adapter.generate_companion_prompt(
-                template_data, context_variables,
+                template_data,
+                context_variables,
             )
-            
+
             # Create a temporary response file path
             with tempfile.NamedTemporaryFile(suffix=".yaml", delete=False) as tmp_file:
                 response_file_path = Path(tmp_file.name)
-            
+
             # Display prompt and wait for companion response
-            parsed_data = ai_companion.display_prompt_and_wait(companion_prompt, response_file_path)
-            
+            parsed_data = ai_companion.display_prompt_and_wait(
+                companion_prompt, response_file_path
+            )
+
             if parsed_data:
                 # Validate response structure
-                schema_path = "metacontext.schemas.extensions.geospatial.VectorAIEnrichment"
+                schema_path = (
+                    "metacontext.schemas.extensions.geospatial.VectorAIEnrichment"
+                )
                 is_valid, validation_errors = adapter.validate_response_structure(
-                    parsed_data, schema_path,
+                    parsed_data,
+                    schema_path,
                 )
                 if not is_valid:
                     logger.error("Response validation failed: %s", validation_errors)
-                    return self._generate_fallback_vector_context(file_path, deterministic_metadata, ai_companion)
-                
+                    return self._generate_fallback_vector_context(
+                        file_path, deterministic_metadata, ai_companion
+                    )
+
                 # Convert to Pydantic instance
                 ai_enrichment, conversion_errors = adapter.convert_yaml_to_pydantic(
-                    parsed_data, schema_path,
+                    parsed_data,
+                    schema_path,
                 )
                 if conversion_errors:
                     logger.error("Response conversion failed: %s", conversion_errors)
-                    return self._generate_fallback_vector_context(file_path, deterministic_metadata, ai_companion)
-                
+                    return self._generate_fallback_vector_context(
+                        file_path, deterministic_metadata, ai_companion
+                    )
+
                 return GeospatialVectorContext(
                     deterministic_metadata=deterministic_metadata,
                     ai_enrichment=ai_enrichment,
                 ).model_dump()
-            
-            return self._generate_fallback_vector_context(file_path, deterministic_metadata, ai_companion)
-            
+
+            return self._generate_fallback_vector_context(
+                file_path, deterministic_metadata, ai_companion
+            )
+
         except Exception:
             logger.exception("Companion analysis failed")
-            return self._generate_fallback_vector_context(file_path, deterministic_metadata, ai_companion)
-    
+            return self._generate_fallback_vector_context(
+                file_path, deterministic_metadata, ai_companion
+            )
+
     def _generate_fallback_vector_context(
         self,
         file_path: Path,

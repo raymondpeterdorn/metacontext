@@ -1,0 +1,403 @@
+metacontext_version: 0.3.0
+generation_info:
+  generated_at: '2025-10-08T23:35:03.579299Z'
+  generation_method: explicit_function
+  function_call: metacontext.metacontextualize()
+file_info:
+  filename: csv.csv
+  extension: .csv
+  file_purpose: Generated file with two-tier architecture
+  project_context_summary: Analysis with CSVHandler
+  creation_timestamp: '2025-10-08T23:35:03.579402Z'
+system_info:
+  working_directory: /Users/bigdawg/Documents/repos/metacontext/bird_demo
+confidence_assessment:
+  overall: MEDIUM
+data_structure:
+  deterministic_metadata:
+    type: pandas_dataframe
+    shape:
+    - 200
+    - 21
+    memory_usage_bytes: 211389
+    column_dtypes:
+      species_name: object
+      taxonomic_family: object
+      taxonomic_order: object
+      asdawas: float64
+      beak_length: float64
+      weight_g: float64
+      nocturnal_diurnal: object
+      brrrrkk: object
+      diet_types: object
+      closest_relatives: object
+      latitude: float64
+      longitude: float64
+      altitude_m: float64
+      habitat_type: object
+      weather_condition: object
+      temperature_c: float64
+      observation_time: object
+      diet_dict: object
+      primary_diet: object
+      is_nocturnal: bool
+      blwl: float64
+  ai_enrichment:
+    domain_analysis: ''
+    data_quality_assessment: unknown
+    column_interpretations:
+      species_name:
+        deterministic:
+          dtype: object
+          null_count: 0
+          null_percentage: 0.0
+          unique_count: 5
+          sample_values:
+          - Haemorhous mexicanus
+          - Pica pica
+          - Pica pica
+        ai_enrichment:
+          semantic_meaning: binomial
+          data_quality_assessment: ''
+          domain_context: tax
+          relationship_to_other_columns:
+          - taxonomic_family
+          - taxonomic_order
+      taxonomic_family:
+        deterministic:
+          dtype: object
+          null_count: 0
+          null_percentage: 0.0
+          unique_count: 5
+          sample_values:
+          - Fringillidae
+          - Corvidae
+          - Corvidae
+        ai_enrichment:
+          semantic_meaning: family
+          data_quality_assessment: ''
+          domain_context: tax
+          relationship_to_other_columns:
+          - species_name
+      taxonomic_order:
+        deterministic:
+          dtype: object
+          null_count: 0
+          null_percentage: 0.0
+          unique_count: 4
+          sample_values:
+          - Passeriformes
+          - Passeriformes
+          - Passeriformes
+        ai_enrichment:
+          semantic_meaning: order
+          data_quality_assessment: ''
+          domain_context: tax
+          relationship_to_other_columns:
+          - species_name
+      asdawas:
+        deterministic:
+          dtype: float64
+          null_count: 0
+          null_percentage: 0.0
+          unique_count: 200
+          sample_values:
+          - 8.91156072292315
+          - 18.831008742960407
+          - 21.63353417277567
+        ai_enrichment:
+          semantic_meaning: wing_length
+          data_quality_assessment: ''
+          domain_context: morph
+          relationship_to_other_columns:
+          - beak_length
+          - weight_g
+      beak_length:
+        deterministic:
+          dtype: float64
+          null_count: 0
+          null_percentage: 0.0
+          unique_count: 200
+          sample_values:
+          - 1.2084595336364423
+          - 3.464735162654236
+          - 3.5949562606268004
+        ai_enrichment:
+          semantic_meaning: beak_length
+          data_quality_assessment: ''
+          domain_context: morph
+          relationship_to_other_columns:
+          - weight_g
+          - blwl
+      weight_g:
+        deterministic:
+          dtype: float64
+          null_count: 0
+          null_percentage: 0.0
+          unique_count: 200
+          sample_values:
+          - 22.63545835787437
+          - 221.9276595225436
+          - 230.1582173720443
+        ai_enrichment:
+          semantic_meaning: mass_g
+          data_quality_assessment: ''
+          domain_context: morph
+          relationship_to_other_columns:
+          - beak_length
+      nocturnal_diurnal:
+        deterministic:
+          dtype: object
+          null_count: 0
+          null_percentage: 0.0
+          unique_count: 2
+          sample_values:
+          - Diurnal
+          - Diurnal
+          - Diurnal
+        ai_enrichment:
+          semantic_meaning: activity_label
+          data_quality_assessment: ''
+          domain_context: behavior
+          relationship_to_other_columns:
+          - is_nocturnal
+          - observation_time
+      brrrrkk:
+        deterministic:
+          dtype: object
+          null_count: 0
+          null_percentage: 0.0
+          unique_count: 158
+          sample_values:
+          - '2025-07-20'
+          - '2024-12-20'
+          - '2025-01-03'
+        ai_enrichment:
+          semantic_meaning: observation_date
+          data_quality_assessment: ''
+          domain_context: temporal
+          relationship_to_other_columns:
+          - observation_time
+      diet_types:
+        deterministic:
+          dtype: object
+          null_count: 0
+          null_percentage: 0.0
+          unique_count: 5
+          sample_values:
+          - seeds: 1.0
+          - insects: 0.5
+            carrion: 0.3
+            seeds: 0.2
+          - insects: 0.5
+            carrion: 0.3
+            seeds: 0.2
+        ai_enrichment:
+          semantic_meaning: diet_composition
+          data_quality_assessment: ''
+          domain_context: ecol
+          relationship_to_other_columns:
+          - diet_dict
+          - primary_diet
+      closest_relatives:
+        deterministic:
+          dtype: object
+          null_count: 0
+          null_percentage: 0.0
+          unique_count: 5
+          sample_values:
+          - - Haemorhous purpureus
+            - Haemorhous cassinii
+          - - Pica hudsonia
+          - - Pica hudsonia
+        ai_enrichment:
+          semantic_meaning: related_taxa
+          data_quality_assessment: ''
+          domain_context: phylo
+          relationship_to_other_columns:
+          - species_name
+      latitude:
+        deterministic:
+          dtype: float64
+          null_count: 0
+          null_percentage: 0.0
+          unique_count: 200
+          sample_values:
+          - 32.346401128781864
+          - 38.44235705433985
+          - 43.831044771135495
+        ai_enrichment:
+          semantic_meaning: decimal_lat
+          data_quality_assessment: ''
+          domain_context: geo
+          relationship_to_other_columns:
+          - longitude
+          - geometry
+      longitude:
+        deterministic:
+          dtype: float64
+          null_count: 0
+          null_percentage: 0.0
+          unique_count: 200
+          sample_values:
+          - -91.0332914317774
+          - -123.20837942455418
+          - -90.37110890379113
+        ai_enrichment:
+          semantic_meaning: decimal_lon
+          data_quality_assessment: ''
+          domain_context: geo
+          relationship_to_other_columns:
+          - latitude
+          - geometry
+      altitude_m:
+        deterministic:
+          dtype: float64
+          null_count: 0
+          null_percentage: 0.0
+          unique_count: 200
+          sample_values:
+          - 557.0704794605397
+          - 716.3898689319495
+          - 206.67436170278563
+        ai_enrichment:
+          semantic_meaning: elevation_m
+          data_quality_assessment: ''
+          domain_context: env
+          relationship_to_other_columns:
+          - temperature_c
+      habitat_type:
+        deterministic:
+          dtype: object
+          null_count: 0
+          null_percentage: 0.0
+          unique_count: 4
+          sample_values:
+          - Urban
+          - Grassland
+          - Grassland
+        ai_enrichment:
+          semantic_meaning: habitat_label
+          data_quality_assessment: ''
+          domain_context: ecol
+          relationship_to_other_columns:
+          - species_name
+      weather_condition:
+        deterministic:
+          dtype: object
+          null_count: 0
+          null_percentage: 0.0
+          unique_count: 5
+          sample_values:
+          - Cloudy
+          - Windy
+          - Clear
+        ai_enrichment:
+          semantic_meaning: weather_label
+          data_quality_assessment: ''
+          domain_context: env
+          relationship_to_other_columns:
+          - temperature_c
+      temperature_c:
+        deterministic:
+          dtype: float64
+          null_count: 0
+          null_percentage: 0.0
+          unique_count: 200
+          sample_values:
+          - 19.23505378184511
+          - 26.60126383416036
+          - 20.507738467172867
+        ai_enrichment:
+          semantic_meaning: air_temp_C
+          data_quality_assessment: ''
+          domain_context: env
+          relationship_to_other_columns:
+          - weather_condition
+          - altitude_m
+      observation_time:
+        deterministic:
+          dtype: object
+          null_count: 0
+          null_percentage: 0.0
+          unique_count: 184
+          sample_values:
+          - 07:55
+          - '15:12'
+          - '11:50'
+        ai_enrichment:
+          semantic_meaning: time_HH:MM
+          data_quality_assessment: ''
+          domain_context: temporal
+          relationship_to_other_columns:
+          - brrrrkk
+      diet_dict:
+        deterministic:
+          dtype: object
+          null_count: 0
+          null_percentage: 0.0
+          unique_count: 5
+          sample_values:
+          - seeds: 1.0
+          - insects: 0.5
+            carrion: 0.3
+            seeds: 0.2
+          - insects: 0.5
+            carrion: 0.3
+            seeds: 0.2
+        ai_enrichment:
+          semantic_meaning: diet_composition
+          data_quality_assessment: ''
+          domain_context: ecol
+          relationship_to_other_columns:
+          - diet_types
+          - primary_diet
+      primary_diet:
+        deterministic:
+          dtype: object
+          null_count: 0
+          null_percentage: 0.0
+          unique_count: 4
+          sample_values:
+          - seeds
+          - insects
+          - insects
+        ai_enrichment:
+          semantic_meaning: dominant_diet
+          data_quality_assessment: ''
+          domain_context: ecol
+          relationship_to_other_columns:
+          - diet_dict
+      is_nocturnal:
+        deterministic:
+          dtype: bool
+          null_count: 0
+          null_percentage: 0.0
+          unique_count: 2
+          sample_values:
+          - false
+          - false
+          - false
+        ai_enrichment:
+          semantic_meaning: nocturnal_flag
+          data_quality_assessment: ''
+          domain_context: behavior
+          relationship_to_other_columns:
+          - nocturnal_diurnal
+      blwl:
+        deterministic:
+          dtype: float64
+          null_count: 0
+          null_percentage: 0.0
+          unique_count: 200
+          sample_values:
+          - 0.05338789763080041
+          - 0.015612002443085672
+          - 0.015619499932151691
+        ai_enrichment:
+          semantic_meaning: derived_ratio
+          data_quality_assessment: ''
+          domain_context: derived
+          relationship_to_other_columns:
+          - beak_length
+    business_value_assessment: ''

@@ -3,21 +3,18 @@
 import json
 import logging
 import re
-import tempfile
 import time
 from pathlib import Path
 from typing import Any, ClassVar
 
 import pandas as pd
 
-from metacontext.ai.handlers.companions.template_adapter import CompanionTemplateAdapter
 from metacontext.ai.handlers.core.exceptions import LLMError, ValidationRetryError
 from metacontext.ai.handlers.llms.prompt_constraints import (
     COMMON_FIELD_CONSTRAINTS,
     build_schema_constraints,
     calculate_response_limits,
 )
-from metacontext.ai.handlers.llms.provider_interface import parse_json_response
 from metacontext.ai.prompts.prompt_loader import PromptLoader
 from metacontext.handlers.base import BaseFileHandler, register_handler
 from metacontext.schemas.extensions.tabular import (
@@ -153,7 +150,10 @@ class CSVHandler(BaseFileHandler):
         ai_companion: object | None = None,
         analysis_depth: object = None,
     ) -> dict[str, object]:
-        """Generate data_structure context using bulk AI prompts.
+        """Generate data_structure context using unified pipeline architecture.
+
+        Uses the unified pipeline where both API and companion modes follow identical
+        workflow steps B→H, with only step I (LLM Analysis) differing.
 
         This method analyzes the tabular data and generates comprehensive
         column analysis using efficient bulk prompting instead of individual
@@ -161,32 +161,19 @@ class CSVHandler(BaseFileHandler):
         """
         context: dict[str, object] = {}
 
-        # Basic data analysis (descriptive layer)
+        # Basic data analysis (descriptive layer) - Step B: Deterministic
         if data_object is not None:
             data_analysis = self._analyze_dataframe(data_object)
         else:
             data_analysis = self._analyze_file(file_path)
 
-        # AI-powered interpretation (interpretive + contextual layers)
+        # AI-powered interpretation using unified pipeline (Steps C→I)
         if (
             ai_companion
             and hasattr(ai_companion, "is_available")
             and ai_companion.is_available()
         ):
-            # Check if this is a companion provider (IDE-integrated) vs regular LLM
-            is_companion_mode = hasattr(ai_companion, "companion_type")
-
-            if is_companion_mode:
-                logger.info("🤖 Using companion mode for tabular analysis")
-                return self._generate_companion_context(
-                    file_path,
-                    data_analysis,
-                    ai_companion,
-                )
-
-            # Continue with regular LLM provider logic
-            logger.info("🔗 Using API LLM provider for tabular analysis")
-            # Extract semantic column knowledge from codebase for better context
+            # Extract semantic column knowledge from codebase for better context (Step D)
             enhanced_context = data_analysis
 
             # Try to access semantic knowledge from codebase context
@@ -311,6 +298,16 @@ class CSVHandler(BaseFileHandler):
             else:
                 logger.info("🔍 DEBUG: No codebase context found on ai_companion")
                 enhanced_context = data_analysis
+
+            # Use unified pipeline for AI analysis (Steps E→I)
+            # The LLM provider type determines whether this goes to API or companion mode
+            if (
+                hasattr(ai_companion, "is_companion_mode")
+                and ai_companion.is_companion_mode()
+            ):
+                logger.info("🤖 Using companion mode for tabular analysis")
+            else:
+                logger.info("🔗 Using API LLM provider for tabular analysis")
 
             ai_analysis = self._generate_ai_analysis(
                 enhanced_context,
@@ -511,20 +508,73 @@ class CSVHandler(BaseFileHandler):
             logger.info("%s", rendered_prompt)
             logger.info("=" * 80)
 
-            # Call LLM using standard method
-            if hasattr(llm_handler, "generate_completion"):
-                response = llm_handler.generate_completion(rendered_prompt)
-            else:
-                response = str(llm_handler)
+            # Call LLM using unified pipeline with proper schema
+            ai_enrichment = llm_handler.generate_with_schema(
+                schema_class=DataAIEnrichment,
+                context_data={"rendered_prompt": rendered_prompt},
+            )
 
-            logger.info("🔍 DEBUG: LLM response received:")
-            logger.info("%s", response)
+            logger.info("🔍 DEBUG: LLM response received and validated:")
+            logger.info("%s", ai_enrichment)
 
-            # Parse and validate the response manually since we bypassed generate_with_schema
-            response_data = parse_json_response(response)
+            # Extract column interpretations from the properly structured DataAIEnrichment
+            result = {}
 
-            # Convert response to legacy format expected by existing code
-            return self._convert_column_response_to_legacy_format(response_data)
+            # Check if we have column_interpretations in the DataAIEnrichment
+            if (
+                hasattr(ai_enrichment, "column_interpretations")
+                and ai_enrichment.column_interpretations
+            ):
+                # Extract each column's ai_enrichment data
+                for col_name, col_info in ai_enrichment.column_interpretations.items():
+                    if (
+                        col_info
+                        and hasattr(col_info, "ai_enrichment")
+                        and col_info.ai_enrichment
+                    ):
+                        # Convert ColumnAIEnrichment to dict format for legacy compatibility
+                        enrichment_dict = col_info.ai_enrichment.model_dump()
+                        # Filter out None values to keep clean output
+                        enrichment_dict = {
+                            k: v for k, v in enrichment_dict.items() if v is not None
+                        }
+                        result[col_name] = enrichment_dict
+
+            # If we got column interpretations, that's our result
+            if result:
+                logger.info(
+                    f"🔍 DEBUG: Extracted {len(result)} column analyses from DataAIEnrichment.column_interpretations"
+                )
+                return result
+
+            # Fallback: check for legacy flat format
+            if hasattr(ai_enrichment, "__dict__"):
+                # Look for columns in the response - the JSON was flat column mappings
+                for attr_name, attr_value in ai_enrichment.__dict__.items():
+                    if attr_name not in [
+                        "domain_analysis",
+                        "data_quality_assessment",
+                        "business_value_assessment",
+                        "column_interpretations",
+                    ]:
+                        # This might be a column name with analysis
+                        if isinstance(attr_value, dict) and "semantic_meaning" in str(
+                            attr_value
+                        ):
+                            result[attr_name] = attr_value
+
+            # If we got direct column mappings in the response, that's our result
+            if result:
+                logger.info(
+                    f"🔍 DEBUG: Extracted {len(result)} column analyses from flat response"
+                )
+                return result
+
+            # Fallback to empty result
+            logger.warning(
+                "🔍 DEBUG: No column analyses found in DataAIEnrichment response"
+            )
+            return {}
 
         except Exception:
             logger.exception("Error during template-based column analysis")
@@ -659,17 +709,11 @@ class CSVHandler(BaseFileHandler):
                 template_context,
             )
 
-            # Call LLM with the constraint-aware prompt
-            if hasattr(llm_handler, "generate_completion"):
-                response = llm_handler.generate_completion(rendered_prompt)
-            else:
-                response = str(llm_handler)
-
-            # Parse the JSON response
-            response_data = parse_json_response(response)
-
-            # Validate against schema
-            ai_enrichment = DataAIEnrichment(**response_data)
+            # Call LLM using unified pipeline with proper schema
+            ai_enrichment = llm_handler.generate_with_schema(
+                schema_class=DataAIEnrichment,
+                context_data={"rendered_prompt": rendered_prompt},
+            )
 
             # Convert to legacy format for backward compatibility
             return self._convert_ai_schema_to_legacy_format(ai_enrichment)
@@ -778,11 +822,19 @@ class CSVHandler(BaseFileHandler):
 
     def _create_data_structure(self, data_analysis: dict[str, Any]) -> DataStructure:
         """Create the DataStructure schema from analysis data."""
+        # Extract column dtypes for deterministic metadata
+        columns_data = data_analysis.get("columns", {})
+        column_dtypes = {
+            col_name: col_info.get("dtype", "unknown")
+            for col_name, col_info in columns_data.items()
+        }
+
         # Deterministic info
         deterministic_info = DataDeterministicMetadata(
             type=data_analysis.get("type", "unknown"),
             shape=data_analysis.get("shape", []),
             memory_usage_bytes=data_analysis.get("memory_usage_bytes", 0),
+            column_dtypes=column_dtypes,
         )
 
         # AI enrichment
@@ -842,10 +894,20 @@ class CSVHandler(BaseFileHandler):
 
         # Create column interpretations dictionary
         column_interpretations = {}
+        columns_data = data_analysis.get("columns", {})  # Get deterministic column data
+
         for col_name, col_data in column_analysis.items():
             # Only add columns that have analysis
             if col_data:
-                det_info = ColumnDeterministicInfo()
+                # Get deterministic data for this column from data_analysis
+                deterministic_col_data = columns_data.get(col_name, {})
+                det_info = ColumnDeterministicInfo(
+                    dtype=deterministic_col_data.get("dtype"),
+                    null_count=deterministic_col_data.get("null_count"),
+                    null_percentage=deterministic_col_data.get("null_percentage"),
+                    unique_count=deterministic_col_data.get("unique_count"),
+                    sample_values=deterministic_col_data.get("sample_values"),
+                )
                 ai_info = ColumnAIEnrichment(
                     semantic_meaning=col_data.get("semantic_meaning", ""),
                     data_quality_assessment=col_data.get("supporting_evidence", ""),
@@ -870,125 +932,6 @@ class CSVHandler(BaseFileHandler):
             column_interpretations=column_interpretations,
             business_value_assessment=schema_interpretation.get("business_impact", ""),
         )
-
-    def _generate_companion_context(
-        self,
-        file_path: Path,
-        data_analysis: dict[str, Any],
-        ai_companion: object,
-    ) -> dict[str, object]:
-        """Generate context using companion provider (IDE-integrated mode).
-
-        This method uses the CompanionTemplateAdapter to create companion-friendly
-        prompts and handles the companion workflow for tabular analysis.
-
-        Args:
-            file_path: Path to the tabular file
-            data_analysis: Deterministic analysis results
-            ai_companion: Companion provider instance
-
-        Returns:
-            Dictionary containing analysis results or companion prompt
-
-        """
-        try:
-            # Initialize companion template adapter
-            adapter = CompanionTemplateAdapter()
-
-            # Create context variables for template substitution
-            context_variables = {
-                "file_name": file_path.name,
-                "file_path": str(file_path),
-                "columns_summary": self._create_columns_summary(data_analysis),
-                "data_shape": f"{data_analysis.get('shape', [0, 0])}",
-            }
-
-            # Load and adapt the tabular analysis template
-            template_path = "tabular/column_analysis.yaml"
-            template_data = adapter.load_api_template(template_path)
-
-            # Generate companion prompt
-            companion_prompt = adapter.generate_companion_prompt(
-                template_data,
-                context_variables,
-            )
-
-            # Send to companion and wait for response
-            # Create a temporary response file path
-            with tempfile.NamedTemporaryFile(suffix=".yaml", delete=False) as tmp_file:
-                response_file_path = Path(tmp_file.name)
-
-            # Display prompt and wait for companion response
-            parsed_data = ai_companion.display_prompt_and_wait(
-                companion_prompt, response_file_path,
-            )
-
-            if parsed_data:
-                # Validate response structure
-                schema_path = "metacontext.schemas.extensions.tabular.DataAIEnrichment"
-                is_valid, validation_errors = adapter.validate_response_structure(
-                    parsed_data,
-                    schema_path,
-                )
-                if not is_valid:
-                    logger.error("Response validation failed: %s", validation_errors)
-                    return {"error": f"Response validation failed: {validation_errors}"}
-
-                # Convert to Pydantic instance
-                ai_enrichment, conversion_errors = adapter.convert_yaml_to_pydantic(
-                    parsed_data,
-                    schema_path,
-                )
-                if conversion_errors:
-                    logger.error("Response conversion failed: %s", conversion_errors)
-                    return {"error": f"Response conversion failed: {conversion_errors}"}
-
-                # Create DataStructure with companion results
-                return {
-                    "extension_context": DataStructure(
-                        deterministic_metadata=DataDeterministicMetadata(
-                            **data_analysis.get("metadata", {}),
-                        ),
-                        ai_enrichment=ai_enrichment,
-                    ),
-                }
-            logger.warning("No response received from companion")
-            return {"error": "No response received from companion"}
-
-        except Exception as e:
-            logger.error("Companion analysis failed: %s", e)
-            return {"error": f"Companion analysis failed: {e}"}
-
-    def _create_columns_summary(self, data_analysis: dict[str, Any]) -> str:
-        """Create a summary of columns for companion context."""
-        columns = data_analysis.get("columns", {})
-        if not columns:
-            return "No column information available"
-
-        summary_lines = []
-        for col_name, col_data in columns.items():
-            dtype = col_data.get("dtype", "unknown")
-            null_count = col_data.get("null_count", 0)
-            unique_count = col_data.get("unique_count", 0)
-            summary_lines.append(
-                f"- {col_name}: {dtype} (nulls: {null_count}, unique: {unique_count})",
-            )
-
-        return "\n".join(summary_lines[:10])  # Limit to first 10 columns
-
-    def _simple_extract_json(self, response: str) -> dict[str, Any] | None:
-        """Extract JSON from a string that might contain other text."""
-        # Find the start and end of the JSON object
-        match = re.search(r"\{.*\}", response, re.DOTALL)
-        if match:
-            json_str = match.group(0)
-            try:
-                result = json.loads(json_str)
-                if isinstance(result, dict):
-                    return result
-            except json.JSONDecodeError:
-                logger.warning("Failed to decode JSON from LLM response.")
-        return None
 
     PROMPT_CONFIG: ClassVar[dict[str, str]] = {
         "column_analysis": "templates/tabular/column_analysis.yaml",

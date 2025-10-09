@@ -4,7 +4,7 @@
 import datetime
 import zoneinfo
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, Field, field_validator
 
 
 class BirdData(BaseModel):
@@ -12,9 +12,14 @@ class BirdData(BaseModel):
 
     species_name: str
     taxonomic_family: str
+    taxonomic_order: str
+    asdawas: str = Field(description = "Wing Length")
+    beak_length: float
+    nocturnal_diurnal: str
+    diet_types: str
+    closest_relatives: str
     observation_date: datetime.date
     location_description: str
-    notes: str | None = None
     brrrrkk: str | None = None
 
     @field_validator("observation_date", mode="before")

@@ -28,30 +28,40 @@ instruction: |
 
   🎯 EFFICIENCY REQUIREMENTS:
   - Maximum response: 1200 characters total
-  - Per column limit: 200 characters per field
   - Use precise technical terminology
-  - Focus on highest-value insights per column
+  - Focus on highest-value insights
 
-  🔍 REQUIRED ANALYSIS FOR EACH COLUMN:
-  ${field_descriptions}
+  🔍 REQUIRED ANALYSIS FORMAT:
+  1. **DOMAIN ANALYSIS**: Overall business domain and context of this dataset
+  2. **DATA QUALITY**: Overall structural quality assessment
+  3. **COLUMN INTERPRETATIONS**: For each column, provide nested analysis
+  4. **BUSINESS VALUE**: How this data provides business insights
 
   ⚠️ CRITICAL Output Format Rules:
+  - Output must be **valid JSON only** matching DataAIEnrichment schema
+  - column_interpretations must contain nested ai_enrichment objects
   - relationship_to_other_columns: Must be a list ["relation1", "relation2"] or null
-  - Never include markdown or prose — output must be **valid JSON only**
+  - Never include markdown or prose
   - Focus on business logic and data relationships
-  - Skip commentary about the task or user
 
-  📋 Example Output Structure:
+  📋 Required Output Structure (DataAIEnrichment format):
   {
-    "column_name": {
-      "semantic_meaning": "What this column represents",
-      "domain_context": "Business domain context", 
-      "usage_guidance": "How to use this column",
-      "data_quality_assessment": "Quality notes",
-      "relationship_to_other_columns": ["related_col1", "related_col2"]
-    }
+    "domain_analysis": "Overall domain this dataset represents and business context",
+    "data_quality_assessment": "Overall assessment of data structure and quality",
+    "column_interpretations": {
+      "column_name": {
+        "ai_enrichment": {
+          "semantic_meaning": "What this column represents",
+          "domain_context": "Business domain context", 
+          "usage_guidance": "How to use this column",
+          "data_quality_assessment": "Quality notes",
+          "relationship_to_other_columns": ["related_col1", "related_col2"]
+        }
+      }
+    },
+    "business_value_assessment": "How this data provides business value and insights"
   }
 
-  📋 Return optimized JSON with column names as keys and forensic analysis as values.
+  📋 Return optimized JSON in DataAIEnrichment format with proper nested structure.
 
-schema_class: metacontext.schemas.extensions.tabular.ColumnAIEnrichment
+schema_class: metacontext.schemas.extensions.tabular.DataAIEnrichment

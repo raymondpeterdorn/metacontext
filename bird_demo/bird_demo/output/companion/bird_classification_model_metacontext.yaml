@@ -1,0 +1,72 @@
+metacontext_version: 0.3.0
+generation_info:
+  generated_at: '2025-10-08T23:35:21.587004Z'
+  generation_method: explicit_function
+  function_call: metacontext.metacontextualize()
+file_info:
+  filename: bird_classification_model.pkl
+  extension: .pkl
+  file_purpose: Generated file with two-tier architecture
+  project_context_summary: Analysis with ModelHandler
+  creation_timestamp: '2025-10-08T23:35:21.587074Z'
+system_info:
+  working_directory: /Users/bigdawg/Documents/repos/metacontext/bird_demo
+confidence_assessment:
+  overall: HIGH
+model_context:
+  deterministic_metadata:
+    framework: scikit-learn
+    model_type: RandomForestClassifier
+    hyperparameters:
+      bootstrap: true
+      ccp_alpha: 0.0
+      criterion: gini
+      max_features: sqrt
+      min_impurity_decrease: 0.0
+      min_samples_leaf: 1
+      min_samples_split: 2
+      min_weight_fraction_leaf: 0.0
+      n_estimators: 10
+      oob_score: false
+      random_state: 42
+      verbose: 0
+      warm_start: false
+    input_shape:
+    - 3
+    output_shape:
+    - 5
+    model_size_bytes: 10824
+  ai_enrichment:
+    ai_interpretation: This model is a scikit-learn RandomForestClassifier designed
+      for multi-class classification, likely for bird species identification.
+    ai_confidence: HIGH
+    ai_domain_context: 'Bird Classification: Identifies bird species based on input
+      features, likely biological measurements.'
+    usage_guidance: Use for automated bird species identification in ecological surveys
+      or citizen science applications.
+    hidden_meaning: The provided "training script" is a test framework for metacontext
+      comparison, not the actual model training code, indicating missing core context.
+    suspicious_patterns:
+    - The actual training script for the model is missing; `test_comparison_framework.py`
+      is a testing utility.
+    - '`n_estimators=10` is very low for RandomForest, potentially leading to underfitting.'
+    cross_references:
+      MetacontextComparator: bird_demo/output/metacontext_comparison/compare_metacontexts.py
+    model_type_analysis: Scikit-learn RandomForestClassifier, an ensemble of 10 decision
+      trees. Uses Gini impurity criterion, bootstrap sampling, and `sqrt` max_features.
+    purpose: To classify input data into one of five distinct categories, most likely
+      identifying different bird species.
+    training_approach: Ensemble learning using 10 decision trees. Each tree is trained
+      on bootstrapped samples, with feature subsets (`max_features='sqrt'`) and Gini
+      criterion.
+    expected_inputs: A numerical array of shape `[3]`, representing three distinct
+      features for classification.
+    expected_outputs: A numerical array of shape `[5]`, likely representing probability
+      scores or one-hot encoded predictions for 5 classes.
+    limitations: Low `n_estimators` (10) may lead to underfitting and reduced robustness.
+      Only 3 input features might limit model discriminative power.
+    ideal_use_cases: Rapid, initial classification of bird species where input features
+      are limited to three key measurements.
+    data_requirements: Requires structured numerical data with 3 features per sample,
+      corresponding to 5 distinct target classes.
+    performance_analysis: ''

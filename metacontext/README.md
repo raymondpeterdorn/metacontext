@@ -298,6 +298,63 @@ args = MetacontextualizeArgs(
 output_path = metacontextualize(df, 'data.csv', args)
 ```
 
+### Using Code Companions (GitHub Copilot, etc.)
+
+**For interactive AI analysis without API keys**, use code companions like GitHub Copilot:
+
+```python
+from metacontext.ai.handlers.companions.companion_factory import CompanionProviderFactory
+from metacontext.metacontextualize import metacontextualize
+import pandas as pd
+
+# Step 1: Your normal data workflow (unchanged)
+df = pd.DataFrame({
+    'species': ['Robin', 'Sparrow', 'Eagle'],
+    'wingspan': [25, 20, 180],
+    'habitat': ['Forest', 'Urban', 'Mountain']
+})
+df.to_csv('bird_data.csv')
+
+# Step 2: Create companion provider (auto-detects GitHub Copilot)
+factory = CompanionProviderFactory()
+ai_companion = factory.detect_available_companion()
+
+# Step 3: Generate context with interactive companion workflow
+output_path = metacontextualize(
+    df,                           # Your data object
+    'bird_data.csv',             # File path
+    output_format="yaml",         # Output format
+    scan_codebase=True,          # Include codebase analysis
+    ai_companion=ai_companion,   # Use companion instead of API
+    verbose=True                 # Show interactive prompts
+)
+
+# This will:
+# 1. Copy analysis prompt to your clipboard
+# 2. Display instructions to paste in GitHub Copilot Chat
+# 3. Wait for you to save Copilot's response to a temporary file
+# 4. Parse the response and generate your metacontext file
+```
+
+**Command Line with Companion:**
+```bash
+# Use companion mode (auto-detects GitHub Copilot)
+python -m metacontext.cli bird_data.csv --companion --verbose
+
+# The CLI will guide you through the interactive workflow:
+# 🤖 Using github_copilot for analysis
+# ✅ Prompt copied to clipboard-- paste in chat and send to generate metacontext
+# 📁 Response file: /tmp/response.yaml
+# Press Enter when ready...
+```
+
+**Benefits of Companion Mode:**
+- 🔓 **No API Keys Required**: Works with your existing GitHub Copilot subscription
+- 🎯 **Interactive Analysis**: Review and refine AI analysis in real-time
+- 💰 **Cost Effective**: Uses your existing Copilot subscription
+- 🔄 **Iterative Workflow**: Easy to regenerate with different prompts
+- 🎨 **IDE Integration**: Works seamlessly with your development environment
+
 ### Command Line Interface
 
 ```bash

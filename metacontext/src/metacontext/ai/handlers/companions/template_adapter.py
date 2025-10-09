@@ -158,7 +158,11 @@ class CompanionTemplateAdapter:
 
         return instruction.strip()
 
-    def convert_schema_to_yaml(self, schema_class_path: str, response_filename: str = "metacontext_response.yaml") -> str:
+    def convert_schema_to_yaml(
+        self,
+        schema_class_path: str,
+        response_filename: str = "metacontext_response.yaml",
+    ) -> str:
         """Convert Pydantic schema class to YAML output format template.
 
         Args:
@@ -786,7 +790,11 @@ class CompanionTemplateAdapter:
             source_filename = context_variables.get("file_name", "unknown")
             if source_filename and source_filename != "unknown":
                 # Remove extension and add _metacontext.yaml
-                base_name = source_filename.rsplit(".", 1)[0] if "." in source_filename else source_filename
+                base_name = (
+                    source_filename.rsplit(".", 1)[0]
+                    if "." in source_filename
+                    else source_filename
+                )
                 response_filename = f"{base_name}_metacontext.yaml"
             else:
                 response_filename = "metacontext_response.yaml"

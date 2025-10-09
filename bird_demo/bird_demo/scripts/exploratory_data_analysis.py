@@ -38,6 +38,10 @@ class BirdObservation(BaseModel):
     weather_condition: str
     temperature_c: float
     observation_time: str
+    diet_dict: dict | None = None
+    primary_diet: str | None = None
+    is_nocturnal: bool | None = None
+    blwl: float | None = None
 
 
 def load_and_validate_data(df: pd.DataFrame) -> pd.DataFrame:
@@ -55,8 +59,26 @@ def load_and_validate_data(df: pd.DataFrame) -> pd.DataFrame:
     """
     # Clean and preprocess columns with string-serialized data structures
     try:
-        df["diet_types"] = df["diet_types"].apply(ast.literal_eval)
-        df["closest_relatives"] = df["closest_relatives"].apply(ast.literal_eval)
+        # Parse string-encoded structures only when necessary. Some rows may
+        # already contain dict/list objects (e.g., when pandas infers them).
+        df["diet_types"] = df["diet_types"].apply(
+            lambda v: ast.literal_eval(v) if isinstance(v, str) else v
+        )
+        df["closest_relatives"] = df["closest_relatives"].apply(
+            lambda v: ast.literal_eval(v) if isinstance(v, str) else v
+        )
+
+        # Avoid double literal_eval: use the already-parsed diet_types as diet_dict
+        df["diet_dict"] = df["diet_types"].apply(lambda v: dict(v) if isinstance(v, dict) else v)
+        # primary_diet should be None for empty/missing diet dicts
+        # Use a lambda key to make the type-checker happy (and handle empty dicts)
+        df["primary_diet"] = df["diet_dict"].apply(
+            lambda x: (max(x, key=lambda k: x[k]) if isinstance(x, dict) and x else None)
+        )
+
+        # Keep is_nocturnal as boolean (Pydantic model expects bool)
+        df["is_nocturnal"] = (df["nocturnal_diurnal"] == "Nocturnal")
+        df["blwl"] = df["beak_length"] / df["weight_g"]
 
         # Validate each row against the Pydantic model
         validated_records = []
@@ -179,7 +201,7 @@ def create_analysis_report_df(df: pd.DataFrame) -> pd.DataFrame:
     t_test_results = perform_t_test_on_weights(df)
 
     # Create the final report DataFrame using a dictionary
-    report_dict = {
+    report_dict: dict[str, list[Any]] = {
         "Analysis Type": [],
         "Attribute": [],
         "Value": [],

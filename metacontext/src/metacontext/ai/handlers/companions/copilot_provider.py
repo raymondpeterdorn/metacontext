@@ -417,7 +417,9 @@ class GitHubCopilotProvider(BaseCompanionProvider):
         return "\n".join(prompt_parts)
 
     def display_prompt_and_wait(
-        self, prompt: str, response_file_path: Path,
+        self,
+        prompt: str,
+        response_file_path: Path,
     ) -> dict[str, Any] | None:
         """Display a ready-made prompt and wait for user response.
 
@@ -477,14 +479,14 @@ class GitHubCopilotProvider(BaseCompanionProvider):
         )
         print("2. Save Copilot's response to the file path shown above")
         print("3. Press Enter when ready...")
-        
+
         # Wait for user acknowledgment before starting to poll
         try:
             input("Press Enter to continue...")
         except KeyboardInterrupt:
             print("\n❌ Operation cancelled by user")
             return None
-            
+
         print("\n⏱️  Waiting for your response file...")
 
         # Simple polling approach - defer watchdog to post-MVP
@@ -1175,7 +1177,9 @@ class GitHubCopilotProvider(BaseCompanionProvider):
         diagnostics["recommended_solutions"].append(solution)
 
     def _add_vscode_path_solution(
-        self, diagnostics: dict[str, Any], vscode_result: dict[str, Any],
+        self,
+        diagnostics: dict[str, Any],
+        vscode_result: dict[str, Any],
     ) -> None:
         """Add solution for VS Code PATH issues."""
         system = platform.system().lower()
@@ -1244,7 +1248,8 @@ class GitHubCopilotProvider(BaseCompanionProvider):
         diagnostics["recommended_solutions"].append(solution)
 
     def _add_github_cli_installation_solution(
-        self, diagnostics: dict[str, Any],
+        self,
+        diagnostics: dict[str, Any],
     ) -> None:
         """Add GitHub CLI installation solution."""
         system = platform.system().lower()
@@ -1332,7 +1337,8 @@ class GitHubCopilotProvider(BaseCompanionProvider):
         diagnostics["recommended_solutions"].append(solution)
 
     def format_user_friendly_error(
-        self, validation_result: dict[str, Any] | None = None,
+        self,
+        validation_result: dict[str, Any] | None = None,
     ) -> str:
         """Format a user-friendly error message with troubleshooting steps.
 
