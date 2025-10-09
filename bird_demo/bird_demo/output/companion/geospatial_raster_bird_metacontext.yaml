@@ -1,0 +1,76 @@
+metacontext_version: 0.3.0
+generation_info:
+  generated_at: '2025-10-09T19:37:46.532137Z'
+  generation_method: explicit_function
+  function_call: metacontext.metacontextualize()
+file_info:
+  filename: geospatial_raster_bird.tif
+  extension: .tif
+  file_purpose: Generated file with two-tier architecture
+  project_context_summary: Analysis with MediaHandler
+  creation_timestamp: '2025-10-09T19:37:46.532396Z'
+file_context:
+  file_summary: A .tif file containing data analysis and metadata context
+  creation_method: automatic_generation
+  intended_use: data_analysis_and_context
+system_info:
+  working_directory: /Users/bigdawg/Documents/repos/metacontext/bird_demo
+confidence_assessment:
+  overall: HIGH
+spatial_extension:
+  crs_detected_method: could_not_determine_crs
+  geometry_type: Raster
+  bounds_estimate:
+    min_lon: -76.483
+    max_lon: -76.475
+    min_lat: 42.44
+    max_lat: 42.448
+  requires_ai_enrichment: true
+  pixel_size:
+  - 0.00040000000000048883
+  - 0.0004000000000001336
+  pixel_dimensions:
+  - 20
+  - 20
+media_context:
+  deterministic_metadata:
+    media_type: image
+    file_size_bytes: 1340
+    media_info:
+      dimensions:
+      - 20
+      - 20
+      color_space: RGB
+  ai_enrichment:
+    ai_interpretation: Synthetic 20x20 RGB GeoTIFF (pixel-art bird) used as a demo/test
+      raster.
+    ai_confidence: HIGH
+    ai_domain_context: Geospatial test asset; low-res RGB raster with external worldfile,
+      intended for raster I/O validation.
+    usage_guidance: Unit/integration tests for raster I/O and worldfile parsing; CI/demo
+      placeholder for geospatial handlers.
+    hidden_meaning: Minimal synthetic asset to exercise affine parsing, CRS fallback,
+      and handler routing in demos.
+    suspicious_patterns:
+    - very low resolution (20x20)
+    - no embedded CRS; relies on external .tfw
+    - tiny file size (~1.34KB) indicates synthetic placeholder
+    cross_references:
+      creation_script: bird_demo/bird_demo/demo.py -> geospatial_raster()
+      worldfile: bird_demo/output/companion/geospatial_raster_bird.tfw
+    detective_insights: Programmatically generated to validate raster write/read,
+      trigger CRS extraction fallback, and exercise geospatial handlers.
+    content_description: 20x20 RGB pixel-art bird on white background.
+    quality_assessment: Low resolution and no embedded metadata; unsuitable for analysis
+      or visualization; acceptable for pipeline tests.
+    technical_analysis: TIFF, RGB, 20x20 px, ~1340 bytes; likely uncompressed or lightly
+      compressed; affine via .tfw; no EPSG tag embedded.
+    use_case_recommendations:
+    - raster I/O and worldfile parsing tests
+    - CI/demo placeholder for GIS handler validation
+    applications:
+    - Geospatial software testing
+    - Educational demos
+    - CI pipeline validation for GIS handlers
+    processing_recommendations: For production, replace with higher-resolution GeoTIFF
+      embedding CRS (EPSG), metadata, appropriate bit depth and overviews.

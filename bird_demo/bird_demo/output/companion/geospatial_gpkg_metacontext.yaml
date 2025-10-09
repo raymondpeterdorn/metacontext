@@ -1,0 +1,238 @@
+metacontext_version: 0.3.0
+generation_info:
+  generated_at: '2025-10-09T19:36:57.951684Z'
+  generation_method: explicit_function
+  function_call: metacontext.metacontextualize()
+file_info:
+  filename: geospatial_gpkg.gpkg
+  extension: .gpkg
+  file_purpose: Generated file with two-tier architecture
+  project_context_summary: Analysis with CSVHandler
+  creation_timestamp: '2025-10-09T19:36:57.951731Z'
+file_context:
+  file_summary: A .gpkg file containing data analysis and metadata context
+  creation_method: automatic_generation
+  intended_use: data_analysis_and_context
+system_info:
+  working_directory: /Users/bigdawg/Documents/repos/metacontext/bird_demo
+confidence_assessment:
+  overall: MEDIUM
+data_structure:
+  deterministic_metadata:
+    type: pandas_dataframe
+    shape:
+    - 200
+    - 18
+    memory_usage_bytes: 136475
+    column_dtypes:
+      species_name: object
+      taxonomic_family: object
+      taxonomic_order: object
+      asdawas: float64
+      beak_length: float64
+      weight_g: float64
+      nocturnal_diurnal: object
+      brrrrkk: object
+      diet_types: object
+      closest_relatives: object
+      latitude: float64
+      longitude: float64
+      altitude_m: float64
+      habitat_type: object
+      weather_condition: object
+      temperature_c: float64
+      observation_time: object
+      geometry: geometry
+  ai_enrichment:
+    domain_analysis: ''
+    data_quality_assessment: unknown
+    column_interpretations:
+      species_name:
+        deterministic:
+          null_count: 0
+          unique_count: 5
+        ai_enrichment:
+          semantic_meaning: species id
+          data_quality_assessment: ''
+          domain_context: taxonomy
+          derived_from:
+          - taxonomic_family
+          - taxonomic_order
+      taxonomic_family:
+        deterministic:
+          null_count: 0
+          unique_count: 5
+        ai_enrichment:
+          semantic_meaning: family taxon
+          data_quality_assessment: ''
+          domain_context: phylogeny
+          derived_from:
+          - species_name
+      taxonomic_order:
+        deterministic:
+          null_count: 0
+          unique_count: 4
+        ai_enrichment:
+          semantic_meaning: order taxon
+          data_quality_assessment: ''
+          domain_context: phylogeny
+          derived_from:
+          - species_name
+      asdawas:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: wing length
+          data_quality_assessment: ''
+          domain_context: morphometrics
+          derived_from:
+          - beak_length
+          - weight_g
+      beak_length:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: beak length
+          data_quality_assessment: ''
+          domain_context: morphometrics
+          derived_from:
+          - asdawas
+          - weight_g
+      weight_g:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: mass (g)
+          data_quality_assessment: ''
+          domain_context: condition metric
+          derived_from:
+          - beak_length
+          - asdawas
+      nocturnal_diurnal:
+        deterministic:
+          null_count: 0
+          unique_count: 2
+        ai_enrichment:
+          semantic_meaning: diel label
+          data_quality_assessment: ''
+          domain_context: behavior
+          derived_from: []
+      brrrrkk:
+        deterministic:
+          null_count: 0
+          unique_count: 158
+        ai_enrichment:
+          semantic_meaning: observer notes/code
+          data_quality_assessment: ''
+          domain_context: unstructured text
+          derived_from: []
+      diet_types:
+        deterministic:
+          null_count: 0
+          unique_count: 5
+        ai_enrichment:
+          semantic_meaning: trophic category
+          data_quality_assessment: ''
+          domain_context: ecology
+          derived_from: []
+      closest_relatives:
+        deterministic:
+          null_count: 0
+          unique_count: 5
+        ai_enrichment:
+          semantic_meaning: nearest taxa note
+          data_quality_assessment: ''
+          domain_context: phylogeny
+          derived_from:
+          - taxonomic_family
+      latitude:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: decimal latitude
+          data_quality_assessment: ''
+          domain_context: spatial coord
+          derived_from:
+          - geometry
+      longitude:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: decimal longitude
+          data_quality_assessment: ''
+          domain_context: spatial coord
+          derived_from:
+          - geometry
+      altitude_m:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: elevation (m)
+          data_quality_assessment: ''
+          domain_context: environment covariate
+          derived_from: []
+      habitat_type:
+        deterministic:
+          null_count: 0
+          unique_count: 4
+        ai_enrichment:
+          semantic_meaning: habitat category
+          data_quality_assessment: ''
+          domain_context: landscape
+          derived_from: []
+      weather_condition:
+        deterministic:
+          null_count: 0
+          unique_count: 5
+        ai_enrichment:
+          semantic_meaning: weather code
+          data_quality_assessment: ''
+          domain_context: detection context
+          derived_from: []
+      temperature_c:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: ambient temp (C)
+          data_quality_assessment: ''
+          domain_context: environment covariate
+          derived_from: []
+      observation_time:
+        deterministic:
+          null_count: 0
+          unique_count: 184
+        ai_enrichment:
+          semantic_meaning: observation timestamp
+          data_quality_assessment: ''
+          domain_context: temporal context
+          derived_from: []
+      geometry:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: GIS geometry (point)
+          data_quality_assessment: ''
+          domain_context: spatial object
+          derived_from:
+          - latitude
+          - longitude
+    business_value_assessment: ''
+spatial_extension:
+  crs: EPSG:4326
+  crs_detected_method: direct_spatial_file_reading
+  geometry_type: Point
+  feature_count: 200
+  bounds_estimate:
+    min_lon: -124.45485227432856
+    min_lat: 24.048655851569247
+    max_lon: -67.14881820935769
+    max_lat: 48.70646835316931
+  requires_ai_enrichment: false

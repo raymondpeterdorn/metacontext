@@ -1,0 +1,222 @@
+metacontext_version: 0.3.0
+generation_info:
+  generated_at: '2025-10-09T18:05:46.585602Z'
+  generation_method: explicit_function
+  function_call: metacontext.metacontextualize()
+  token_usage:
+    total_tokens: 10643
+    prompt_tokens: 8907
+    completion_tokens: 5593
+    total_api_calls: 4
+    provider: gemini
+    model: gemini-2.5-flash
+file_info:
+  filename: geospatial_gpkg.gpkg
+  extension: .gpkg
+  file_purpose: Generated file with two-tier architecture
+  project_context_summary: Analysis with CSVHandler
+  creation_timestamp: '2025-10-09T18:05:46.586068Z'
+file_context:
+  file_summary: A .gpkg file containing data analysis and metadata context
+  creation_method: automatic_generation
+  intended_use: data_analysis_and_context
+system_info:
+  working_directory: /Users/bigdawg/Documents/repos/metacontext/bird_demo
+confidence_assessment:
+  overall: MEDIUM
+data_structure:
+  deterministic_metadata:
+    type: pandas_dataframe
+    shape:
+    - 200
+    - 18
+    memory_usage_bytes: 136475
+    column_dtypes:
+      species_name: object
+      taxonomic_family: object
+      taxonomic_order: object
+      asdawas: float64
+      beak_length: float64
+      weight_g: float64
+      nocturnal_diurnal: object
+      brrrrkk: object
+      diet_types: object
+      closest_relatives: object
+      latitude: float64
+      longitude: float64
+      altitude_m: float64
+      habitat_type: object
+      weather_condition: object
+      temperature_c: float64
+      observation_time: object
+      geometry: geometry
+  ai_enrichment:
+    domain_analysis: ''
+    data_quality_assessment: unknown
+    column_interpretations:
+      species_name:
+        deterministic:
+          null_count: 0
+          unique_count: 5
+        ai_enrichment:
+          semantic_meaning: Bird species.
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      taxonomic_family:
+        deterministic:
+          null_count: 0
+          unique_count: 5
+        ai_enrichment:
+          semantic_meaning: Taxonomic family.
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      taxonomic_order:
+        deterministic:
+          null_count: 0
+          unique_count: 4
+        ai_enrichment:
+          semantic_meaning: Taxonomic order.
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      asdawas:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: Wing Length.
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      beak_length:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: Beak length.
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      weight_g:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: Weight (g).
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      nocturnal_diurnal:
+        deterministic:
+          null_count: 0
+          unique_count: 2
+        ai_enrichment:
+          semantic_meaning: Activity pattern.
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      brrrrkk:
+        deterministic:
+          null_count: 0
+          unique_count: 158
+        ai_enrichment:
+          semantic_meaning: Observation ID.
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      diet_types:
+        deterministic:
+          null_count: 0
+          unique_count: 5
+        ai_enrichment:
+          semantic_meaning: Diet classification.
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      closest_relatives:
+        deterministic:
+          null_count: 0
+          unique_count: 5
+        ai_enrichment:
+          semantic_meaning: Evolutionary relatives.
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      latitude:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: Geographic latitude.
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      longitude:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: Geographic longitude.
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      altitude_m:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: Altitude (m).
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      habitat_type:
+        deterministic:
+          null_count: 0
+          unique_count: 4
+        ai_enrichment:
+          semantic_meaning: Habitat classification.
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      weather_condition:
+        deterministic:
+          null_count: 0
+          unique_count: 5
+        ai_enrichment:
+          semantic_meaning: Weather condition.
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      temperature_c:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: Temperature (°C).
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      observation_time:
+        deterministic:
+          null_count: 0
+          unique_count: 184
+        ai_enrichment:
+          semantic_meaning: Observation timestamp.
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+      geometry:
+        deterministic:
+          null_count: 0
+          unique_count: 200
+        ai_enrichment:
+          semantic_meaning: Geospatial point.
+          data_quality_assessment: ''
+          domain_context: ''
+          derived_from: []
+    business_value_assessment: ''
+spatial_extension:
+  crs_detected_method: extraction_failed
+  requires_ai_enrichment: true

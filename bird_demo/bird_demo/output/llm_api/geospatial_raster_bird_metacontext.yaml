@@ -1,0 +1,77 @@
+metacontext_version: 0.3.0
+generation_info:
+  generated_at: '2025-10-09T18:01:04.889222Z'
+  generation_method: explicit_function
+  function_call: metacontext.metacontextualize()
+  token_usage:
+    total_tokens: 6155
+    prompt_tokens: 2018
+    completion_tokens: 347
+    total_api_calls: 2
+    provider: gemini
+    model: gemini-2.5-flash
+file_info:
+  filename: geospatial_raster_bird.tif
+  extension: .tif
+  file_purpose: Generated file with two-tier architecture
+  project_context_summary: Analysis with MediaHandler
+  creation_timestamp: '2025-10-09T18:01:04.889422Z'
+file_context:
+  file_summary: A .tif file containing data analysis and metadata context
+  creation_method: automatic_generation
+  intended_use: data_analysis_and_context
+system_info:
+  working_directory: /Users/bigdawg/Documents/repos/metacontext/bird_demo
+confidence_assessment:
+  overall: HIGH
+spatial_extension:
+  crs: EPSG:4326
+  crs_detected_method: worldfile_assumed_wgs84
+  geometry_type: Raster
+  bounds_estimate:
+    min_lon: -76.483
+    max_lon: -76.475
+    min_lat: 42.44
+    max_lat: 42.448
+  requires_ai_enrichment: false
+  pixel_size:
+  - 0.00040000000000048883
+  - 0.0004000000000001336
+  pixel_dimensions:
+  - 20
+  - 20
+media_context:
+  deterministic_metadata:
+    media_type: image
+    file_size_bytes: 1340
+    media_info:
+      dimensions:
+      - 20
+      - 20
+      color_space: RGB
+  ai_enrichment:
+    ai_interpretation: A 20x20 pixel RGB TIFF image, likely a placeholder or icon,
+      representing a bird in a geospatial context.
+    ai_confidence: HIGH
+    ai_domain_context: 'Geospatial imaging: Raster data, low-res, for mapping/UI elements.'
+    usage_guidance: Suitable for small icons, map markers, or testing low-res image
+      pipelines.
+    hidden_meaning: Geospatial prefix suggests GIS integration, likely symbolic representation.
+    suspicious_patterns:
+    - Extremely low resolution (20x20 pixels) limits visual utility.
+    detective_insights: Likely a small asset for a geospatial application, e.g., legend,
+      map marker, or raster test.
+    content_description: A 20x20 pixel RGB image, likely depicting a bird, intended
+      for symbolic representation.
+    quality_assessment: Low resolution (20x20) and small file size. Quality is appropriate
+      for its symbolic purpose.
+    technical_analysis: TIFF format, 20x20 pixels, RGB color space. 1.34 KB. Likely
+      uncompressed.
+    use_case_recommendations:
+    - Map legend icons
+    - GIS feature markers
+    - Low-resolution UI elements
+    applications:
+    - Geographic Information Systems (GIS)
+    - Web mapping
+    - Software development (testing)

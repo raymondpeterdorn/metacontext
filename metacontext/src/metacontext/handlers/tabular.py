@@ -50,6 +50,10 @@ class CSVHandler(BaseFileHandler):
         ".xls",
         ".parquet",
         ".feather",
+        # Vector geospatial files with attribute tables (require tabular + spatial composition)
+        ".geojson",
+        ".gpkg", 
+        ".shp",
     ]
     required_schema_extensions: ClassVar[list[str]] = ["data_structure"]
 
@@ -59,8 +63,22 @@ class CSVHandler(BaseFileHandler):
 
     def can_handle(self, file_path: Path, data_object: object | None = None) -> bool:
         """Check if this is a tabular data file."""
-        if file_path.suffix.lower() in self.supported_extensions:
+        file_ext = file_path.suffix.lower()
+        
+        # First check if file extension is supported
+        if file_ext in self.supported_extensions:
             return True
+
+        # Check for vector geospatial files that should be handled with tabular + spatial composition
+        # These files have attribute tables and should be processed as tabular data with geospatial extensions
+        vector_geospatial_extensions = [".gpkg", ".geojson", ".shp"]
+        if file_ext in vector_geospatial_extensions:
+            return True
+
+        # Exclude pure geospatial files (no attributes) and raster files (handled by MediaHandler)
+        excluded_extensions = [".kml", ".kmz", ".tif", ".tiff", ".nc"]
+        if file_ext in excluded_extensions:
+            return False
 
         # Check if data_object is a pandas DataFrame
         if data_object is not None:
@@ -159,15 +177,31 @@ class CSVHandler(BaseFileHandler):
         column analysis using efficient bulk prompting instead of individual
         field-by-field prompts.
         """
+        start_time = time.time()
+        file_ext = file_path.suffix.lower()
+        
         context: dict[str, object] = {}
 
         # Basic data analysis (descriptive layer) - Step B: Deterministic
+        deterministic_start = time.time()
         if data_object is not None:
             data_analysis = self._analyze_dataframe(data_object)
         else:
-            data_analysis = self._analyze_file(file_path)
+            # Try to load the file as a DataFrame for analysis
+            try:
+                loaded_df = self._load_file_as_dataframe(file_path)
+                if loaded_df is not None:
+                    data_analysis = self._analyze_dataframe(loaded_df)
+                else:
+                    data_analysis = self._analyze_file(file_path)
+            except Exception as e:
+                logger.debug("Failed to load file as DataFrame: %s", e)
+                data_analysis = self._analyze_file(file_path)
+        
+        deterministic_time = time.time() - deterministic_start
 
         # AI-powered interpretation using unified pipeline (Steps C→I)
+        ai_start = time.time()
         if (
             ai_companion
             and hasattr(ai_companion, "is_available")
@@ -323,8 +357,67 @@ class CSVHandler(BaseFileHandler):
             enhanced_context if "enhanced_context" in locals() else data_analysis
         )
         context["data_structure"] = self._create_data_structure(final_analysis)
-
+        
+        # Performance and validation logging for Tasks 2.6-2.8
+        total_time = time.time() - start_time
+        ai_time = time.time() - ai_start if 'ai_start' in locals() else 0.0
+        
+        logger.info("✅ TASK-2.7 TabularHandler.generate_context completed in %.3f seconds (det: %.3f, ai: %.3f)", 
+                   total_time, deterministic_time, ai_time)
+        
+        # Schema validation logging for Task 2.6
+        data_structure = context.get("data_structure", {})
+        if isinstance(data_structure, dict):
+            columns_count = len(data_structure.get("columns", {}))
+            logger.info("📊 TASK-2.6 Schema output: Generated data_structure with %d columns", columns_count)
+            
+            # Check for extension pattern context
+            if file_ext in [".gpkg", ".geojson", ".shp"]:
+                logger.info("🗺️ TASK-2.6 Extension pattern: Vector geospatial file processed by TabularHandler")
+        
         return context
+
+    def _load_file_as_dataframe(self, file_path: Path) -> pd.DataFrame | None:
+        """Load a file as a pandas DataFrame.
+        
+        Handles various tabular formats including geospatial files.
+        
+        Args:
+            file_path: Path to the file to load
+            
+        Returns:
+            DataFrame if successful, None if failed
+        """
+        file_ext = file_path.suffix.lower()
+        
+        try:
+            # Handle geospatial files with geopandas
+            if file_ext in {".gpkg", ".geojson", ".shp"}:
+                try:
+                    import geopandas as gpd  # noqa: PLC0415
+                    gdf = gpd.read_file(file_path)
+                    # Convert to regular DataFrame for tabular analysis
+                    return pd.DataFrame(gdf)
+                except ImportError:
+                    logger.debug("GeoPandas not available for loading %s", file_ext)
+                    return None
+                    
+            # Handle regular tabular files
+            elif file_ext == ".csv":
+                return pd.read_csv(file_path)
+            elif file_ext in {".xlsx", ".xls"}:
+                return pd.read_excel(file_path)
+            elif file_ext == ".parquet":
+                return pd.read_parquet(file_path)
+            elif file_ext == ".feather":
+                return pd.read_feather(file_path)
+            else:
+                logger.debug("Unsupported file extension for DataFrame loading: %s", file_ext)
+                return None
+                
+        except Exception as e:
+            logger.debug("Failed to load %s as DataFrame: %s", file_path.name, e)
+            return None
 
     def _analyze_dataframe(self, df: pd.DataFrame) -> dict[str, Any]:
         """Analyze a pandas DataFrame (descriptive layer).
@@ -358,21 +451,10 @@ class CSVHandler(BaseFileHandler):
                     # For unhashable types like dicts/lists, count unique string representations
                     unique_count = int(col_data.astype(str).nunique())
 
-                # Handle sample values for potentially unhashable types
-                try:
-                    sample_values = col_data.dropna().head(3).tolist()
-                except (TypeError, ValueError):
-                    # For unhashable types, convert to string representation
-                    sample_values = col_data.dropna().head(3).astype(str).tolist()
-
                 analysis["columns"][col_name] = {
-                    "dtype": str(col_data.dtype),
+                    "dtype": str(col_data.dtype),  # Keep for overall column_dtypes
                     "null_count": int(col_data.isna().sum()),
-                    "null_percentage": float(
-                        col_data.isna().sum() / len(col_data) * 100,
-                    ),
                     "unique_count": unique_count,
-                    "sample_values": sample_values,
                 }
         except ImportError:
             return {"error": "pandas not available for DataFrame analysis"}
@@ -412,6 +494,7 @@ class CSVHandler(BaseFileHandler):
         """
         ai_analysis = {}
         start_time = time.time()
+        column_time = 0.0  # Initialize to handle cases with no columns
 
         # Bulk column analysis prompt - pass full data_analysis which includes semantic knowledge
         if data_analysis.get("columns"):
@@ -602,7 +685,7 @@ class CSVHandler(BaseFileHandler):
                     "semantic_meaning": str(col_data),
                     "data_quality_assessment": "",
                     "domain_context": "",
-                    "relationship_to_other_columns": [],
+                    "derived_from": [],
                 }
 
         return result
@@ -635,7 +718,7 @@ class CSVHandler(BaseFileHandler):
                     "domain_context": ai_enrichment_data.domain_context
                     if ai_enrichment_data
                     else "",
-                    "relationship_to_other_columns": ai_enrichment_data.relationship_to_other_columns
+                    "derived_from": ai_enrichment_data.derived_from
                     if ai_enrichment_data
                     else [],
                 }
@@ -815,7 +898,7 @@ class CSVHandler(BaseFileHandler):
                 "semantic_meaning": f"Column analysis unavailable for {col_name}",
                 "data_quality_assessment": "No AI companion available for analysis",
                 "domain_context": "Unknown domain context",
-                "relationship_to_other_columns": [],
+                "derived_from": [],
             }
             for col_name in columns_data
         }
@@ -902,20 +985,14 @@ class CSVHandler(BaseFileHandler):
                 # Get deterministic data for this column from data_analysis
                 deterministic_col_data = columns_data.get(col_name, {})
                 det_info = ColumnDeterministicInfo(
-                    dtype=deterministic_col_data.get("dtype"),
                     null_count=deterministic_col_data.get("null_count"),
-                    null_percentage=deterministic_col_data.get("null_percentage"),
                     unique_count=deterministic_col_data.get("unique_count"),
-                    sample_values=deterministic_col_data.get("sample_values"),
                 )
                 ai_info = ColumnAIEnrichment(
                     semantic_meaning=col_data.get("semantic_meaning", ""),
                     data_quality_assessment=col_data.get("supporting_evidence", ""),
                     domain_context=col_data.get("domain_context", ""),
-                    relationship_to_other_columns=col_data.get(
-                        "relationship_to_other_columns",
-                        [],
-                    ),
+                    derived_from=col_data.get("derived_from", []),
                 )
 
                 column_interpretations[col_name] = ColumnInfo(

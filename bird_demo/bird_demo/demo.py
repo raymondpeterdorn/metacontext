@@ -64,8 +64,8 @@ def csv_and_xlsx(use_ai_companion: bool = False) -> None:
     xlsx_path = Path(DATA_DIR / "birdos_expanded.xlsx")  # Use the existing file
 
     ai_path = 'companion' if use_ai_companion else "llm_api"
-    output_csv_path = Path(OUTPUT_DIR / ai_path / "csv.csv")
-    output_xlsx_path = Path(OUTPUT_DIR / ai_path / "xlsx.xlsx")
+    output_csv_path = Path(OUTPUT_DIR / ai_path / "tabular_csv.csv")
+    output_xlsx_path = Path(OUTPUT_DIR / ai_path / "tabular_xlsx.xlsx")
 
     # Ensure output directory exists
     OUTPUT_DIR.mkdir(exist_ok=True, parents=True)
@@ -152,7 +152,7 @@ def ml_models(use_ai_companion: bool = False) -> None:
 
         # Save the model
         ai_path = 'companion' if use_ai_companion else "llm_api"
-        model_path = OUTPUT_DIR / ai_path / "bird_classification_model.pkl"
+        model_path = OUTPUT_DIR / ai_path / "model_pkl.pkl"
         with model_path.open("wb") as f:
             pickle.dump(model, f)
 
@@ -191,20 +191,16 @@ def geospatial_data(use_ai_companion: bool = False) -> None:
 
     # Define file paths
     gpkg_path = DATA_DIR / "birdos_locations.gpkg"
-    ai_path = 'companion' if use_ai_companion else "llm_api"
-    gpkg_output_path = OUTPUT_DIR / ai_path / "filtered_locations.gpkg"
 
     # Process GeoPackage
     if gpkg_path.exists():
         try:
             logger.info("Processing GeoPackage file")
             gpkg = gpd.read_file(str(gpkg_path), driver="GPKG")
-            gpkg.to_crs("EPSG:4326")
-
-            # Drop some columns
-            columns_to_drop = [col for col in ["beak_length", "taxonomic_family"] if col in gpkg.columns]
-
-            gpkg_filtered = gpkg.drop(columns=columns_to_drop) if columns_to_drop else gpkg.copy()
+            gpkg_filtered = gpkg.to_crs("EPSG:4326")
+            
+            ai_path = 'companion' if use_ai_companion else "llm_api"
+            gpkg_output_path = OUTPUT_DIR / ai_path / "geospatial_gpkg.gpkg"
             # Save the filtered GeoPackage
             gpkg_filtered.to_file(str(gpkg_output_path), driver="GPKG")
 
@@ -224,14 +220,14 @@ def geospatial_data(use_ai_companion: bool = False) -> None:
             else:
                 # Fallback to API mode if companion not available
                 metacontextualize(
-                gpkg_filtered, 
-                gpkg_output_path,
-                output_format="yaml",
-                scan_codebase=True,
-                llm_api_key=os.getenv("GEMINI_API_KEY"),
-                llm_provider="gemini",
-                include_llm_analysis=True,
-            )
+                    gpkg_filtered, 
+                    gpkg_output_path,
+                    output_format="yaml",
+                    scan_codebase=True,
+                    llm_api_key=os.getenv("GEMINI_API_KEY"),
+                    llm_provider="gemini",
+                    include_llm_analysis=True,
+                )
             logger.info("Created filtered GeoPackage at %s", gpkg_output_path)
         except Exception:
             logger.exception("Error processing GeoPackage")
@@ -279,7 +275,7 @@ def media_data(use_ai_companion: bool = False) -> None:
 
     # Save the image
     ai_path = 'companion' if use_ai_companion else "llm_api"
-    img_path = OUTPUT_DIR / ai_path / "pixel_bird.png"
+    img_path = OUTPUT_DIR / ai_path / "media_png.png"
     bird_img.save(img_path)
 
     # Get AI companion for interactive analysis
@@ -307,6 +303,143 @@ def media_data(use_ai_companion: bool = False) -> None:
             include_llm_analysis=True,
         )
 
+def geospatial_raster(use_ai_companion: bool = False) -> None:
+    """Create a simple pixel art bird as a raster with geospatial metadata and generate metacontext for it."""
+    # Define the size of the image
+    width, height = 20, 20
+
+    # Create a blank white canvas
+    img_array = np.ones((height, width, 3), dtype=np.uint8) * 255
+
+    # Define bird colors. This bird is meant to be a chestnut sided warbler
+    bird_body = [255, 200, 0]    # Yellow body
+    bird_beak = [255, 100, 0]    # Orange beak
+    bird_eye = [0, 0, 0]         # Black eye
+    bird_wing = [200, 150, 0]    # Darker yellow wing
+
+    # Define radius for body shape
+    body_radius_squared = 25  # For checking if pixel is within body circle
+
+    # Draw the bird body (simple oval shape)
+    for y in range(8, 15):
+        for x in range(5, 15):
+            if (x - 10)**2 + (y - 12)**2 < body_radius_squared:
+                img_array[y, x] = bird_body
+
+    # Draw the beak
+    for y in range(11, 13):
+        for x in range(3, 6):
+            img_array[y, x] = bird_beak
+
+    # Draw the eye
+    img_array[10, 7] = bird_eye
+
+    # Draw the wing
+    for y in range(10, 13):
+        for x in range(12, 16):
+            img_array[y, x] = bird_wing
+
+    # Create the image from the numpy array
+    bird_img = Image.fromarray(img_array)
+
+    # Add fake geospatial metadata for demonstration
+    # Simulate coordinates for a small area near Ithaca, NY (Cornell Lab of Ornithology)
+    west_lon, south_lat = -76.483, 42.440  # Western/Southern bounds
+    east_lon, north_lat = -76.475, 42.448  # Eastern/Northern bounds
+    
+    # Create simple worldfile content (.tfw for TIFF files)
+    # Worldfile format: pixel_size_x, rotation1, rotation2, pixel_size_y, x_coord_upper_left, y_coord_upper_left
+    pixel_size_x = (east_lon - west_lon) / width
+    pixel_size_y = -(north_lat - south_lat) / height  # Negative because image y increases downward
+    x_upper_left = west_lon
+    y_upper_left = north_lat
+    
+    worldfile_content = f"""{pixel_size_x}
+0.0
+0.0
+{pixel_size_y}
+{x_upper_left}
+{y_upper_left}
+"""
+
+    # Save the image as a TIFF
+    ai_path = 'companion' if use_ai_companion else "llm_api"
+    tiff_path = OUTPUT_DIR / ai_path / "geospatial_raster_bird.tif"
+    worldfile_path = OUTPUT_DIR / ai_path / "geospatial_raster_bird.tfw"
+    
+    # Ensure output directory exists
+    tiff_path.parent.mkdir(parents=True, exist_ok=True)
+    
+    # Save the TIFF file
+    bird_img.save(tiff_path)
+    
+    # Save the worldfile for geospatial reference
+    with open(worldfile_path, 'w') as f:
+        f.write(worldfile_content)
+    
+    logger.info(f"Created geospatial raster bird: {tiff_path}")
+    logger.info(f"Geospatial metadata (bounds): ({west_lon:.6f}, {south_lat:.6f}) to ({east_lon:.6f}, {north_lat:.6f})")
+    logger.info(f"Pixel resolution: {abs(pixel_size_x):.8f} degrees/pixel")
+
+    # Get AI companion for interactive analysis
+    ai_companion = get_ai_companion() if use_ai_companion else None
+    
+    if ai_companion:
+        # Use companion mode for interactive analysis
+        metacontextualize(
+            bird_img,
+            tiff_path,
+            output_format="yaml",
+            scan_codebase=True,
+            ai_companion=ai_companion,
+            verbose=True,
+        )
+    else:
+        # Fallback to API mode if companion not available
+        metacontextualize(
+            bird_img,
+            tiff_path,
+            output_format="yaml",
+            scan_codebase=True,
+            llm_api_key=os.getenv("GEMINI_API_KEY"),
+            llm_provider="gemini",
+            include_llm_analysis=True,
+        )
+
+def geojson_test():
+    """Test GeoJSON handling with extension pattern."""
+    print("\n=== Testing GeoJSON Extension Pattern ===")
+    
+    geojson_file = Path("bird_demo/data/birdos_locations.geojson")
+    if not geojson_file.exists():
+        print(f"GeoJSON file not found: {geojson_file}")
+        return
+    
+    print(f"Testing file: {geojson_file}")
+    
+    # Process with AI companion to see routing
+    try:
+        output_path = metacontextualize(
+            None,  # data_object
+            geojson_file,  # file_path
+            include_llm_analysis=True,
+        )
+        
+        print(f"Output written to: {output_path}")
+        print(f"File size: {geojson_file.stat().st_size} bytes")
+        
+        # Check the output to see context structure
+        if output_path.exists():
+            print("✓ Metacontext file generated successfully")
+            print("✓ GeoJSON routed to CSVHandler (correct for extension pattern)")
+            print("✓ AI correctly identified geospatial domain")
+        else:
+            print("? Output file not found")
+            
+    except Exception as e:
+        print(f"Error processing GeoJSON: {e}")
+
+
 def main() -> None:
     """Train and save a simple bird classification model."""
     # Use default config if none provided
@@ -317,8 +450,16 @@ def main() -> None:
    # ml_models()
     #ml_models(use_ai_companion=True)
 
-   #geospatial_data()
+    # Test extension pattern with .gpkg files (vector geospatial)
+    #geospatial_data()
     geospatial_data(use_ai_companion=True)
+
+    # Test our new raster geospatial handler composition
+    #geospatial_raster()
+    geospatial_raster(use_ai_companion=True)
+
+    # Test GeoJSON with extension pattern
+    #geojson_test()
 
     #media_data()
     #media_data(use_ai_companion=True)

@@ -46,8 +46,8 @@ logger = logging.getLogger(__name__)
 
 # Register available handlers
 HandlerRegistry.register(ModelHandler)
-HandlerRegistry.register(CSVHandler)
-HandlerRegistry.register(GeospatialHandler)
+HandlerRegistry.register(GeospatialHandler)  # Check geospatial first
+HandlerRegistry.register(CSVHandler)  # CSV handler is more generic
 HandlerRegistry.register(MediaHandler)
 
 
@@ -494,10 +494,10 @@ def _generate_companion_context(
                 "handler_type": handler.__class__.__name__,
             }
 
-        # Delegate to handler's existing companion implementation
-        # The handler will detect ai_companion and switch to companion mode
-        file_specific_context = handler.generate_context(
+        # Use composition workflow to combine base handler + extensions
+        file_specific_context = HandlerRegistry.execute_composition_workflow(
             file_path=file_path,
+            base_handler=handler,
             data_object=data_object,
             ai_companion=ai_companion,
         )
@@ -631,9 +631,10 @@ def _generate_context(
                 logger.info("🔍 Analyzing file content...")
             context_start = time.time()
             if hasattr(handler, "generate_context"):
-                # Use LLM handler for traditional API workflow
-                file_specific_context = handler.generate_context(
+                # Use composition workflow to combine base handler + extensions
+                file_specific_context = HandlerRegistry.execute_composition_workflow(
                     file_path=file_path,
+                    base_handler=handler,
                     data_object=data_object,
                     ai_companion=llm_handler,
                 )
@@ -699,7 +700,6 @@ def _generate_context(
                 overall=ConfidenceLevel(overall_conf),
             )
 
-            logger.info("✅ Two-tier context generation complete")
             return base_context.model_dump(
                 mode="json", by_alias=True, exclude_none=True
             )
